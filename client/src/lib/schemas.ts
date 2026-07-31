@@ -33,6 +33,12 @@ const OPENING_HOURS = [
   },
 ];
 
+const MEDICAL_SPECIALTIES = [
+  { "@id": "https://schema.org/PrimaryCare" },
+  { "@id": "https://schema.org/Geriatric" },
+  { "@id": "https://schema.org/Gynecologic" },
+];
+
 export function organizationSchema() {
   return {
     "@context": "https://schema.org",
@@ -90,7 +96,7 @@ export function medicalClinicSchema() {
       { "@type": "City", name: "Fort Myers" },
       { "@type": "City", name: "Cape Coral" },
     ],
-    medicalSpecialty: ["PrimaryCare", "Geriatric", "Gynecologic"],
+    medicalSpecialty: MEDICAL_SPECIALTIES,
     availableService: [
       { "@type": "MedicalTherapy", name: "Primary Care Services", url: `${DOMAIN}/primary-care/checkups-prevention` },
       { "@type": "MedicalTherapy", name: "Palliative Care Services", url: `${DOMAIN}/palliative-care/about-palliative-care` },
@@ -137,10 +143,10 @@ export function physicianSchema() {
     honorificSuffix: "MD",
     jobTitle: "Founder and Primary Care Physician",
     description:
-      "Board-certified primary care physician specializing in adult and geriatric medicine. Founder of Faithful Care Medical Services in Naples, FL.",
+      "Primary care physician focused on adult and geriatric medicine. Founder of Faithful Care Medical Services in Naples, FL.",
     image: `${DOMAIN}/images/dr-addys-reve.webp`,
     telephone: PHONE,
-    medicalSpecialty: ["PrimaryCare", "Geriatric", "Gynecologic"],
+    medicalSpecialty: MEDICAL_SPECIALTIES,
     availableService: [
       { "@type": "MedicalTherapy", name: "Primary Care Services", url: `${DOMAIN}/primary-care/checkups-prevention` },
       { "@type": "MedicalTherapy", name: "Palliative Care Services", url: `${DOMAIN}/palliative-care/about-palliative-care` },
@@ -239,9 +245,7 @@ export function medicalServiceSchema(opts: {
   };
 }
 
-export function insuranceLpClinicSchema(opts: {
-  acceptedNetworks: string[];
-}) {
+export function insuranceLpClinicSchema() {
   return {
     "@context": "https://schema.org",
     "@type": "Service",
@@ -254,7 +258,6 @@ export function insuranceLpClinicSchema(opts: {
     category: "Health insurance",
     provider: { "@id": `${DOMAIN}/#clinic` },
     areaServed: { "@type": "State", name: "Florida" },
-    keywords: opts.acceptedNetworks,
     availableChannel: {
       "@type": "ServiceChannel",
       serviceUrl: `${DOMAIN}/contact`,

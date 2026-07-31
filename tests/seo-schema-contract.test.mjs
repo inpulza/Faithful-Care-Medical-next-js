@@ -23,7 +23,14 @@ test("base organization and clinic schemas publish stable, valid identity signal
   assert.deepEqual(clinic.parentOrganization, { "@id": organization["@id"] });
   assert.equal(clinic.currenciesAccepted, "USD");
   assert.equal("acceptsInsurance" in clinic, false);
-  assert.equal(clinic.medicalSpecialty.includes("PalliativeCare"), false);
+  const expectedSpecialties = [
+    { "@id": "https://schema.org/PrimaryCare" },
+    { "@id": "https://schema.org/Geriatric" },
+    { "@id": "https://schema.org/Gynecologic" },
+  ];
+  assert.deepEqual(clinic.medicalSpecialty, expectedSpecialties);
+  assert.deepEqual(physician.medicalSpecialty, expectedSpecialties);
+  assert.doesNotMatch(physician.description, /board-certified/i);
   assert.equal("availableLanguage" in clinic, false);
   assert.equal("availableLanguage" in physician, false);
   assert.deepEqual(clinic.contactPoint, { "@id": "https://faithfulcaremedical.com/#appointments" });
@@ -78,13 +85,12 @@ test("location pages describe service areas, not fictional physical branches", (
 });
 
 test("insurance page schema is a coverage-verification service without unsupported clinic properties", () => {
-  const insurance = insuranceLpClinicSchema({
-    acceptedNetworks: ["Medicare", "Aetna"],
-  });
+  const insurance = insuranceLpClinicSchema();
 
   assert.equal(insurance["@type"], "Service");
   assert.deepEqual(insurance.provider, { "@id": "https://faithfulcaremedical.com/#clinic" });
   assert.equal("acceptsInsurance" in insurance, false);
   assert.equal("medicalSpecialty" in insurance, false);
+  assert.equal("keywords" in insurance, false);
   assert.equal(insurance.availableChannel.servicePhone["@type"], "ContactPoint");
 });

@@ -616,7 +616,7 @@ export default function InsuranceAccepted() {
     <div className="bg-white text-deep-navy">
       <JsonLdArray
         schemas={[
-          insuranceLpClinicSchema({ acceptedNetworks: ACCEPTED_NETWORKS }),
+          insuranceLpClinicSchema(),
           faqPageSchema(faqsForSchema),
         ]}
       />
