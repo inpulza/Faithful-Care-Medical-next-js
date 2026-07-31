@@ -31,7 +31,9 @@ Los tests validan las 37 rutas canónicas EN/ES, redirects 301, SEO, archivos de
 
 Copiar `.env.example` a `.env.local` y definir:
 
-- `FCMS_RESEND_API`: API key de Resend usada por `/api/contact`.
+- `RESEND_API_KEY`: API key de Resend usada por `/api/contact`.
+
+Por compatibilidad, el servidor también acepta el nombre heredado `FCMS_RESEND_API`.
 
 No guardar secretos en Git. En Vercel, configurar la variable en los entornos **Production**, **Preview** y **Development** que necesiten envío real.
 

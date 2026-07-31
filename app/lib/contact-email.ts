@@ -412,7 +412,7 @@ export async function sendContactFormEmails(
   data: ContactFormData,
   requestId: string = "no-id"
 ): Promise<{ success: boolean; error?: string }> {
-  const apiKey = process.env.FCMS_RESEND_API;
+  const apiKey = process.env.RESEND_API_KEY ?? process.env.FCMS_RESEND_API;
   if (!apiKey) {
     console.error(`[email] request=${requestId} configuration=missing_api_key`);
     return { success: false, error: "missing_api_key" };
