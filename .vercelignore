@@ -1,0 +1,7 @@
+tests/
+.github/
+README.md
+.env.example
+coverage/
+playwright-report/
+test-results/
