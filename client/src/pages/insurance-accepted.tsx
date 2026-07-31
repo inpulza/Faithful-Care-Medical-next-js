@@ -8,7 +8,7 @@ import {
 import { Button } from "@/components/ui/button";
 import type { FaqItem } from "@/components/sections/faq-section";
 import { JsonLdArray } from "@/components/json-ld";
-import { faqPageSchema, breadcrumbSchema, insuranceLpClinicSchema } from "@/lib/schemas";
+import { faqPageSchema, insuranceLpClinicSchema } from "@/lib/schemas";
 import { cn } from "@/lib/utils";
 
 const PHONE_DISPLAY = "(239) 423-0205";
@@ -618,10 +618,6 @@ export default function InsuranceAccepted() {
         schemas={[
           insuranceLpClinicSchema({ acceptedNetworks: ACCEPTED_NETWORKS }),
           faqPageSchema(faqsForSchema),
-          breadcrumbSchema([
-            { name: "Home", path: "/" },
-            { name: "Insurance Accepted", path: "/insurance-accepted" },
-          ]),
         ]}
       />
       <main id="main">

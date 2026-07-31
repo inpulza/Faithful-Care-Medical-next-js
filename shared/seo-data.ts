@@ -168,7 +168,6 @@ export const HREFLANG_PAIRS: HreflangPair[] = [
   { en: "/primary-care", es: "/es/medico-de-familia-naples" },
   { en: "/palliative-care", es: "/es/cuidados-paliativos-naples" },
   { en: "/insurance-accepted", es: "/es/seguros-y-medicare" },
-  { en: "/medicare", es: "/es/seguros-y-medicare" },
   { en: "/contact", es: "/es/contacto" },
 ];
 

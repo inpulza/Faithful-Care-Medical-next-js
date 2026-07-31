@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { SiteShell } from "../../../site-shell";
 import { metadataForRoute } from "../../../lib/metadata";
 import { publicRoutes, routeForPath } from "../../../lib/route-contract";
+import { RouteStructuredData } from "../../../lib/structured-data";
 
 interface RouteProps {
   params: Promise<{ path: string[] }>;
@@ -23,5 +24,10 @@ export async function generateMetadata({ params }: RouteProps) {
 export default async function SpanishRoutePage({ params }: RouteProps) {
   const route = routeForPath(pathFromParams(await params));
   if (!route || route.lang !== "es") notFound();
-  return <SiteShell />;
+  return (
+    <>
+      <RouteStructuredData route={route} />
+      <SiteShell />
+    </>
+  );
 }

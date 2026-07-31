@@ -196,7 +196,7 @@ export function InsuranceMembership({
   eyebrow = "Insurance & Membership",
   title = (
     <>
-      Humana, Aetna, Cigna, Medicare and Medicaid.<br className="hidden lg:block" /> No insurance? No&nbsp;problem.
+      Humana, Aetna, Cigna, Medicare and Medicaid.<br className="hidden lg:block" />{" "}No insurance? No&nbsp;problem.
     </>
   ),
   dpcHeading = "What is Direct Primary Care?",

@@ -9,6 +9,11 @@ function attr(html, selectorName) {
   return html.match(pattern)?.[1];
 }
 
+function jsonLdSchemas(html) {
+  return [...html.matchAll(/<script[^>]+type=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi)]
+    .map((match) => JSON.parse(match[1]));
+}
+
 test("all 37 canonical routes return indexable localized HTML", async () => {
   const results = await Promise.all(publicRoutes.map(async (route) => {
     const response = await fetch(`${baseUrl}${route.path}`, { redirect: "manual" });
@@ -21,9 +26,29 @@ test("all 37 canonical routes return indexable localized HTML", async () => {
     assert.match(html, new RegExp(`<html[^>]+lang=["']${route.lang}["']`, "i"), `${route.path} lang`);
     assert.match(html, /<title>[^<]+<\/title>/i, `${route.path} title`);
     assert.match(html, /<meta[^>]+name=["']description["'][^>]+content=["'][^"']+["']/i, `${route.path} description`);
-    assert.ok(html.includes(`href="${route.canonical}"`) && html.includes('rel="canonical"'), `${route.path} canonical`);
+    const canonicalHref = html.match(/<link[^>]+rel=["']canonical["'][^>]+href=["']([^"']+)["']/i)?.[1];
+    assert.ok(canonicalHref, `${route.path} canonical missing`);
+    assert.equal(new URL(canonicalHref).href, new URL(route.canonical).href, `${route.path} canonical`);
     assert.doesNotMatch(html, /\[object Object\]/, `${route.path} serialized object`);
     assert.doesNotMatch(html, /noindex/i, `${route.path} unexpectedly noindex`);
+
+    const schemas = jsonLdSchemas(html);
+    assert.equal(
+      schemas.filter((schema) => schema["@type"] === "WebPage").length,
+      1,
+      `${route.path} must publish one WebPage schema`,
+    );
+    if (route.path === "/") {
+      const graph = schemas.find((schema) => Array.isArray(schema["@graph"]));
+      const ids = new Set(graph?.["@graph"].map((entity) => entity["@id"]));
+      for (const id of ["#organization", "#clinic", "#website", "#physician"]) {
+        assert.ok(ids.has(`https://faithfulcaremedical.com/${id}`), `home missing ${id}`);
+      }
+    } else if (route.path !== "/es") {
+      const breadcrumbs = schemas.filter((schema) => schema["@type"] === "BreadcrumbList");
+      assert.equal(breadcrumbs.length, 1, `${route.path} must publish one breadcrumb`);
+      assert.ok(breadcrumbs[0].itemListElement.length >= 2, `${route.path} valid breadcrumb`);
+    }
   }
 });
 
@@ -40,6 +65,16 @@ test("all approved aliases return permanent redirects to their canonicals", asyn
     const target = new URL(location, baseUrl);
     assert.equal(`${target.pathname}${target.hash}`, rule.destination, `${rule.source} destination`);
   }
+});
+
+test("production HTML preserves security and crawler-facing headers", async () => {
+  const response = await fetch(`${baseUrl}/`);
+  assert.equal(response.headers.get("x-content-type-options"), "nosniff");
+  assert.equal(response.headers.get("x-frame-options"), "DENY");
+  assert.equal(response.headers.get("referrer-policy"), "strict-origin-when-cross-origin");
+  assert.doesNotMatch(response.headers.get("content-security-policy") || "", /unsafe-inline/);
+  assert.notEqual(response.headers.get("cross-origin-resource-policy"), "cross-origin");
+  assert.match(response.headers.get("permissions-policy") || "", /geolocation=\(\)/);
 });
 
 test("discovery files expose every canonical route", async () => {

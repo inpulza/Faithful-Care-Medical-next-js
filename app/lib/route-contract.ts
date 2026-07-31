@@ -1,4 +1,10 @@
-import { DOMAIN, seoMap, isSpanishPath, type PageSeo } from "../../shared/seo-data";
+import {
+  DOMAIN,
+  HREFLANG_PAIRS,
+  seoMap,
+  isSpanishPath,
+  type PageSeo,
+} from "../../shared/seo-data";
 
 export type SiteLanguage = "en" | "es";
 
@@ -15,13 +21,6 @@ export interface RedirectRule {
   statusCode: 301;
 }
 
-const languagePairs = [
-  { en: "/", es: "/es" },
-  { en: "/primary-care", es: "/es/medico-de-familia-naples" },
-  { en: "/palliative-care", es: "/es/cuidados-paliativos-naples" },
-  { en: "/insurance-accepted", es: "/es/seguros-y-medicare" },
-  { en: "/contact", es: "/es/contacto" },
-] as const;
 
 function normalizePath(path: string): string {
   if (path === "/es/") return "/es";
@@ -30,7 +29,7 @@ function normalizePath(path: string): string {
 }
 
 function languagesForPath(path: string): PublicRoute["languages"] {
-  const pair = languagePairs.find(({ en, es }) => en === path || es === path);
+  const pair = HREFLANG_PAIRS.find(({ en, es }) => en === path || es === path);
   if (!pair) return undefined;
 
   return {
@@ -54,11 +53,19 @@ const canonicalHtmlAliases: RedirectRule[] = publicRoutes.map(({ path }) => ({
   statusCode: 301,
 }));
 
+const canonicalSlashAliases: RedirectRule[] = publicRoutes
+  .filter(({ path }) => path !== "/")
+  .map(({ path }) => ({
+    source: `${path}/`,
+    destination: path,
+    statusCode: 301,
+  }));
+
 export const redirectRules: RedirectRule[] = [
-  { source: "/es/", destination: "/es", statusCode: 301 },
   { source: "/dr-addys-reve", destination: "/about", statusCode: 301 },
   { source: "/palliative-humana", destination: "/insurance-accepted#humana", statusCode: 301 },
   { source: "/primary-care-aetna", destination: "/insurance-accepted#aetna", statusCode: 301 },
+  ...canonicalSlashAliases,
   ...canonicalHtmlAliases,
 ];
 

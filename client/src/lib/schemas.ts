@@ -1,8 +1,4 @@
-import {
-  ACCEPTED_INSURANCE_PLANS,
-  PROVIDER_NPI,
-  PROVIDER_FL_LICENSE,
-} from "./provider-info";
+import { PROVIDER_NPI, PROVIDER_FL_LICENSE } from "./provider-info";
 
 const DOMAIN = "https://faithfulcaremedical.com";
 const BUSINESS_NAME = "Faithful Care Medical Services";
@@ -44,12 +40,13 @@ export function organizationSchema() {
     "@id": `${DOMAIN}/#organization`,
     name: BUSINESS_NAME,
     url: DOMAIN,
-    logo: `${DOMAIN}/images/logos/faithful-care-logo.webp`,
+    logo: `${DOMAIN}/images/faithful-care-logo.webp`,
     image: `${DOMAIN}/og-image.png`,
     telephone: PHONE,
     address: ADDRESS,
     contactPoint: {
       "@type": "ContactPoint",
+      "@id": `${DOMAIN}/#appointments`,
       telephone: PHONE,
       contactType: "appointments",
       areaServed: "US",
@@ -76,7 +73,7 @@ export function medicalClinicSchema() {
     "@id": `${DOMAIN}/#clinic`,
     name: BUSINESS_NAME,
     url: DOMAIN,
-    logo: `${DOMAIN}/images/logos/faithful-care-logo.webp`,
+    logo: `${DOMAIN}/images/faithful-care-logo.webp`,
     image: `${DOMAIN}/og-image.png`,
     description:
       "Primary care and palliative care clinic in Naples, FL serving adults and seniors across Collier and Lee counties. Same-day appointments, chronic disease management, and compassionate support.",
@@ -93,7 +90,7 @@ export function medicalClinicSchema() {
       { "@type": "City", name: "Fort Myers" },
       { "@type": "City", name: "Cape Coral" },
     ],
-    medicalSpecialty: ["PrimaryCare", "PalliativeCare", "Geriatric", "Gynecologic"],
+    medicalSpecialty: ["PrimaryCare", "Geriatric", "Gynecologic"],
     availableService: [
       { "@type": "MedicalTherapy", name: "Primary Care Services", url: `${DOMAIN}/primary-care/checkups-prevention` },
       { "@type": "MedicalTherapy", name: "Palliative Care Services", url: `${DOMAIN}/palliative-care/about-palliative-care` },
@@ -108,16 +105,9 @@ export function medicalClinicSchema() {
     hasMap: GOOGLE_MAPS_PLACE_URL,
     openingHoursSpecification: OPENING_HOURS,
     paymentAccepted: ["Cash", "Credit Card", "Health Insurance", "HSA"],
-    acceptsInsurance: ACCEPTED_INSURANCE_PLANS.map((name) => ({
-      "@type": "HealthInsurancePlan",
-      name,
-    })),
     currenciesAccepted: "USD",
     priceRange: "$$",
-    availableLanguage: [
-      { "@type": "Language", name: "English", alternateName: "en" },
-      { "@type": "Language", name: "Spanish", alternateName: "es" },
-    ],
+    contactPoint: { "@id": `${DOMAIN}/#appointments` },
     isAcceptingNewPatients: true,
     parentOrganization: { "@id": `${DOMAIN}/#organization` },
   };
@@ -159,10 +149,7 @@ export function physicianSchema() {
     worksFor: { "@id": `${DOMAIN}/#organization` },
     address: ADDRESS,
     geo: GEO,
-    availableLanguage: [
-      { "@type": "Language", name: "English", alternateName: "en" },
-      { "@type": "Language", name: "Spanish", alternateName: "es" },
-    ],
+    contactPoint: { "@id": `${DOMAIN}/#appointments` },
     hasCredential: [
       {
         "@type": "EducationalOccupationalCredential",
@@ -232,7 +219,7 @@ export function medicalServiceSchema(opts: {
 }) {
   return {
     "@context": "https://schema.org",
-    "@type": "MedicalTherapy",
+    "@type": "Service",
     name: opts.name,
     description: opts.description,
     url: `${DOMAIN}${opts.url}`,
@@ -246,8 +233,8 @@ export function medicalServiceSchema(opts: {
     availableChannel: {
       "@type": "ServiceChannel",
       serviceUrl: `${DOMAIN}/contact`,
-      servicePhone: PHONE,
-      serviceSmsNumber: PHONE,
+      servicePhone: { "@type": "ContactPoint", telephone: PHONE },
+      serviceSmsNumber: { "@type": "ContactPoint", telephone: PHONE },
     },
   };
 }
@@ -257,23 +244,22 @@ export function insuranceLpClinicSchema(opts: {
 }) {
   return {
     "@context": "https://schema.org",
-    "@type": "MedicalClinic",
-    "@id": `${DOMAIN}/insurance-accepted#clinic`,
-    name: BUSINESS_NAME,
+    "@type": "Service",
+    "@id": `${DOMAIN}/insurance-accepted#insurance-verification`,
+    name: "Insurance coverage and benefits verification",
+    description:
+      "Insurance coverage verification for patients of Faithful Care Medical Services in Naples, Florida.",
     url: `${DOMAIN}/insurance-accepted`,
-    telephone: PHONE,
-    address: ADDRESS,
-    geo: GEO,
-    medicalSpecialty: ["PrimaryCare", "PalliativeCare"],
-    openingHoursSpecification: OPENING_HOURS,
-    paymentAccepted: ["Health Insurance", "Medicare", "Medicaid"],
-    healthPlanNetworkId: opts.acceptedNetworks,
-    acceptsInsurance: opts.acceptedNetworks.map((name) => ({
-      "@type": "HealthInsurancePlan",
-      name,
-    })),
-    isAcceptingNewPatients: true,
-    parentOrganization: { "@id": `${DOMAIN}/#organization` },
+    serviceType: "Insurance coverage verification",
+    category: "Health insurance",
+    provider: { "@id": `${DOMAIN}/#clinic` },
+    areaServed: { "@type": "State", name: "Florida" },
+    keywords: opts.acceptedNetworks,
+    availableChannel: {
+      "@type": "ServiceChannel",
+      serviceUrl: `${DOMAIN}/contact`,
+      servicePhone: { "@type": "ContactPoint", telephone: PHONE },
+    },
   };
 }
 
@@ -285,25 +271,23 @@ export function locationPageSchema(opts: {
   const slug = opts.url.replace("/locations/", "");
   return {
     "@context": "https://schema.org",
-    "@type": "MedicalBusiness",
+    "@type": "Service",
     "@id": `${DOMAIN}/#service-area-${slug}`,
-    name: `${BUSINESS_NAME} - ${opts.cityName}`,
+    name: `${BUSINESS_NAME} service area - ${opts.cityName}`,
     description: opts.description,
     url: `${DOMAIN}${opts.url}`,
-    telephone: PHONE,
-    address: ADDRESS,
-    geo: GEO,
+    serviceType: "Primary and palliative care",
+    category: "Medical care service area",
+    provider: { "@id": `${DOMAIN}/#clinic` },
     areaServed: {
       "@type": "City",
       name: opts.cityName,
     },
-    medicalSpecialty: ["PrimaryCare", "Geriatric", "Gynecologic"],
-    hasMap: GOOGLE_MAPS_PLACE_URL,
-    openingHoursSpecification: OPENING_HOURS,
-    paymentAccepted: ["Medicare", "Medicaid", "Health Insurance"],
-    priceRange: "$$",
-    isAcceptingNewPatients: true,
     image: `${DOMAIN}/images/dr-addys-reve.webp`,
-    parentOrganization: { "@id": `${DOMAIN}/#organization` },
+    availableChannel: {
+      "@type": "ServiceChannel",
+      serviceUrl: `${DOMAIN}/contact`,
+      servicePhone: { "@type": "ContactPoint", telephone: PHONE },
+    },
   };
 }
