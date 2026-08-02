@@ -5,6 +5,7 @@ export const DEFAULT_OG_IMAGE = `${DOMAIN}/og-image.png`;
 export interface PageSeo {
   title: string;
   description: string;
+  dateModified?: string;
 }
 
 export const seoMap: Record<string, PageSeo> = {
@@ -119,14 +120,17 @@ export const seoMap: Record<string, PageSeo> = {
   "/privacy-policy": {
     title: "Privacy Policy | Faithful Care Medical Services",
     description: "How Faithful Care collects, uses, and protects your personal information online. Your rights under HIPAA, FDBR, CCPA and other US privacy laws.",
+    dateModified: "2026-01-01",
   },
   "/notice-of-privacy-practices": {
     title: "HIPAA Notice of Privacy Practices | Faithful Care",
     description: "How protected health information is used and disclosed at Faithful Care Medical Services in Naples, FL, and your rights under federal HIPAA law.",
+    dateModified: "2026-01-01",
   },
   "/terms-of-use": {
     title: "Terms of Use | Faithful Care Medical Services",
     description: "Terms governing your use of the Faithful Care Medical Services website. Acceptable use, disclaimers, limitation of liability, and Florida governing law.",
+    dateModified: "2026-01-01",
   },
   "/medical-disclaimer": {
     title: "Medical Disclaimer | Faithful Care Medical Services",
@@ -135,6 +139,7 @@ export const seoMap: Record<string, PageSeo> = {
   "/accessibility-statement": {
     title: "Accessibility Statement | Faithful Care Medical Services",
     description: "Our commitment to WCAG 2.1 Level AA accessibility on faithfulcaremedical.com, alternative ways to reach us, and how to report accessibility issues.",
+    dateModified: "2026-01-01",
   },
   "/es": {
     title: "Atención Primaria y Cuidados Paliativos en Naples",

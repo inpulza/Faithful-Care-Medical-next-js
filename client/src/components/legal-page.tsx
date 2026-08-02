@@ -9,8 +9,6 @@ export interface LegalPageProps {
   effectiveDate?: string;
   intro?: React.ReactNode;
   children: React.ReactNode;
-  schemaUrl: string;
-  schemaDescription: string;
 }
 
 export function LegalPage({

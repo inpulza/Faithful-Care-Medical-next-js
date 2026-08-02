@@ -6,8 +6,6 @@ export default function AccessibilityStatement() {
       eyebrow="Accessibility"
       title="Accessibility Statement"
       effectiveDate="January 1, 2026"
-      schemaUrl="/accessibility-statement"
-      schemaDescription="Accessibility commitment for faithfulcaremedical.com. We work to meet WCAG 2.1 Level AA so everyone can access primary and palliative care information."
       intro={
         <p>
           Faithful Care Medical Services is committed to ensuring that our website, services,

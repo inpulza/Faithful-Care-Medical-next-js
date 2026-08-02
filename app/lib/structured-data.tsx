@@ -50,6 +50,7 @@ function pageSchema(route: PublicRoute): Schema {
     inLanguage: route.lang === "es" ? "es-US" : "en-US",
     isPartOf: { "@id": `${DOMAIN}/#website` },
     publisher: { "@id": `${DOMAIN}/#organization` },
+    ...(route.dateModified ? { dateModified: route.dateModified } : {}),
     ...(route.path === "/about"
       ? { mainEntity: { "@id": `${DOMAIN}/#physician` } }
       : {}),

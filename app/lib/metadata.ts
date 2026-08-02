@@ -58,7 +58,6 @@ export function metadataForRoute(route: PublicRoute): Metadata {
     },
     twitter: {
       card: "summary_large_image",
-      site: "@faithfulcaremd",
       title: route.title,
       description: route.description,
       images: [{ url: DEFAULT_OG_IMAGE, alt: SOCIAL_IMAGE_ALT }],

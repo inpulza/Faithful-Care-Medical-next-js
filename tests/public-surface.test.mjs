@@ -3,6 +3,12 @@ import { test } from "node:test";
 
 const baseUrl = process.env.BASE_URL || "http://127.0.0.1:3100";
 const { publicRoutes, redirectRules } = await import(new URL("../app/lib/route-contract.ts", import.meta.url).href);
+const datedLegalRoutes = new Map([
+  ["/privacy-policy", "2026-01-01"],
+  ["/notice-of-privacy-practices", "2026-01-01"],
+  ["/terms-of-use", "2026-01-01"],
+  ["/accessibility-statement", "2026-01-01"],
+]);
 
 function attr(html, selectorName) {
   const pattern = new RegExp(`<[^>]+${selectorName}=["']([^"']+)["'][^>]*>`, "i");
@@ -33,11 +39,17 @@ test("all 37 canonical routes return indexable localized HTML", async () => {
     assert.doesNotMatch(html, /noindex/i, `${route.path} unexpectedly noindex`);
 
     const schemas = jsonLdSchemas(html);
+    const webpage = schemas.find((schema) => schema["@type"] === "WebPage");
     assert.equal(
       schemas.filter((schema) => schema["@type"] === "WebPage").length,
       1,
       `${route.path} must publish one WebPage schema`,
     );
+    if (datedLegalRoutes.has(route.path)) {
+      assert.equal(webpage.dateModified, datedLegalRoutes.get(route.path), `${route.path} dateModified`);
+    } else {
+      assert.equal("dateModified" in webpage, false, `${route.path} gained an undeclared dateModified`);
+    }
     if (route.path === "/") {
       const graph = schemas.find((schema) => Array.isArray(schema["@graph"]));
       const ids = new Set(graph?.["@graph"].map((entity) => entity["@id"]));

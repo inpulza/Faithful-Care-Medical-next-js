@@ -61,3 +61,23 @@ test("every non-home route gets a breadcrumb with at least two real URLs", async
     }
   }
 });
+
+test("legal WebPage schemas preserve only their declared modification dates", async () => {
+  const { publicRoutes } = await import(routeContractUrl.href);
+  const datedLegalRoutes = new Map([
+    ["/privacy-policy", "2026-01-01"],
+    ["/notice-of-privacy-practices", "2026-01-01"],
+    ["/terms-of-use", "2026-01-01"],
+    ["/accessibility-statement", "2026-01-01"],
+  ]);
+
+  for (const route of publicRoutes) {
+    const webpage = schemasForRoute(route).find((schema) => schema["@type"] === "WebPage");
+    assert.ok(webpage, `${route.path} missing WebPage`);
+    if (datedLegalRoutes.has(route.path)) {
+      assert.equal(webpage.dateModified, datedLegalRoutes.get(route.path), `${route.path} dateModified`);
+    } else {
+      assert.equal("dateModified" in webpage, false, `${route.path} gained an undeclared dateModified`);
+    }
+  }
+});

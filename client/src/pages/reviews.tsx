@@ -4,7 +4,7 @@ import { PageHero, InsuranceLogos, TealCta, TestimonialsSection } from "@/compon
 import { StarRating, GoogleIcon } from "@/components/sections/testimonials-section";
 import { Button } from "@/components/ui/button";
 import { pageContentMap } from "@/lib/page-content";
-import { CLINIC_GMAPS_DIRECTIONS_URL, CLINIC_GMAPS_SHARE_URL } from "@/lib/clinic-location";
+import { CLINIC_GMAPS_DIRECTIONS_URL, CLINIC_GOOGLE_REVIEW_URL } from "@/lib/clinic-location";
 import { GOOGLE_RATING } from "@/lib/provider-info";
 
 function GoogleRatingSection() {
@@ -78,7 +78,7 @@ function LeaveReviewCard({
       </h2>
       <p className="body-lg text-deep-navy/70 leading-relaxed mb-8 flex-grow">{supportText}</p>
       <Button asChild size="lg" data-testid={`button-${testId}`}>
-        <a href={CLINIC_GMAPS_SHARE_URL} target="_blank" rel="noopener noreferrer">
+        <a href={CLINIC_GOOGLE_REVIEW_URL} target="_blank" rel="noopener noreferrer">
           {buttonText}
           <ArrowSquareOut className="ml-2 w-5 h-5" aria-hidden="true" />
         </a>

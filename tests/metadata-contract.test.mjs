@@ -23,7 +23,7 @@ test("route metadata includes robust social image attribution", () => {
     url: "https://faithfulcaremedical.com/og-image.png",
     alt: "Faithful Care Medical Services in Naples, Florida",
   });
-  assert.equal(metadata.twitter.site, "@faithfulcaremd");
+  assert.equal(metadata.twitter.site, undefined, "metadata must not invent an unverified social account");
 });
 
 test("root metadata links existing brand icons and manifest", () => {
