@@ -6,8 +6,6 @@ export default function NoticeOfPrivacyPractices() {
       eyebrow="HIPAA"
       title="Notice of Privacy Practices"
       effectiveDate="January 1, 2026"
-      schemaUrl="/notice-of-privacy-practices"
-      schemaDescription="HIPAA Notice of Privacy Practices for Faithful Care Medical Services in Naples, FL. How protected health information is used and disclosed, and your rights under federal law."
       intro={
         <p className="legal-mandatory">
           THIS NOTICE DESCRIBES HOW MEDICAL INFORMATION ABOUT YOU MAY BE USED AND DISCLOSED

@@ -24,6 +24,13 @@ test("Next route contract preserves the public surface and approved redirects", 
   assert.equal(routeForPath("/medicare")?.languages, undefined);
   assert.equal(routeForPath("/does-not-exist"), undefined);
 
+  const { HREFLANG_PAIRS } = await import(new URL("../shared/seo-data.ts", import.meta.url).href);
+  assert.equal(HREFLANG_PAIRS.length, 5);
+  for (const pair of HREFLANG_PAIRS) {
+    assert.equal(routeForPath(pair.en)?.languages?.es, `https://faithfulcaremedical.com${pair.es}`);
+    assert.equal(routeForPath(pair.es)?.languages?.en, `https://faithfulcaremedical.com${pair.en}`);
+  }
+
   assert.deepEqual(redirectRules.find((rule) => rule.source === "/dr-addys-reve"), {
     source: "/dr-addys-reve",
     destination: "/about",
@@ -34,4 +41,16 @@ test("Next route contract preserves the public surface and approved redirects", 
     destination: "/about",
     statusCode: 301,
   });
+
+  const trailingSlashRules = redirectRules.filter((rule) =>
+    rule.source.endsWith("/") && rule.source !== "/",
+  );
+  assert.equal(trailingSlashRules.length, 36);
+  for (const route of publicRoutes.filter(({ path }) => path !== "/")) {
+    assert.deepEqual(
+      trailingSlashRules.find((rule) => rule.source === `${route.path}/`),
+      { source: `${route.path}/`, destination: route.path, statusCode: 301 },
+      `${route.path}/ must permanently redirect to its canonical URL`,
+    );
+  }
 });

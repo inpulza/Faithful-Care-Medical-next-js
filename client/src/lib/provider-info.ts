@@ -42,7 +42,3 @@ export const GOOGLE_RATING = {
   value: "4.9",
   source: "Google",
 } as const;
-
-export const GOOGLE_REVIEW_LINK_PENDING = true;
-export const GOOGLE_REVIEW_LINK_MARKER =
-  "[COMPLETAR: Jordan aporta el enlace directo de reseña del perfil de Google]";

@@ -5,8 +5,6 @@ export default function MedicalDisclaimer() {
     <LegalPage
       eyebrow="Important"
       title="Medical Disclaimer"
-      schemaUrl="/medical-disclaimer"
-      schemaDescription="Medical disclaimer for the Faithful Care Medical Services website. Information presented is educational only and does not replace professional medical advice."
       intro={
         <p>
           Please read this disclaimer carefully before relying on any information presented on

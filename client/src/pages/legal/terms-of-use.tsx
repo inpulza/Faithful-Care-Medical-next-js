@@ -6,8 +6,6 @@ export default function TermsOfUse() {
       eyebrow="Legal"
       title="Terms of Use"
       effectiveDate="January 1, 2026"
-      schemaUrl="/terms-of-use"
-      schemaDescription="Terms of Use for the faithfulcaremedical.com website. Acceptable use, disclaimers, limitation of liability, and governing law."
       intro={
         <p>
           These Terms of Use ("Terms") govern your access to and use of the website

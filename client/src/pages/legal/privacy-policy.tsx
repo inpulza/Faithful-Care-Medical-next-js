@@ -6,8 +6,6 @@ export default function PrivacyPolicy() {
       eyebrow="Privacy"
       title="Privacy Policy"
       effectiveDate="January 1, 2026"
-      schemaUrl="/privacy-policy"
-      schemaDescription="Privacy Policy for Faithful Care Medical Services. How we collect, use, and protect personal information on faithfulcaremedical.com, and your rights under HIPAA, FDBR, CCPA and other US state privacy laws."
       intro={
         <p>
           Faithful Care Medical Services ("we," "our," "us") respects your privacy. This

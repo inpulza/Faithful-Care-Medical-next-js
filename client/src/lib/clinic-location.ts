@@ -36,6 +36,14 @@ export const CLINIC_FULL_ADDRESS = `${CLINIC_STREET}, ${CLINIC_CITY}, ${CLINIC_S
 export const CLINIC_GMAPS_SHARE_URL = "https://maps.app.goo.gl/wfopfjr5d1Yrksqv9";
 
 /**
+ * Direct Google review-composer URL for Faithful Care's verified place.
+ * Keep this separate from the Maps share URL: review CTAs should open the
+ * composer, while directions and profile links should continue using Maps.
+ */
+export const CLINIC_GOOGLE_REVIEW_URL =
+  "https://search.google.com/local/writereview?placeid=ChIJp-qiqPIf24gRXbYjPaNmLIQ";
+
+/**
  * Canonical place URL with place_id baked into the URL data parameter.
  * Reserved for SEO / structured data fields (sameAs, hasMap) where a
  * stable, fully qualified URL is preferred over a Google-shortened link.

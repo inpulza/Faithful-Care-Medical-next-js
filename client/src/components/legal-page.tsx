@@ -1,7 +1,7 @@
 import * as React from "react";
 import { Link } from "@/lib/router";
 import { Printer, ArrowLeft } from "@phosphor-icons/react";
-import { JsonLd } from "@/components/json-ld";
+
 
 export interface LegalPageProps {
   eyebrow: string;
@@ -9,8 +9,6 @@ export interface LegalPageProps {
   effectiveDate?: string;
   intro?: React.ReactNode;
   children: React.ReactNode;
-  schemaUrl: string;
-  schemaDescription: string;
 }
 
 export function LegalPage({
@@ -19,28 +17,13 @@ export function LegalPage({
   effectiveDate,
   intro,
   children,
-  schemaUrl,
-  schemaDescription,
 }: LegalPageProps) {
   const handlePrint = React.useCallback(() => {
     if (typeof window !== "undefined") window.print();
   }, []);
 
-  const webPageSchema: Record<string, unknown> = {
-    "@context": "https://schema.org",
-    "@type": "WebPage",
-    name: title,
-    description: schemaDescription,
-    url: `https://faithfulcaremedical.com${schemaUrl}`,
-    isPartOf: { "@id": "https://faithfulcaremedical.com/#website" },
-    publisher: { "@id": "https://faithfulcaremedical.com/#organization" },
-    inLanguage: "en-US",
-    ...(effectiveDate ? { dateModified: effectiveDate } : {}),
-  };
-
   return (
     <div className="bg-white text-[hsl(var(--foreground))]">
-      <JsonLd data={webPageSchema} />
       <main id="main">
         <section className="legal-page-header">
           <div className="container-radical pt-28 md:pt-36 pb-10 md:pb-14">

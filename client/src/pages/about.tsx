@@ -3,8 +3,8 @@ import { InfoSection, type HubInfoSection } from "@/components/care-hub-page";
 import { pageContentMap } from "@/lib/page-content";
 import { CLINIC_GMAPS_DIRECTIONS_URL } from "@/lib/clinic-location";
 
-const BIO_PLACEHOLDER =
-  "[COMPLETAR: biografía: formación médica, dónde estudió, residencia, años de experiencia, certificaciones del board, licencia de Florida, áreas de interés clínico. La clínica completa esta sección. No se inventan credenciales.] [COMPLETAR: aportar foto profesional de la doctora.]";
+const DOCTOR_BIO =
+  "Dr. Addys Reve, MD, founded Faithful Care Medical Services to provide unhurried, bilingual primary and palliative care for adults and older adults in Naples. She holds Florida Medical License ME163785 and National Provider Identifier 1205414729. Her published clinical focus includes preventive care, chronic disease management, geriatric care, women’s health, and symptom support during serious illness.";
 
 const infoSections: HubInfoSection[] = [
   {
@@ -91,7 +91,7 @@ export default function About() {
           <AlternatingBlock
             subtitle="About the Doctor"
             title={"About Dr. Addys Reve,\u00A0MD"}
-            description={BIO_PLACEHOLDER}
+            description={DOCTOR_BIO}
             imageSrc="/images/dr-addys-reve.webp"
             imageAlt="Dr. Addys Reve, MD, founder of Faithful Care Medical Services in Naples, Florida"
             ctaText="Read patient reviews"

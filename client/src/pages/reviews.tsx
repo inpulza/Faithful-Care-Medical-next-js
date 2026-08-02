@@ -4,13 +4,8 @@ import { PageHero, InsuranceLogos, TealCta, TestimonialsSection } from "@/compon
 import { StarRating, GoogleIcon } from "@/components/sections/testimonials-section";
 import { Button } from "@/components/ui/button";
 import { pageContentMap } from "@/lib/page-content";
-import { CLINIC_GMAPS_DIRECTIONS_URL, CLINIC_GMAPS_SHARE_URL } from "@/lib/clinic-location";
-import { GOOGLE_RATING, GOOGLE_REVIEW_LINK_MARKER } from "@/lib/provider-info";
-
-const REVIEWS_EMBED_PLACEHOLDER =
-  "[COMPLETAR: insertar aquí el bloque de reseñas reales de Google (widget o listado). No escribir reseñas a mano; mostrar solo las reales de Google.]";
-
-const REVIEW_COUNT_PLACEHOLDER = "[COMPLETAR: número de reseñas del perfil de Google]";
+import { CLINIC_GMAPS_DIRECTIONS_URL, CLINIC_GOOGLE_REVIEW_URL } from "@/lib/clinic-location";
+import { GOOGLE_RATING } from "@/lib/provider-info";
 
 function GoogleRatingSection() {
   return (
@@ -49,24 +44,7 @@ function GoogleRatingSection() {
           </span>
           <StarRating />
           <p className="text-deep-navy/70 text-lg">stars on {GOOGLE_RATING.source}</p>
-          <p className="text-deep-navy/60 text-sm" data-testid="text-review-count-marker">
-            {REVIEW_COUNT_PLACEHOLDER}
-          </p>
         </motion.div>
-      </div>
-    </section>
-  );
-}
-
-function ReviewsEmbedPlaceholder() {
-  return (
-    <section className="section-gap bg-white" data-testid="section-reviews-embed-placeholder">
-      <div className="container-radical">
-        <div className="max-w-3xl mx-auto rounded-3xl border border-dashed border-secondary/50 bg-secondary/5 p-8 md:p-10 text-center">
-          <p className="text-deep-navy/70 text-lg leading-relaxed" data-testid="text-reviews-embed-marker">
-            {REVIEWS_EMBED_PLACEHOLDER}
-          </p>
-        </div>
       </div>
     </section>
   );
@@ -100,7 +78,7 @@ function LeaveReviewCard({
       </h2>
       <p className="body-lg text-deep-navy/70 leading-relaxed mb-8 flex-grow">{supportText}</p>
       <Button asChild size="lg" data-testid={`button-${testId}`}>
-        <a href={CLINIC_GMAPS_SHARE_URL} target="_blank" rel="noopener noreferrer">
+        <a href={CLINIC_GOOGLE_REVIEW_URL} target="_blank" rel="noopener noreferrer">
           {buttonText}
           <ArrowSquareOut className="ml-2 w-5 h-5" aria-hidden="true" />
         </a>
@@ -140,12 +118,6 @@ function LeaveReviewSection() {
             testId="leave-review-es"
           />
         </div>
-        <p
-          className="mt-8 max-w-3xl mx-auto text-center text-deep-navy/60 text-sm leading-relaxed rounded-2xl border border-dashed border-secondary/50 bg-secondary/5 p-4"
-          data-testid="text-review-link-marker"
-        >
-          {GOOGLE_REVIEW_LINK_MARKER}
-        </p>
       </div>
     </section>
   );
@@ -178,8 +150,6 @@ export default function Reviews() {
         <GoogleRatingSection />
 
         <TestimonialsSection />
-
-        <ReviewsEmbedPlaceholder />
 
         <LeaveReviewSection />
 
