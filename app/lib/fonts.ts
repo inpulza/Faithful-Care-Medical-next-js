@@ -9,6 +9,7 @@ export const inter = Inter({
   variable: "--font-inter-loaded",
 });
 
+// Keep both italic faces available without adding them to the critical first-load preloads.
 const interItalic = Inter({
   subsets: ["latin"],
   weight: "variable",
