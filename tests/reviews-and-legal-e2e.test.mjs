@@ -1,9 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { chromium } from "playwright";
-
-const baseUrl = process.env.BASE_URL || "http://127.0.0.1:3100";
-const previewAccessUrl = process.env.PREVIEW_ACCESS_URL;
+import { baseUrl, unlockPreview } from "./preview-access.mjs";
 const reviewUrl = "https://search.google.com/local/writereview?placeid=ChIJp-qiqPIf24gRXbYjPaNmLIQ";
 const datedLegalRoutes = new Map([
   ["/privacy-policy", "2026-08-03"],
@@ -11,14 +9,6 @@ const datedLegalRoutes = new Map([
   ["/terms-of-use", "2026-01-01"],
   ["/accessibility-statement", "2026-01-01"],
 ]);
-
-async function unlockPreview(context) {
-  if (!previewAccessUrl) return;
-  const accessPage = await context.newPage();
-  const response = await accessPage.goto(previewAccessUrl, { waitUntil: "networkidle" });
-  assert.equal(response?.status(), 200, "The protected Preview access URL should settle successfully");
-  await accessPage.close();
-}
 
 function jsonLdSchemas(html) {
   return [...html.matchAll(/<script[^>]+type=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi)]

@@ -1,10 +1,9 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-
-const baseUrl = process.env.BASE_URL || "http://127.0.0.1:3100";
+import { previewFetch } from "./preview-access.mjs";
 
 test("contact API rejects invalid submissions before sending email", async () => {
-  const response = await fetch(`${baseUrl}/api/contact`, {
+  const response = await previewFetch("/api/contact", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
@@ -24,7 +23,7 @@ test("contact API rejects invalid submissions before sending email", async () =>
 });
 
 test("contact API rejects unrecognized source pages", async () => {
-  const response = await fetch(`${baseUrl}/api/contact`, {
+  const response = await previewFetch("/api/contact", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({

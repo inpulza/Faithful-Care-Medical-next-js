@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
+import { baseUrl, previewFetch } from "./preview-access.mjs";
 
-const baseUrl = process.env.BASE_URL || "http://127.0.0.1:3100";
 const { publicRoutes, redirectRules } = await import(new URL("../app/lib/route-contract.ts", import.meta.url).href);
 const datedLegalRoutes = new Map([
   ["/privacy-policy", "2026-08-03"],
@@ -22,7 +22,7 @@ function jsonLdSchemas(html) {
 
 test("all 37 canonical routes return indexable localized HTML", async () => {
   const results = await Promise.all(publicRoutes.map(async (route) => {
-    const response = await fetch(`${baseUrl}${route.path}`, { redirect: "manual" });
+    const response = await previewFetch(route.path, { redirect: "manual" });
     return { route, response, html: await response.text() };
   }));
 
@@ -66,7 +66,7 @@ test("all 37 canonical routes return indexable localized HTML", async () => {
 
 test("all approved aliases return permanent redirects to their canonicals", async () => {
   const results = await Promise.all(redirectRules.map(async (rule) => {
-    const response = await fetch(`${baseUrl}${rule.source}`, { redirect: "manual" });
+    const response = await previewFetch(rule.source, { redirect: "manual" });
     return { rule, response };
   }));
 
@@ -80,7 +80,7 @@ test("all approved aliases return permanent redirects to their canonicals", asyn
 });
 
 test("production HTML preserves security and crawler-facing headers", async () => {
-  const response = await fetch(`${baseUrl}/`);
+  const response = await previewFetch("/");
   assert.equal(response.headers.get("x-content-type-options"), "nosniff");
   assert.equal(response.headers.get("x-frame-options"), "DENY");
   assert.equal(response.headers.get("referrer-policy"), "strict-origin-when-cross-origin");
@@ -91,9 +91,9 @@ test("production HTML preserves security and crawler-facing headers", async () =
 
 test("discovery files expose every canonical route", async () => {
   const [sitemapResponse, robotsResponse, llmsResponse] = await Promise.all([
-    fetch(`${baseUrl}/sitemap.xml`),
-    fetch(`${baseUrl}/robots.txt`),
-    fetch(`${baseUrl}/llms.txt`),
+    previewFetch("/sitemap.xml"),
+    previewFetch("/robots.txt"),
+    previewFetch("/llms.txt"),
   ]);
   const [sitemap, robots, llms] = await Promise.all([
     sitemapResponse.text(),

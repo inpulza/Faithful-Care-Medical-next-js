@@ -2,9 +2,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { test } from "node:test";
 import { chromium } from "playwright";
-
-const baseUrl = process.env.BASE_URL || "http://127.0.0.1:3100";
-const previewAccessUrl = process.env.PREVIEW_ACCESS_URL;
+import { baseUrl, unlockPreview } from "./preview-access.mjs";
 const root = new URL("../", import.meta.url);
 
 test("both language roots install the shared optimized fonts", () => {
@@ -60,12 +58,7 @@ test("Naples renders the real display and body fonts on desktop and mobile", asy
       const page = await context.newPage();
 
       try {
-        if (previewAccessUrl) {
-          const accessPage = await context.newPage();
-          const accessResponse = await accessPage.goto(previewAccessUrl, { waitUntil: "networkidle" });
-          assert.equal(accessResponse?.status(), 200, "The protected Preview access URL should settle successfully");
-          await accessPage.close();
-        }
+        await unlockPreview(context);
 
         page.on("pageerror", (error) => pageErrors.push(error.message));
 

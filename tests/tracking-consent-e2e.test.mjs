@@ -2,9 +2,7 @@ import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import { test } from "node:test";
 import { chromium } from "playwright";
-
-const baseUrl = process.env.BASE_URL || "http://127.0.0.1:3100";
-const previewAccessUrl = process.env.PREVIEW_ACCESS_URL;
+import { baseUrl, previewFetch, unlockPreview } from "./preview-access.mjs";
 const humanDesktopUa =
   "Mozilla/5.0 (Windows NT 10.0; Win64; x64) " +
   "AppleWebKit/537.36 (KHTML, like Gecko) " +
@@ -13,14 +11,6 @@ const humanMobileUa =
   "Mozilla/5.0 (Linux; Android 15; Pixel 9) " +
   "AppleWebKit/537.36 (KHTML, like Gecko) " +
   "Chrome/150.0.0.0 Mobile Safari/537.36";
-
-async function unlockPreview(context) {
-  if (!previewAccessUrl) return;
-  const page = await context.newPage();
-  const response = await page.goto(previewAccessUrl, { waitUntil: "networkidle" });
-  assert.equal(response?.status(), 200, "Preview access URL should settle successfully");
-  await page.close();
-}
 
 async function createHumanContext(browser, { mobile = false } = {}) {
   const context = await browser.newContext({
@@ -77,7 +67,7 @@ function collectUnexpectedErrors(page) {
 }
 
 test("server HTML boots verified basic consent before either tracking tag", async () => {
-  const response = await fetch(`${baseUrl}/`);
+  const response = await previewFetch("/");
   assert.equal(response.status, 200);
   const html = await response.text();
 
