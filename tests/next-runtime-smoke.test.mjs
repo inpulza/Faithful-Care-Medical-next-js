@@ -1,8 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { chromium } from "playwright";
-
-const baseUrl = process.env.BASE_URL || "http://127.0.0.1:3100";
+import { baseUrl, unlockPreview } from "./preview-access.mjs";
 
 async function scrollSweep(page) {
   await page.evaluate(async () => {
@@ -38,7 +37,9 @@ async function scrollSweep(page) {
 
 test("Next home survives a settled scroll sweep with all images loaded", async () => {
   const browser = await chromium.launch();
-  const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
+  const context = await browser.newContext({ viewport: { width: 1440, height: 900 } });
+  await unlockPreview(context);
+  const page = await context.newPage();
   const pageErrors = [];
   page.on("pageerror", (error) => pageErrors.push(error.message));
 
@@ -68,7 +69,9 @@ test("Next home survives a settled scroll sweep with all images loaded", async (
 
 test("Spanish root emits Spanish HTML and unknown routes are real 404s", async () => {
   const browser = await chromium.launch();
-  const page = await browser.newPage();
+  const context = await browser.newContext();
+  await unlockPreview(context);
+  const page = await context.newPage();
   try {
     const spanish = await page.goto(`${baseUrl}/es`, { waitUntil: "domcontentloaded" });
     assert.equal(spanish?.status(), 200);

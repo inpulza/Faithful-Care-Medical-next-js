@@ -5,6 +5,7 @@ import { cn } from "@/lib/utils";
 import { AnimatePresence, motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { CLINIC_GMAPS_DIRECTIONS_URL } from "@/lib/clinic-location";
+import { trackLead } from "@/lib/analytics";
 
 const PHONE_NUMBER = "2394230205";
 const WHATSAPP_NUMBER = "17868171932";
@@ -190,6 +191,7 @@ function ActionBarContactModal({ isOpen, onClose }: { isOpen: boolean; onClose: 
         setError(result.error || "Something went wrong. Please try again or call us at (239) 423-0205.");
         return;
       }
+      trackLead("mobile_action_bar_form", location);
       setSubmitted(true);
       setFormData({ name: "", email: "", phone: "", service: "" });
       setTimeout(() => { setSubmitted(false); onClose(); }, 4000);
@@ -251,7 +253,7 @@ function ActionBarContactModal({ isOpen, onClose }: { isOpen: boolean; onClose: 
                 </p>
               </div>
             ) : (
-              <form onSubmit={handleSubmit} className="flex flex-col gap-4" data-testid="action-bar-contact-form">
+              <form onSubmit={handleSubmit} className="flex flex-col gap-4" data-testid="action-bar-contact-form" data-clarity-mask="true">
                 <div>
                   <label className="block text-sm font-semibold text-[hsl(var(--foreground))] mb-1.5" htmlFor="ab-contact-name">
                     Full name

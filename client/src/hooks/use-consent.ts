@@ -1,61 +1,78 @@
 import * as React from "react";
+import { updateTrackingConsent } from "@/lib/analytics";
+import {
+  ALL_GRANTED,
+  CONSENT_STORAGE_KEY,
+  CONSENT_VERSION,
+  DEFAULT_DENIED,
+  type ConsentCategories,
+  type StoredConsent,
+} from "@shared/tracking";
 
-export const CONSENT_STORAGE_KEY = "fcms_consent_v1";
-export const CONSENT_VERSION = 1;
 export const OPEN_PREFERENCES_EVENT = "fcms:open-cookie-preferences";
 
-export interface ConsentCategories {
-  necessary: true;
-  analytics: boolean;
-  advertising: boolean;
-  personalization: boolean;
-}
-
-export interface StoredConsent {
-  version: number;
-  decidedAt: string;
-  state: ConsentCategories;
-}
-
-export const DEFAULT_DENIED: ConsentCategories = {
-  necessary: true,
-  analytics: false,
-  advertising: false,
-  personalization: false,
+export {
+  ALL_GRANTED,
+  CONSENT_STORAGE_KEY,
+  CONSENT_VERSION,
+  DEFAULT_DENIED,
+  type ConsentCategories,
+  type StoredConsent,
 };
 
-export const ALL_GRANTED: ConsentCategories = {
-  necessary: true,
-  analytics: true,
-  advertising: true,
-  personalization: true,
-};
+function applyBrowserPrivacySignals(state: ConsentCategories): ConsentCategories {
+  if (
+    typeof navigator !== "undefined" &&
+    (navigator as Navigator & { globalPrivacyControl?: boolean }).globalPrivacyControl === true
+  ) {
+    return {
+      ...state,
+      advertising: false,
+      personalization: false,
+    };
+  }
+  return state;
+}
 
-declare global {
-  interface Window {
-    gtag?: (...args: unknown[]) => void;
-    dataLayer?: unknown[];
+export function parseStoredConsent(raw: string | null): StoredConsent | null {
+  if (!raw) return null;
+  try {
+    const parsed = JSON.parse(raw) as StoredConsent;
+    if (
+      !parsed ||
+      parsed.version !== CONSENT_VERSION ||
+      !parsed.state ||
+      parsed.state.necessary !== true ||
+      typeof parsed.state.analytics !== "boolean" ||
+      typeof parsed.state.advertising !== "boolean" ||
+      typeof parsed.state.personalization !== "boolean"
+    ) {
+      return null;
+    }
+    return {
+      ...parsed,
+      state: applyBrowserPrivacySignals(parsed.state),
+    };
+  } catch {
+    return null;
   }
 }
 
 export function readStoredConsent(): StoredConsent | null {
   if (typeof window === "undefined") return null;
   try {
-    const raw = window.localStorage.getItem(CONSENT_STORAGE_KEY);
-    if (!raw) return null;
-    const parsed = JSON.parse(raw) as StoredConsent;
-    if (!parsed || parsed.version !== CONSENT_VERSION) return null;
-    return parsed;
+    return parseStoredConsent(window.localStorage.getItem(CONSENT_STORAGE_KEY));
   } catch {
     return null;
   }
 }
 
 function writeStoredConsent(state: ConsentCategories): StoredConsent {
+  const effectiveState = applyBrowserPrivacySignals(state);
   const payload: StoredConsent = {
     version: CONSENT_VERSION,
     decidedAt: new Date().toISOString(),
-    state,
+    state: effectiveState,
   };
   try {
     window.localStorage.setItem(CONSENT_STORAGE_KEY, JSON.stringify(payload));
@@ -63,16 +80,6 @@ function writeStoredConsent(state: ConsentCategories): StoredConsent {
     // localStorage may be blocked; fail silently.
   }
   return payload;
-}
-
-export function updateGtagConsent(state: ConsentCategories) {
-  if (typeof window === "undefined" || typeof window.gtag !== "function") return;
-  window.gtag("consent", "update", {
-    ad_storage: state.advertising ? "granted" : "denied",
-    ad_user_data: state.advertising ? "granted" : "denied",
-    ad_personalization: state.personalization ? "granted" : "denied",
-    analytics_storage: state.analytics ? "granted" : "denied",
-  });
 }
 
 export function openCookiePreferences() {
@@ -106,8 +113,27 @@ export function useConsent(): UseConsentResult {
   const save = React.useCallback((next: ConsentCategories) => {
     const stored = writeStoredConsent(next);
     setDecision(stored);
-    setState(next);
-    updateGtagConsent(next);
+    setState(stored.state);
+    const requiresReload = updateTrackingConsent(stored.state);
+    if (requiresReload) {
+      window.setTimeout(() => window.location.reload(), 0);
+    }
+  }, []);
+
+  React.useEffect(() => {
+    const handleStorage = (event: StorageEvent) => {
+      if (event.key !== CONSENT_STORAGE_KEY) return;
+      const stored = parseStoredConsent(event.newValue);
+      const nextState = stored?.state ?? DEFAULT_DENIED;
+      setDecision(stored);
+      setState(nextState);
+      const requiresReload = updateTrackingConsent(nextState);
+      if (requiresReload) {
+        window.setTimeout(() => window.location.reload(), 0);
+      }
+    };
+    window.addEventListener("storage", handleStorage);
+    return () => window.removeEventListener("storage", handleStorage);
   }, []);
 
   const acceptAll = React.useCallback(() => save(ALL_GRANTED), [save]);

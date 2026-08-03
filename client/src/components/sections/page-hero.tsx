@@ -9,6 +9,7 @@ import { cn } from "@/lib/utils";
 import { useLocation } from "@/lib/router";
 import { assetUrl } from "@/lib/asset-url";
 import type { MapConfig } from "@/lib/page-content";
+import { trackLead } from "@/lib/analytics";
 
 const LazyHeroLocationMap = React.lazy(() => import("@/components/hero-location-map").then(m => ({ default: m.HeroLocationMap })));
 
@@ -316,7 +317,7 @@ const FORM_TEXT = {
     networkError: "Could not send your message. Please check your connection and try again, or call us at (239) 423-0205.",
     privacyLabel: "Privacy notice.",
     phi: "By submitting this form, you acknowledge it is not intended for protected health information. For urgent medical questions or to discuss conditions, please call (239) 423-0205. We do not transmit sensitive health information via this form.",
-    fabAria: "Book a visit",
+    fabAria: "Book Visit",
     fabLine1: "Book",
     fabLine2: "Visit",
   },
@@ -348,7 +349,7 @@ const FORM_TEXT = {
     networkError: "No pudimos enviar su mensaje. Revise su conexión e intente de nuevo, o llámenos al (239) 423-0205.",
     privacyLabel: "Aviso de privacidad.",
     phi: "Al enviar este formulario, usted reconoce que no es para información médica protegida. Para preguntas médicas urgentes o para hablar de una condición de salud, llame al (239) 423-0205. No envíe información de salud delicada por este formulario.",
-    fabAria: "Pedir una cita",
+    fabAria: "Pedir cita",
     fabLine1: "Pedir",
     fabLine2: "cita",
   },
@@ -483,6 +484,7 @@ function ContactFormCard({ expanded = false, lang = "en" }: { expanded?: boolean
         return;
       }
 
+      trackLead(expanded ? "contact_page_form" : "hero_contact_form", location);
       setSubmitted(true);
       setTimeout(() => setSubmitted(false), 5000);
       setFormData({ name: "", email: "", phone: "", service: "", message: "" });
@@ -516,7 +518,7 @@ function ContactFormCard({ expanded = false, lang = "en" }: { expanded?: boolean
           </p>
         </div>
       ) : expanded ? (
-        <form onSubmit={handleSubmit} className="flex flex-col gap-6" data-testid="hero-contact-form">
+        <form onSubmit={handleSubmit} className="flex flex-col gap-6" data-testid="hero-contact-form" data-clarity-mask="true">
           <div>
             <h3 className="font-serif text-2xl lg:text-3xl font-bold text-[hsl(var(--foreground))]" data-testid="text-expanded-form-title">
               {t.expandedTitle}
@@ -632,7 +634,7 @@ function ContactFormCard({ expanded = false, lang = "en" }: { expanded?: boolean
           </p>
         </form>
       ) : (
-        <form onSubmit={handleSubmit} className="flex flex-col gap-4" data-testid="hero-contact-form">
+        <form onSubmit={handleSubmit} className="flex flex-col gap-4" data-testid="hero-contact-form" data-clarity-mask="true">
           <div className="flex flex-col lg:flex-row items-end gap-4">
           <div className="flex-1 w-full lg:w-auto">
             <label className="block text-sm font-semibold text-[hsl(var(--foreground))] mb-1.5" htmlFor="contact-name">
@@ -810,6 +812,13 @@ export function PageHero({
     [heroImagesMobile, heroImageMobile, heroImage],
   );
   const slideCount = Math.max(desktopSlides.length, mobileSlides.length);
+  const responsiveSlides = React.useMemo(
+    () => Array.from({ length: slideCount }, (_, index) => ({
+      desktop: desktopSlides[index] ?? desktopSlides[0],
+      mobile: mobileSlides[index] ?? mobileSlides[0],
+    })),
+    [desktopSlides, mobileSlides, slideCount],
+  );
   const isCarousel = slideCount > 1;
   const [activeSlide, setActiveSlide] = React.useState(0);
 
@@ -882,6 +891,33 @@ export function PageHero({
 
   return (
     <>
+      {responsiveSlides[0] && (
+        responsiveSlides[0].desktop === responsiveSlides[0].mobile ? (
+          <link
+            rel="preload"
+            as="image"
+            href={responsiveSlides[0].desktop}
+            fetchPriority="high"
+          />
+        ) : (
+          <>
+            <link
+              rel="preload"
+              as="image"
+              href={responsiveSlides[0].mobile}
+              media="(max-width: 1023px)"
+              fetchPriority="high"
+            />
+            <link
+              rel="preload"
+              as="image"
+              href={responsiveSlides[0].desktop}
+              media="(min-width: 1024px)"
+              fetchPriority="high"
+            />
+          </>
+        )
+      )}
       <section className="relative w-full overflow-hidden bg-white" data-testid="section-hero">
         <div
           ref={photoRef as React.RefObject<HTMLDivElement>}
@@ -898,36 +934,39 @@ export function PageHero({
               style={{ filter: 'blur(20px)', transform: 'scale(1.1)', opacity: desktopLoaded ? 0 : 1 }}
             />
           )}
-          {desktopSlides.map((slide, i) => (
-            <img
-              key={slide}
-              ref={i === 0 ? desktopImgRef : undefined}
-              src={slide}
-              alt={i === 0 ? heroImageAlt : ""}
-              aria-hidden={i === 0 ? undefined : true}
-              className={
-                (i === 0
-                  ? "w-full h-full object-cover block relative"
-                  : "absolute inset-0 w-full h-full object-cover block") +
-                " z-[1] transition-opacity ease-in-out"
-              }
-              style={{
-                transitionDuration: "1200ms",
-                opacity:
-                  i === 0
-                    ? (heroBlurPlaceholder && !desktopLoaded ? 0 : activeSlide === 0 ? 1 : 0)
-                    : activeSlide === i
-                      ? 1
-                      : 0,
-              }}
-              loading={i === 0 ? "eager" : "lazy"}
-              fetchPriority={i === 0 ? "high" : "auto"}
-              decoding="async"
-              width={2400}
-              height={1340}
-              onLoad={i === 0 ? () => setDesktopLoaded(true) : undefined}
-              data-testid={i === 0 ? "img-hero-bg" : `img-hero-slide-${i}`}
-            />
+          {responsiveSlides.map((slide, i) => (
+            <picture key={`${slide.desktop}-${slide.mobile}-${i}`} className="contents">
+              <source media="(max-width: 1023px)" srcSet={slide.mobile} />
+              <source media="(min-width: 1024px)" srcSet={slide.desktop} />
+              <img
+                ref={i === 0 ? desktopImgRef : undefined}
+                src={slide.desktop}
+                alt={i === 0 ? heroImageAlt : ""}
+                aria-hidden={i === 0 ? undefined : true}
+                className={
+                  (i === 0
+                    ? "w-full h-full object-cover block relative"
+                    : "absolute inset-0 w-full h-full object-cover block") +
+                  " z-[1] transition-opacity ease-in-out"
+                }
+                style={{
+                  transitionDuration: "1200ms",
+                  opacity:
+                    i === 0
+                      ? (heroBlurPlaceholder && !desktopLoaded ? 0 : activeSlide === 0 ? 1 : 0)
+                      : activeSlide === i
+                        ? 1
+                        : 0,
+                }}
+                loading={i === 0 ? "eager" : "lazy"}
+                fetchPriority={i === 0 ? "high" : "auto"}
+                decoding="async"
+                width={2400}
+                height={1340}
+                onLoad={i === 0 ? () => setDesktopLoaded(true) : undefined}
+                data-testid={i === 0 ? "img-hero-bg" : `img-hero-slide-${i}`}
+              />
+            </picture>
           ))}
           {isLight && (
             <div
@@ -949,35 +988,38 @@ export function PageHero({
               style={{ filter: 'blur(20px)', transform: 'scale(1.1)', opacity: mobileLoaded ? 0 : 1 }}
             />
           )}
-          {mobileSlides.map((slide, i) => (
-            <img
-              key={slide}
-              ref={i === 0 ? mobileImgRef : undefined}
-              src={slide}
-              alt={i === 0 ? heroImageAlt : ""}
-              aria-hidden={i === 0 ? undefined : true}
-              className={
-                (i === 0 ? "relative" : "absolute inset-0") +
-                " w-full h-full object-cover z-[1] transition-opacity ease-in-out"
-              }
-              style={{
-                objectPosition: mapConfig ? 'center top' : 'right top',
-                transitionDuration: "1200ms",
-                opacity:
-                  i === 0
-                    ? (heroBlurPlaceholder && !mobileLoaded ? 0 : activeSlide === 0 ? 1 : 0)
-                    : activeSlide === i
-                      ? 1
-                      : 0,
-              }}
-              loading={i === 0 ? "eager" : "lazy"}
-              fetchPriority={i === 0 ? "high" : "auto"}
-              decoding="async"
-              width={800}
-              height={447}
-              onLoad={i === 0 ? () => setMobileLoaded(true) : undefined}
-              data-testid={i === 0 ? "img-hero-mobile" : `img-hero-mobile-slide-${i}`}
-            />
+          {responsiveSlides.map((slide, i) => (
+            <picture key={`${slide.desktop}-${slide.mobile}-${i}`} className="contents">
+              <source media="(max-width: 1023px)" srcSet={slide.mobile} />
+              <source media="(min-width: 1024px)" srcSet={slide.desktop} />
+              <img
+                ref={i === 0 ? mobileImgRef : undefined}
+                src={slide.desktop}
+                alt={i === 0 ? heroImageAlt : ""}
+                aria-hidden={i === 0 ? undefined : true}
+                className={
+                  (i === 0 ? "relative" : "absolute inset-0") +
+                  " w-full h-full object-cover z-[1] transition-opacity ease-in-out"
+                }
+                style={{
+                  objectPosition: mapConfig ? 'center top' : 'right top',
+                  transitionDuration: "1200ms",
+                  opacity:
+                    i === 0
+                      ? (heroBlurPlaceholder && !mobileLoaded ? 0 : activeSlide === 0 ? 1 : 0)
+                      : activeSlide === i
+                        ? 1
+                        : 0,
+                }}
+                loading={i === 0 ? "eager" : "lazy"}
+                fetchPriority={i === 0 ? "high" : "auto"}
+                decoding="async"
+                width={800}
+                height={447}
+                onLoad={i === 0 ? () => setMobileLoaded(true) : undefined}
+                data-testid={i === 0 ? "img-hero-mobile" : `img-hero-mobile-slide-${i}`}
+              />
+            </picture>
           ))}
           {!mapConfig && (
             <div

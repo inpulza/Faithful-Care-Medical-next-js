@@ -2,7 +2,8 @@ import * as React from "react";
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { Phone, EnvelopeSimple, Clock, MapPin, ArrowRight } from "@phosphor-icons/react";
-import { CLINIC_GMAPS_DIRECTIONS_URL, CLINIC_GMAPS_EMBED_URL } from "@/lib/clinic-location";
+import { CLINIC_GMAPS_DIRECTIONS_URL } from "@/lib/clinic-location";
+import { PrivacySafeGoogleMap } from "@/components/privacy-safe-google-map";
 
 export interface NapBlockProps {
   cityName: string;
@@ -156,16 +157,12 @@ export function NapBlock({ cityName, className }: NapBlockProps) {
           viewport={{ once: true }}
           transition={{ duration: 0.5, delay: 0.2 }}
         >
-          <iframe
-            src={CLINIC_GMAPS_EMBED_URL}
-            width="100%"
-            height="280"
-            style={{ border: 0, display: "block" }}
-            allowFullScreen
-            loading="lazy"
-            referrerPolicy="no-referrer-when-downgrade"
+          <PrivacySafeGoogleMap
+            className="h-[280px] w-full"
+            iframeTestId="map-google-embed-nap"
+            loadButtonTestId="cta-load-map-nap"
             title="Faithful Care Medical Services - 9955 Tamiami Trail N. Suite 2, Naples, FL 34108"
-            data-testid="map-google-embed-nap"
+            wrapperTestId="map-google-wrapper-nap"
           />
         </motion.div>
       </div>

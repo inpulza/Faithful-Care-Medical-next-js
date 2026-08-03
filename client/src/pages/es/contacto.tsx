@@ -26,8 +26,8 @@ import { pageContentMap } from "@/lib/page-content";
 import {
   CLINIC_GMAPS_SHARE_URL,
   CLINIC_GMAPS_DIRECTIONS_URL,
-  CLINIC_GMAPS_EMBED_URL,
 } from "@/lib/clinic-location";
+import { PrivacySafeGoogleMap } from "@/components/privacy-safe-google-map";
 
 const firstVisitItems = [
   {
@@ -157,18 +157,14 @@ export default function EsContacto() {
                 viewport={{ once: true }}
                 transition={{ duration: 0.5, delay: 0.3 }}
               >
-                <div className="flex-1">
-                  <iframe
-                    src={CLINIC_GMAPS_EMBED_URL}
-                    className="w-full min-h-[300px] lg:min-h-[400px]"
-                    style={{ border: 0 }}
-                    allowFullScreen
-                    loading="lazy"
-                    referrerPolicy="no-referrer-when-downgrade"
-                    title="Faithful Care Medical Services - 9955 Tamiami Trail N. Suite 2, Naples, FL 34108"
-                    data-testid="map-google-embed-es-contacto"
-                  />
-                </div>
+                <PrivacySafeGoogleMap
+                  className="flex-1 min-h-[300px] lg:min-h-[400px]"
+                  iframeTestId="map-google-embed-es-contacto"
+                  loadButtonTestId="cta-load-map-es-contacto"
+                  locale="es"
+                  title="Faithful Care Medical Services - 9955 Tamiami Trail N. Suite 2, Naples, FL 34108"
+                  wrapperTestId="map-google-wrapper-es-contacto"
+                />
                 <div className="p-4 flex items-center justify-between border-t border-primary/10">
                   <p className="text-deep-navy/60 text-sm">9955 Tamiami Trail N. Suite 2, Naples, FL 34108</p>
                   <a

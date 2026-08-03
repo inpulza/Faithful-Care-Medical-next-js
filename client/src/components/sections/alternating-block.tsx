@@ -61,6 +61,8 @@ export function AlternatingBlock({
                 <img 
                   src={imageSrc} 
                   alt={imageAlt}
+                  loading="lazy"
+                  decoding="async"
                   className="w-full h-full object-cover"
                   data-testid="img-block-feature"
                 />

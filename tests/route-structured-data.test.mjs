@@ -65,7 +65,7 @@ test("every non-home route gets a breadcrumb with at least two real URLs", async
 test("legal WebPage schemas preserve only their declared modification dates", async () => {
   const { publicRoutes } = await import(routeContractUrl.href);
   const datedLegalRoutes = new Map([
-    ["/privacy-policy", "2026-01-01"],
+    ["/privacy-policy", "2026-08-03"],
     ["/notice-of-privacy-practices", "2026-01-01"],
     ["/terms-of-use", "2026-01-01"],
     ["/accessibility-statement", "2026-01-01"],

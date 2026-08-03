@@ -5,7 +5,7 @@ export default function PrivacyPolicy() {
     <LegalPage
       eyebrow="Privacy"
       title="Privacy Policy"
-      effectiveDate="January 1, 2026"
+      effectiveDate="August 3, 2026"
       intro={
         <p>
           Faithful Care Medical Services ("we," "our," "us") respects your privacy. This
@@ -27,7 +27,7 @@ export default function PrivacyPolicy() {
       <ul>
         <li>Standard server logs (IP address, browser type, pages visited, referring URL, timestamps).</li>
         <li>Cookies and similar technologies (see Cookies and tracking below).</li>
-        <li>Aggregate analytics data through Google Analytics 4.</li>
+        <li>Analytics and website-interaction/session data through Google Analytics 4 and Microsoft Clarity.</li>
       </ul>
 
       <h2>How we use information</h2>
@@ -50,9 +50,9 @@ export default function PrivacyPolicy() {
       </p>
       <ul>
         <li><strong>Necessary:</strong> required for core site functionality. Always on.</li>
-        <li><strong>Analytics:</strong> help us understand how visitors use the Website (Google Analytics 4).</li>
+        <li><strong>Analytics:</strong> help us understand how visitors use the Website (Google Analytics 4 and Microsoft Clarity).</li>
         <li><strong>Advertising:</strong> support measurement and (when applicable) personalization for Google Ads.</li>
-        <li><strong>Personalization:</strong> remember your choices and preferences.</li>
+        <li><strong>Ad personalization:</strong> allows advertising platforms to personalize ads when campaigns are enabled. Your cookie choice itself is stored as necessary site data.</li>
       </ul>
       <p>
         On your first visit you will be asked to accept, reject, or customize non-essential
@@ -60,11 +60,24 @@ export default function PrivacyPolicy() {
         the footer. We honor Google Consent Mode v2 signals and the Global Privacy Control
         (GPC) where applicable.
       </p>
+      <p>
+        Google Analytics 4 and Microsoft Clarity do not load until you allow Analytics.
+        Rejecting non-essential cookies leaves those services off. If you later withdraw
+        Analytics permission, the Website stops sending new analytics events and removes the
+        related first-party cookies it can access.
+      </p>
+      <p>
+        If you allow Advertising, the Website may retain only Google's ad-click and aggregate
+        campaign identifiers from the landing URL for campaign attribution. Other landing-page
+        parameters are removed before analytics events are sent. Microsoft Clarity is not loaded
+        for visits that arrive with URL parameters, fragments, or referrer data.
+      </p>
 
       <h2>Third-party services</h2>
       <p>We share information with the following service providers, only as needed to operate the Website and respond to you:</p>
       <ul>
-        <li><strong>Google LLC:</strong> Google Analytics 4 (anonymous traffic measurement) and, in the future, Google Ads (advertising measurement). See Google's privacy policy at <a href="https://policies.google.com/privacy" target="_blank" rel="noopener noreferrer">policies.google.com/privacy</a>.</li>
+        <li><strong>Google LLC:</strong> Google Analytics 4 (consent-based traffic measurement), Google Maps (an interactive map that connects to Google only after you choose to load it), and, when enabled, Google Ads (advertising measurement). See Google's privacy policy at <a href="https://policies.google.com/privacy" target="_blank" rel="noopener noreferrer">policies.google.com/privacy</a>.</li>
+        <li><strong>Microsoft Corporation:</strong> Microsoft Clarity (website interaction and performance measurement). Clarity receives our consent signal and does not use its analytics cookies when analytics storage is denied. See Microsoft's privacy statement at <a href="https://privacy.microsoft.com/privacystatement" target="_blank" rel="noopener noreferrer">privacy.microsoft.com</a>.</li>
         <li><strong>Resend, Inc.:</strong> transactional email delivery for confirmations and form notifications.</li>
         <li><strong>Hosting and infrastructure providers</strong> that help us keep the Website online.</li>
       </ul>

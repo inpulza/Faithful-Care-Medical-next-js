@@ -177,21 +177,21 @@ export function MegaMenu({ className }: MegaMenuProps) {
                     <List weight="bold" className="w-5 h-5" />
                     <span>Explore</span>
                   </button>
-                  <a href="tel:2394230205" className="block" aria-label="Call Now (239) 423-0205">
-                    <button
-                      className={cn("inline-flex items-center gap-2 rounded-xl border font-semibold text-[15px] transition-all whitespace-nowrap shadow-[0_2px_12px_rgba(0,0,0,0.06)]", isLocationPage && !isScrolled ? "text-white border-white/30 hover:border-white/50" : "text-deep-navy border-primary/30 hover:border-primary/50")}
-                      style={{
-                        paddingInline: 'clamp(18px, 1.6vw, 28px)',
-                        paddingBlock: 'clamp(10px, 0.9vw, 14px)',
-                        background: 'rgba(255, 255, 255, 0.55)',
-                        backdropFilter: 'blur(16px) saturate(180%)',
-                        WebkitBackdropFilter: 'blur(16px) saturate(180%)',
-                      }}
-                      data-testid="button-get-started"
-                    >
-                      <Phone weight="fill" className="w-4 h-4" />
-                      <span className="hidden sm:inline">Call Now</span>
-                    </button>
+                  <a
+                    href="tel:2394230205"
+                    className={cn("inline-flex items-center gap-2 rounded-xl border font-semibold text-[15px] transition-all whitespace-nowrap shadow-[0_2px_12px_rgba(0,0,0,0.06)]", isLocationPage && !isScrolled ? "text-white border-white/30 hover:border-white/50" : "text-deep-navy border-primary/30 hover:border-primary/50")}
+                    style={{
+                      paddingInline: 'clamp(18px, 1.6vw, 28px)',
+                      paddingBlock: 'clamp(10px, 0.9vw, 14px)',
+                      background: 'rgba(255, 255, 255, 0.55)',
+                      backdropFilter: 'blur(16px) saturate(180%)',
+                      WebkitBackdropFilter: 'blur(16px) saturate(180%)',
+                    }}
+                    aria-label="Call Now (239) 423-0205"
+                    data-testid="button-get-started"
+                  >
+                    <Phone weight="fill" className="w-4 h-4" aria-hidden="true" />
+                    <span className="hidden sm:inline">Call Now</span>
                   </a>
                 </div>
               </div>

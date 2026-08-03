@@ -10,6 +10,7 @@ import type { FaqItem } from "@/components/sections/faq-section";
 import { JsonLdArray } from "@/components/json-ld";
 import { faqPageSchema, insuranceLpClinicSchema } from "@/lib/schemas";
 import { cn } from "@/lib/utils";
+import { trackEvent } from "@/lib/analytics";
 
 const PHONE_DISPLAY = "(239) 423-0205";
 const PHONE_HREF = "tel:+12394230205";
@@ -23,46 +24,11 @@ const ACCEPTED_NETWORKS = [
   "Florida Medicaid (Sunshine Health)",
 ];
 
-type DataLayerEvent = Record<string, unknown> & { event: string };
-
-declare global {
-  interface Window {
-    dataLayer?: unknown[];
-  }
-}
-
-function pushEvent(event: DataLayerEvent) {
-  if (typeof window === "undefined") return;
-  window.dataLayer = window.dataLayer || [];
-  window.dataLayer.push(event);
-}
-
 function trackCta(section: string, label: string, kind: "call" | "click" = "click") {
-  pushEvent({
-    event: kind === "call" ? "cta_call" : "cta_click",
+  trackEvent(kind === "call" ? "cta_call" : "cta_click", {
     cta_section: section,
     cta_label: label,
   });
-}
-
-function usePageInit() {
-  React.useEffect(() => {
-    if (typeof window === "undefined") return;
-    const params = new URLSearchParams(window.location.search);
-    const campaign: Record<string, string> = {};
-    ["utm_source", "utm_medium", "utm_campaign", "utm_term", "utm_content", "gclid"].forEach((k) => {
-      const v = params.get(k);
-      if (v) campaign[k] = v;
-    });
-    window.dataLayer = window.dataLayer || [];
-    window.dataLayer.push({ campaign });
-    pushEvent({
-      event: "page_view",
-      page_path: "/insurance-accepted",
-      page_title: "Insurance Accepted | Faithful Care",
-      campaign,
-    });
-  }, []);
 }
 
 interface ImageSlotProps {
@@ -581,8 +547,6 @@ function LpLogoMarquee() {
 const InsuranceBelowFold = React.lazy(() => import("./insurance-accepted-below"));
 
 export default function InsuranceAccepted() {
-  usePageInit();
-
   const faqsForSchema = insuranceFaqs.map((f) => ({
     question: f.question,
     answer: typeof f.answer === "string" ? f.answer : "",
