@@ -1,4 +1,5 @@
 import { PROVIDER_NPI, PROVIDER_FL_LICENSE } from "./provider-info";
+import { SOCIAL_PROFILES } from "@shared/social-videos";
 
 const DOMAIN = "https://faithfulcaremedical.com";
 const BUSINESS_NAME = "Faithful Care Medical Services";
@@ -63,6 +64,9 @@ export function organizationSchema() {
     },
     sameAs: [
       GOOGLE_MAPS_PLACE_URL,
+      SOCIAL_PROFILES.facebook,
+      SOCIAL_PROFILES.instagram,
+      SOCIAL_PROFILES.tiktok,
     ],
     founder: {
       "@type": "Person",
