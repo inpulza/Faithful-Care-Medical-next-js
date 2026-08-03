@@ -19,7 +19,12 @@ declare global {
     __fcmsConsentState?: ConsentCategories;
     __fcmsAnalyticsInitialized?: boolean;
     __fcmsInitialPageLocation?: string;
+    __fcmsAllowedTrackingPaths?: readonly string[];
   }
+}
+
+function safeTrackingPath(pathname: string) {
+  return window.__fcmsAllowedTrackingPaths?.includes(pathname) ? pathname : "/404";
 }
 
 function sanitizedReferrer() {
@@ -27,7 +32,7 @@ function sanitizedReferrer() {
   try {
     const referrer = new URL(document.referrer);
     return referrer.origin === window.location.origin
-      ? `${referrer.origin}${referrer.pathname}`
+      ? `${referrer.origin}${safeTrackingPath(referrer.pathname)}`
       : referrer.origin;
   } catch {
     return "";
@@ -35,9 +40,10 @@ function sanitizedReferrer() {
 }
 
 function currentPageContext() {
+  const pagePath = safeTrackingPath(window.location.pathname);
   return {
-    page_path: window.location.pathname,
-    page_location: `${window.location.origin}${window.location.pathname}`,
+    page_path: pagePath,
+    page_location: `${window.location.origin}${pagePath}`,
     page_referrer: sanitizedReferrer(),
   };
 }
@@ -45,9 +51,11 @@ function currentPageContext() {
 function sanitizeSourcePage(sourcePage: string) {
   try {
     const source = new URL(sourcePage, window.location.origin);
-    return source.origin === window.location.origin ? source.pathname : window.location.pathname;
+    return source.origin === window.location.origin
+      ? safeTrackingPath(source.pathname)
+      : safeTrackingPath(window.location.pathname);
   } catch {
-    return window.location.pathname;
+    return safeTrackingPath(window.location.pathname);
   }
 }
 
@@ -58,6 +66,7 @@ const VALID_AD_AGGREGATE_ID = /^[0-9]{1,20}$/;
 
 function prepareBrowserUrlForTracking(state: ConsentCategories) {
   const originalUrl = new URL(window.location.href);
+  const pagePath = safeTrackingPath(originalUrl.pathname);
   const safeHash = originalUrl.hash === "#main" || originalUrl.hash === "#callback"
     ? originalUrl.hash
     : "";
@@ -76,7 +85,10 @@ function prepareBrowserUrlForTracking(state: ConsentCategories) {
   }
   const serializedParameters = retainedParameters.toString();
   const retainedSearch = serializedParameters ? `?${serializedParameters}` : "";
-  const clarityEligible = !originalUrl.search && !originalUrl.hash && !document.referrer;
+  const clarityEligible = pagePath !== "/404"
+    && !originalUrl.search
+    && !originalUrl.hash
+    && !document.referrer;
 
   if (originalUrl.search !== retainedSearch || originalUrl.hash !== safeHash) {
     window.history.replaceState(
@@ -88,7 +100,7 @@ function prepareBrowserUrlForTracking(state: ConsentCategories) {
 
   return {
     clarityEligible,
-    initialPageLocation: `${originalUrl.origin}${originalUrl.pathname}`,
+    initialPageLocation: `${originalUrl.origin}${pagePath}`,
   };
 }
 
@@ -235,7 +247,7 @@ export function trackLead(formId: string, sourcePage: string) {
 
 export function trackPageView() {
   if (typeof window === "undefined" || window.__fcmsConsentState?.analytics !== true) return;
-  const pagePath = window.location.pathname;
+  const pagePath = safeTrackingPath(window.location.pathname);
   if (window.__fcmsLastTrackedPage === pagePath) return;
   window.__fcmsLastTrackedPage = pagePath;
 

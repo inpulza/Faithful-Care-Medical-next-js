@@ -246,6 +246,48 @@ test("returning consent strips URL and referrer metadata before either tracking 
   }
 });
 
+test("returning consent leaves tracking off on sensitive unknown paths", async () => {
+  const browser = await chromium.launch();
+  const context = await createHumanContext(browser);
+  await context.addInitScript(() => {
+    localStorage.setItem(
+      "fcms_consent_v2",
+      JSON.stringify({
+        version: 2,
+        decidedAt: "2026-08-03T00:00:00.000Z",
+        state: {
+          necessary: true,
+          analytics: true,
+          advertising: true,
+          personalization: true,
+        },
+      }),
+    );
+  });
+
+  try {
+    const page = await context.newPage();
+    const response = await page.goto(`${baseUrl}/patient-jane-diabetes`, {
+      waitUntil: "networkidle",
+    });
+    assert.equal(response?.status(), 404);
+    assert.equal(await page.locator("#fcms-google-tag").count(), 0);
+    assert.equal(await page.locator("#fcms-clarity-tag").count(), 0);
+
+    const configs = await commands(page, "google", "config");
+    const events = await commands(page, "google", "event");
+    assert.equal(configs.length, 0);
+    assert.equal(events.length, 0);
+    assert.doesNotMatch(
+      JSON.stringify(await page.evaluate(() => window.dataLayer)) ?? "",
+      /patient|jane|diabetes/,
+    );
+  } finally {
+    await context.close();
+    await browser.close();
+  }
+});
+
 test("Spanish mobile consent is localized, focus-trapped, scrollable, and denied by default", async () => {
   const browser = await chromium.launch();
   const context = await createHumanContext(browser, { mobile: true });

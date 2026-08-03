@@ -5,6 +5,9 @@ import {
   GA4_MEASUREMENT_ID,
 } from "@shared/tracking";
 import Script from "next/script";
+import { publicRoutes } from "./lib/route-contract";
+
+const TRACKABLE_PATHS = publicRoutes.map(({ path }) => path);
 
 const bootstrap = `
 (function () {
@@ -47,8 +50,11 @@ const bootstrap = `
   };
   window.__fcmsConsentState = state;
   window.__fcmsAnalyticsInitialized = false;
+  var allowedTrackingPaths = Object.freeze(${JSON.stringify(TRACKABLE_PATHS)});
+  window.__fcmsAllowedTrackingPaths = allowedTrackingPaths;
+  var trackingPathAllowed = allowedTrackingPaths.indexOf(window.location.pathname) !== -1;
   var clarityEligible = true;
-  var pagePath = window.location.pathname;
+  var pagePath = trackingPathAllowed ? window.location.pathname : "/404";
   var pageLocation = window.location.origin + pagePath;
   var pageReferrer = "";
 
@@ -62,10 +68,11 @@ const bootstrap = `
     wait_for_update: 500
   });
 
-  if (state.analytics) {
+  if (state.analytics && trackingPathAllowed) {
     try {
       var originalUrl = new URL(window.location.href);
       var referrerUrl = document.referrer ? new URL(document.referrer) : null;
+      trackingPathAllowed = allowedTrackingPaths.indexOf(originalUrl.pathname) !== -1;
       var safeHash = originalUrl.hash === "#main" || originalUrl.hash === "#callback"
         ? originalUrl.hash
         : "";
@@ -89,10 +96,13 @@ const bootstrap = `
         var serializedParameters = retainedParameters.toString();
         retainedSearch = serializedParameters ? "?" + serializedParameters : "";
       }
-      clarityEligible = !originalUrl.search && !originalUrl.hash && !referrerUrl;
+      clarityEligible = trackingPathAllowed && !originalUrl.search && !originalUrl.hash && !referrerUrl;
       if (referrerUrl) {
+        var referrerPath = allowedTrackingPaths.indexOf(referrerUrl.pathname) !== -1
+          ? referrerUrl.pathname
+          : "/404";
         pageReferrer = referrerUrl.origin === originalUrl.origin
-          ? referrerUrl.origin + referrerUrl.pathname
+          ? referrerUrl.origin + referrerPath
           : referrerUrl.origin;
       }
       if (originalUrl.search !== retainedSearch || originalUrl.hash !== safeHash) {
@@ -102,8 +112,8 @@ const bootstrap = `
           originalUrl.pathname + retainedSearch + safeHash
         );
       }
-      pagePath = originalUrl.pathname;
-      pageLocation = originalUrl.origin + originalUrl.pathname;
+      pagePath = trackingPathAllowed ? originalUrl.pathname : "/404";
+      pageLocation = originalUrl.origin + pagePath;
       window.__fcmsInitialPageLocation = pageLocation;
     } catch (error) {
       clarityEligible = false;
@@ -142,7 +152,7 @@ const bootstrap = `
     document.head.appendChild(script);
   }
 
-  if (state.analytics) {
+  if (state.analytics && trackingPathAllowed) {
     window.__fcmsAnalyticsInitialized = true;
     loadTrackingTag(
       "fcms-google-tag",
