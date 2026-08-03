@@ -310,6 +310,12 @@ test("fresh and cross-tab consent cannot enable tracking on an unknown path", as
     assert.equal(await knownPage.locator("#fcms-google-tag").count(), 1);
     assert.equal(await unknownPage.locator("#fcms-google-tag").count(), 0);
     assert.equal(await unknownPage.locator("#fcms-clarity-tag").count(), 0);
+
+    await unknownPage.evaluate(() => {
+      window.history.pushState(window.history.state, "", "/patient-jane-diabetes-follow-up");
+    });
+    await unknownPage.waitForTimeout(300);
+
     assert.equal((await commands(unknownPage, "google", "config")).length, 0);
     assert.equal((await commands(unknownPage, "google", "event")).length, 0);
     assert.doesNotMatch(

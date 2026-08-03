@@ -237,6 +237,7 @@ export function updateTrackingConsent(state: ConsentCategories): boolean {
 export function trackEvent(name: string, parameters: TrackingParameters = {}) {
   if (
     typeof window === "undefined" ||
+    safeTrackingPath(window.location.pathname) === "/404" ||
     window.__fcmsConsentState?.analytics !== true ||
     typeof window.gtag !== "function"
   ) {
@@ -268,6 +269,7 @@ export function trackLead(formId: string, sourcePage: string) {
 export function trackPageView() {
   if (typeof window === "undefined" || window.__fcmsConsentState?.analytics !== true) return;
   const pagePath = safeTrackingPath(window.location.pathname);
+  if (pagePath === "/404") return;
   if (window.__fcmsLastTrackedPage === pagePath) return;
   window.__fcmsLastTrackedPage = pagePath;
 
