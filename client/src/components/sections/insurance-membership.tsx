@@ -135,7 +135,7 @@ function DpcCarousel({
         ))}
       </div>
 
-      <div className="flex items-center justify-center gap-6 mt-6">
+      <div className="flex items-center justify-center gap-2 sm:gap-6 mt-6">
         <button
           onClick={() => scrollToIndex(Math.max(0, activeIndex - 1))}
           className="w-12 h-12 rounded-full border border-primary/30 flex items-center justify-center hover:bg-primary/5 transition-colors disabled:opacity-30"
@@ -151,7 +151,7 @@ function DpcCarousel({
             <button
               key={i}
               onClick={() => scrollToIndex(i)}
-              className="p-3 -m-3 flex items-center justify-center"
+              className="w-8 h-8 flex-shrink-0 flex items-center justify-center"
               aria-label={dotLabel(i + 1)}
               data-testid={`dpc-dot-${i}`}
             >

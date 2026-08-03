@@ -270,7 +270,7 @@ export function Footer({ className }: FooterProps) {
           </div>
 
           <div className="border-t border-white/10 pt-6 md:pt-8 flex flex-col md:flex-row items-center justify-between gap-4 md:gap-6">
-            <p className="text-white/40 text-sm">
+            <p className="text-white/60 text-sm">
               &copy; {new Date().getFullYear()} Faithful Care Medical Services. All rights reserved.
             </p>
 
@@ -283,7 +283,7 @@ export function Footer({ className }: FooterProps) {
             <div className="flex flex-wrap items-center justify-center gap-4 md:gap-6 text-sm">
               <Link
                 href="/notice-of-privacy-practices"
-                className="text-white/40 hover:text-secondary transition-colors underline-offset-4 hover:underline"
+                className="text-white/60 hover:text-secondary transition-colors underline-offset-4 hover:underline"
                 data-testid="footer-link-hipaa-badge"
               >
                 HIPAA Compliant
@@ -311,7 +311,7 @@ export function Footer({ className }: FooterProps) {
                 </span>
               ))}
             </p>
-            <p className="text-white/40">
+            <p className="text-white/60">
               <a
                 href={PROVIDER_CREDENTIALS[1].verifyUrl}
                 target="_blank"
