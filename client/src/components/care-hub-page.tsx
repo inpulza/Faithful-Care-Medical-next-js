@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { navigationData } from "@/lib/navigation-data";
 import { pageContentMap } from "@/lib/page-content";
 import { CLINIC_GMAPS_DIRECTIONS_URL } from "@/lib/clinic-location";
+import { SocialVideoCarousel } from "@/components/social-video-carousel";
 
 const InsuranceMembership = React.lazy(() =>
   import("@/components/sections/insurance-membership").then(m => ({ default: m.InsuranceMembership }))
@@ -164,6 +165,8 @@ export function CareHubPage({
         />
 
         <InsuranceLogos />
+
+        <SocialVideoCarousel placement={path === "/primary-care" ? "primary-care" : "palliative-care"} />
 
         <section id="page-content" className="section-gap bg-white" data-testid={`section-hub-services-${categoryId}`}>
           <div className="container-radical">

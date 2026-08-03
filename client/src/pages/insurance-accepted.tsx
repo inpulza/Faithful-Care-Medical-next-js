@@ -11,6 +11,7 @@ import { JsonLdArray } from "@/components/json-ld";
 import { faqPageSchema, insuranceLpClinicSchema } from "@/lib/schemas";
 import { cn } from "@/lib/utils";
 import { trackEvent } from "@/lib/analytics";
+import { SocialVideoCarousel } from "@/components/social-video-carousel";
 
 const PHONE_DISPLAY = "(239) 423-0205";
 const PHONE_HREF = "tel:+12394230205";
@@ -587,6 +588,7 @@ export default function InsuranceAccepted() {
       <main id="main">
         <HeroSection />
         <LpLogoMarquee />
+        <SocialVideoCarousel placement="insurance-accepted" />
         <PrimaryCarriers />
         <React.Suspense fallback={null}>
           <InsuranceBelowFold faqs={faqsWithLinks} />

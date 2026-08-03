@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 export const baseUrl = process.env.BASE_URL || "http://127.0.0.1:3100";
 
 const bypassSecret = process.env.VERCEL_AUTOMATION_BYPASS_SECRET;
+const previewCookie = process.env.VERCEL_PREVIEW_BYPASS_COOKIE;
 const previewAccessUrl = process.env.PREVIEW_ACCESS_URL;
 const baseOrigin = new URL(baseUrl).origin;
 
@@ -12,18 +13,33 @@ export async function previewFetch(path, init = {}) {
   if (bypassSecret) {
     assert.equal(target.origin, baseOrigin, "Preview bypass headers must stay on the configured origin");
     headers.set("x-vercel-protection-bypass", bypassSecret);
+  } else if (previewCookie) {
+    assert.equal(target.origin, baseOrigin, "Preview cookies must stay on the configured origin");
+    headers.set("cookie", `_vercel_jwt=${previewCookie}`);
   }
 
   return fetch(target, {
     ...init,
     headers,
-    ...(bypassSecret ? { redirect: "manual" } : {}),
+    ...(bypassSecret || previewCookie ? { redirect: "manual" } : {}),
   });
 }
 
 export async function unlockPreview(context) {
-  if (bypassSecret || previewAccessUrl) {
+  if (bypassSecret || previewCookie || previewAccessUrl) {
     context.setDefaultNavigationTimeout(60_000);
+  }
+
+  if (previewCookie) {
+    await context.addCookies([{
+      name: "_vercel_jwt",
+      value: previewCookie,
+      url: baseOrigin,
+      httpOnly: true,
+      secure: baseOrigin.startsWith("https://"),
+      sameSite: "Lax",
+    }]);
+    return;
   }
 
   if (bypassSecret) {

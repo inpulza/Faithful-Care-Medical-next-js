@@ -24,6 +24,7 @@ import { JsonLdArray } from "@/components/json-ld";
 import { faqPageSchema } from "@/lib/schemas";
 import { homeFaqs } from "@/lib/home-faqs";
 import { extractFaqText } from "@/lib/extract-faq-text";
+import { SocialVideoCarousel } from "@/components/social-video-carousel";
 import heroImage from "@/assets/images/hero-doctor-faithful-care.optimized.webp";
 import heroImageMobile from "@/assets/images/hero-doctor-mobile.mobile.webp";
 import heroSeniorWoman from "@/assets/images/hero-doctor-senior-woman.optimized.webp";
@@ -376,6 +377,8 @@ export default function Home() {
         />
 
         <InsuranceLogos />
+
+        <SocialVideoCarousel placement="home" />
 
         <BentoGrid
           id="page-content"

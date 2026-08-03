@@ -12,6 +12,7 @@ const ServiceAreaMap = React.lazy(() => import("@/components/service-area-map"))
 import { pageContentMap } from "@/lib/page-content";
 import { JsonLdArray } from "@/components/json-ld";
 import { locationPageSchema, faqPageSchema } from "@/lib/schemas";
+import { SocialVideoCarousel } from "@/components/social-video-carousel";
 
 export interface LocationData {
   name: string;
@@ -93,6 +94,8 @@ export function LocationPage({ data }: { data: LocationData }) {
             <InsuranceLogos />
           </>
         )}
+
+        {location === "/locations/naples" && <SocialVideoCarousel placement="naples" />}
 
         {marqueeDataMap[location] && (
           <React.Suspense fallback={<div style={{ minHeight: "clamp(220px, 30vh, 360px)" }} aria-hidden="true" />}>

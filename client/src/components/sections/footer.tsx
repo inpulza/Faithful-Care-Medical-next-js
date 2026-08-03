@@ -11,6 +11,7 @@ import {
   InstagramLogo 
 } from "@phosphor-icons/react";
 import { PROVIDER_NAME, PROVIDER_CREDENTIALS } from "@/lib/provider-info";
+import { SOCIAL_PROFILES } from "@shared/social-videos";
 
 interface FooterProps {
   className?: string;
@@ -275,9 +276,9 @@ export function Footer({ className }: FooterProps) {
             </p>
 
             <div className="flex items-center gap-4">
-              <SocialLink href="https://www.facebook.com/addysrevemd/" icon={FacebookLogo} label="Visit Faithful Care Medical Services on Facebook" testIdLabel="facebook" />
-              <SocialLink href="https://www.instagram.com/addysreve/" icon={InstagramLogo} label="Visit Faithful Care Medical Services on Instagram" testIdLabel="instagram" />
-              <SocialLink href="https://www.tiktok.com/@addysrevemd" icon={TiktokLogo} label="Visit Faithful Care Medical Services on TikTok" testIdLabel="tiktok" />
+              <SocialLink href={SOCIAL_PROFILES.facebook} icon={FacebookLogo} label="Visit Faithful Care Medical Services on Facebook" testIdLabel="facebook" />
+              <SocialLink href={SOCIAL_PROFILES.instagram} icon={InstagramLogo} label="Visit Faithful Care Medical Services on Instagram" testIdLabel="instagram" />
+              <SocialLink href={SOCIAL_PROFILES.tiktok} icon={TiktokLogo} label="Visit Faithful Care Medical Services on TikTok" testIdLabel="tiktok" />
             </div>
 
             <div className="flex flex-wrap items-center justify-center gap-4 md:gap-6 text-sm">

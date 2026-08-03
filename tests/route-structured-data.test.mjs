@@ -30,6 +30,10 @@ test("home publishes one connected identity graph plus a WebPage", () => {
   ]));
   assert.ok(schemas.some((schema) => schema["@type"] === "WebPage"));
   assert.equal(schemas.some((schema) => schema["@type"] === "BreadcrumbList"), false);
+  const organization = graph["@graph"].find((entity) => entity["@id"] === "https://faithfulcaremedical.com/#organization");
+  assert.ok(organization.sameAs.includes("https://www.instagram.com/addysreve/"));
+  assert.ok(organization.sameAs.includes("https://www.tiktok.com/@addysrevemd"));
+  assert.equal(organization.sameAs.some((url) => /youtube/i.test(url)), false);
 });
 
 test("nested routes publish connected WebPage and valid hierarchical breadcrumbs", () => {
