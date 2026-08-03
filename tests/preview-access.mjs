@@ -34,7 +34,24 @@ export async function unlockPreview(context) {
         "x-vercel-set-bypass-cookie": "true",
       },
     });
-    assert.equal(response.status(), 200, "Protected Preview header authentication should settle successfully");
+    const status = response.status();
+    if (status === 307 || status === 308) {
+      const location = response.headers().location;
+      assert.ok(location, "Protected Preview cookie redirect must include Location");
+      const redirectTarget = new URL(location, baseUrl);
+      assert.equal(
+        redirectTarget.origin,
+        baseOrigin,
+        "Protected Preview cookie redirect must stay on the configured origin",
+      );
+      const storageState = await context.request.storageState();
+      assert.ok(
+        storageState.cookies.some((cookie) => cookie.name === "_vercel_jwt"),
+        "Protected Preview cookie redirect must set the Vercel bypass cookie",
+      );
+      return;
+    }
+    assert.equal(status, 200, "Protected Preview header authentication should settle successfully");
     return;
   }
 

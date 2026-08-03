@@ -56,3 +56,36 @@ test("Preview bypass headers never follow a cross-origin redirect", async () => 
     else process.env.VERCEL_AUTOMATION_BYPASS_SECRET = previousSecret;
   }
 });
+
+test("Preview unlock accepts Vercel's same-origin cookie redirect", async () => {
+  const source = createServer((request, response) => {
+    response.writeHead(307, {
+      Location: "/",
+      "Set-Cookie": "_vercel_jwt=synthetic-cookie; Path=/; HttpOnly; SameSite=Lax",
+    }).end();
+  });
+  const sourceUrl = await listen(source);
+  const previousBaseUrl = process.env.BASE_URL;
+  const previousSecret = process.env.VERCEL_AUTOMATION_BYPASS_SECRET;
+  process.env.BASE_URL = sourceUrl;
+  process.env.VERCEL_AUTOMATION_BYPASS_SECRET = "synthetic-preview-bypass";
+
+  const api = await playwrightRequest.newContext();
+  try {
+    const { unlockPreview } = await import(`./preview-access.mjs?cookie=${Date.now()}`);
+    const context = {
+      request: api,
+      setDefaultNavigationTimeout() {},
+    };
+    await unlockPreview(context);
+    const storageState = await api.storageState();
+    assert.ok(storageState.cookies.some((cookie) => cookie.name === "_vercel_jwt"));
+  } finally {
+    await api.dispose();
+    await new Promise((resolve, reject) => source.close((error) => error ? reject(error) : resolve()));
+    if (previousBaseUrl === undefined) delete process.env.BASE_URL;
+    else process.env.BASE_URL = previousBaseUrl;
+    if (previousSecret === undefined) delete process.env.VERCEL_AUTOMATION_BYPASS_SECRET;
+    else process.env.VERCEL_AUTOMATION_BYPASS_SECRET = previousSecret;
+  }
+});
