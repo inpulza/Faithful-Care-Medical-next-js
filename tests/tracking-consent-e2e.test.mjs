@@ -175,6 +175,77 @@ test("legacy consent is not reinterpreted after the advertising taxonomy change"
   }
 });
 
+test("returning consent strips URL and referrer metadata before either tracking tag loads", async () => {
+  const clickId = "Test_Click-1234567890";
+  const browser = await chromium.launch();
+  const context = await createHumanContext(browser);
+  await context.addInitScript(() => {
+    localStorage.setItem(
+      "fcms_consent_v2",
+      JSON.stringify({
+        version: 2,
+        decidedAt: "2026-08-03T00:00:00.000Z",
+        state: {
+          necessary: true,
+          analytics: true,
+          advertising: true,
+          personalization: true,
+        },
+      }),
+    );
+  });
+
+  try {
+    const page = await context.newPage();
+    await page.goto(
+      `${baseUrl}/contact?patient_condition=diabetes&email=private%40example.com&gclid=${clickId}&gad_source=1&gad_campaignid=1234567890`,
+      {
+        waitUntil: "networkidle",
+        referer: "https://referrer.example/health?patient_condition=diabetes",
+      },
+    );
+    await page.waitForURL(
+      `${baseUrl}/contact?gclid=${clickId}&gad_source=1&gad_campaignid=1234567890`,
+    );
+
+    assert.equal(await page.locator("#fcms-google-tag").count(), 1);
+    assert.equal(await page.locator("#fcms-clarity-tag").count(), 0);
+    const configs = await commands(page, "google", "config");
+    const pageviews = (await commands(page, "google", "event")).filter(
+      (entry) => entry[1] === "page_view",
+    );
+    assert.equal(configs.at(-1)[2].page_location, `${baseUrl}/contact`);
+    assert.equal(configs.at(-1)[2].page_path, "/contact");
+    assert.equal(configs.at(-1)[2].page_referrer, "https://referrer.example");
+    assert.equal(pageviews.at(-1)[2].page_location, `${baseUrl}/contact`);
+    assert.equal(pageviews.at(-1)[2].page_path, "/contact");
+    assert.equal(pageviews.at(-1)[2].page_referrer, "https://referrer.example");
+    assert.doesNotMatch(
+      JSON.stringify([configs.at(-1), pageviews.at(-1)]),
+      /patient_condition|diabetes|private@example|gclid|Test_Click|gad_source|gad_campaignid/,
+    );
+
+    const referrerOnlyPage = await context.newPage();
+    await referrerOnlyPage.goto(`${baseUrl}/contact`, {
+      waitUntil: "networkidle",
+      referer: "https://referrer.example/health/diabetes",
+    });
+    assert.equal(await referrerOnlyPage.locator("#fcms-google-tag").count(), 1);
+    assert.equal(await referrerOnlyPage.locator("#fcms-clarity-tag").count(), 0);
+    const referrerOnlyConfigs = await commands(referrerOnlyPage, "google", "config");
+    assert.equal(referrerOnlyConfigs.at(-1)[2].page_referrer, "https://referrer.example");
+
+    const anchorPage = await context.newPage();
+    await anchorPage.goto(`${baseUrl}/insurance-accepted#callback`, { waitUntil: "networkidle" });
+    await anchorPage.waitForURL(`${baseUrl}/insurance-accepted#callback`);
+    assert.equal(await anchorPage.locator("#callback").count(), 1);
+    assert.equal(await anchorPage.locator("#fcms-clarity-tag").count(), 0);
+  } finally {
+    await context.close();
+    await browser.close();
+  }
+});
+
 test("Spanish mobile consent is localized, focus-trapped, scrollable, and denied by default", async () => {
   const browser = await chromium.launch();
   const context = await createHumanContext(browser, { mobile: true });
@@ -298,6 +369,36 @@ test("accept, customize, reject, and withdrawal stay synchronized and remove coo
   }
 });
 
+test("withdrawing Advertising removes retained Google click identifiers", async () => {
+  const clickId = "Test_Click-1234567890";
+  const browser = await chromium.launch();
+  const context = await createHumanContext(browser);
+  try {
+    const page = await context.newPage();
+    await page.goto(
+      `${baseUrl}/?patient_condition=diabetes&gclid=${clickId}&gad_source=1`,
+      { waitUntil: "networkidle" },
+    );
+    await page.getByTestId("button-cookie-accept-all").click();
+    await page.waitForURL(`${baseUrl}/?gclid=${clickId}&gad_source=1`);
+    assert.equal(await page.locator("#fcms-google-tag").count(), 1);
+    assert.equal(await page.locator("#fcms-clarity-tag").count(), 0);
+
+    await page.getByRole("button", { name: "Cookie Preferences" }).click();
+    await page.getByTestId("cookie-toggle-advertising").click();
+    await page.getByTestId("button-cookie-drawer-save").click();
+    await page.waitForURL(`${baseUrl}/`);
+
+    const googleConsent = await commands(page, "google", "consent");
+    assert.equal(googleConsent.at(-1)[2].analytics_storage, "granted");
+    assert.equal(googleConsent.at(-1)[2].ad_storage, "denied");
+    assert.equal(googleConsent.at(-1)[2].ad_user_data, "denied");
+  } finally {
+    await context.close();
+    await browser.close();
+  }
+});
+
 test("Global Privacy Control keeps advertising and personalization denied", async () => {
   const browser = await chromium.launch();
   const context = await createHumanContext(browser);
@@ -320,7 +421,11 @@ test("Global Privacy Control keeps advertising and personalization denied", asyn
 
   try {
     const page = await context.newPage();
-    await page.goto(`${baseUrl}/`, { waitUntil: "networkidle" });
+    await page.goto(
+      `${baseUrl}/?patient_condition=diabetes&gclid=Test_Click-1234567890&gad_source=1`,
+      { waitUntil: "networkidle" },
+    );
+    await page.waitForURL(`${baseUrl}/`);
     assert.equal(await page.getByTestId("cookie-banner").isVisible().catch(() => false), false);
 
     const googleConsent = await commands(page, "google", "consent");
@@ -488,6 +593,7 @@ test("English and Spanish service-area maps use only bundled vector data", async
 });
 
 test("a successful contact request emits one sanitized lead and no form values", async () => {
+  const clickId = "Test_Click-1234567890";
   const browser = await chromium.launch();
   const context = await createHumanContext(browser);
   await context.route("**/api/contact", (route) =>
@@ -500,8 +606,33 @@ test("a successful contact request emits one sanitized lead and no form values",
 
   try {
     const page = await context.newPage();
-    await page.goto(`${baseUrl}/contact`, { waitUntil: "networkidle" });
+    await page.goto(
+      `${baseUrl}/contact?patient_condition=diabetes&email=private%40example.com&gclid=${clickId}&gad_source=1&gad_campaignid=1234567890`,
+      {
+        waitUntil: "networkidle",
+        referer: "https://referrer.example/health?patient_condition=diabetes",
+      },
+    );
     await page.getByTestId("button-cookie-accept-all").click();
+    await page.waitForURL(
+      `${baseUrl}/contact?gclid=${clickId}&gad_source=1&gad_campaignid=1234567890`,
+    );
+    assert.equal(await page.locator("#fcms-google-tag").count(), 1);
+    assert.equal(await page.locator("#fcms-clarity-tag").count(), 0);
+    const configs = await commands(page, "google", "config");
+    assert.equal(configs.at(-1)[2].page_location, `${baseUrl}/contact`);
+    assert.equal(configs.at(-1)[2].page_path, "/contact");
+    assert.equal(configs.at(-1)[2].page_referrer, "https://referrer.example");
+    const pageviews = (await commands(page, "google", "event")).filter(
+      (entry) => entry[1] === "page_view",
+    );
+    assert.equal(pageviews.at(-1)[2].page_location, `${baseUrl}/contact`);
+    assert.equal(pageviews.at(-1)[2].page_path, "/contact");
+    assert.equal(pageviews.at(-1)[2].page_referrer, "https://referrer.example");
+    assert.doesNotMatch(
+      JSON.stringify([configs.at(-1), pageviews.at(-1)]),
+      /patient_condition|diabetes|private@example|gclid|Test_Click|gad_source|gad_campaignid/,
+    );
     assert.equal(
       await page.getByTestId("hero-contact-form").first().getAttribute("data-clarity-mask"),
       "true",
@@ -517,9 +648,20 @@ test("a successful contact request emits one sanitized lead and no form values",
       (entry) => entry[1] === "generate_lead",
     );
     assert.equal(leads.length, 1);
-    assert.deepEqual(Object.keys(leads[0][2]).sort(), ["form_id", "source_page"]);
+    assert.deepEqual(Object.keys(leads[0][2]).sort(), [
+      "form_id",
+      "page_location",
+      "page_path",
+      "page_referrer",
+      "source_page",
+    ]);
     assert.equal(leads[0][2].source_page, "/contact");
-    assert.doesNotMatch(JSON.stringify(leads[0]), /Consent Test|test@example|2395550100/);
+    assert.equal(leads[0][2].page_path, "/contact");
+    assert.equal(leads[0][2].page_location, `${baseUrl}/contact`);
+    assert.doesNotMatch(
+      JSON.stringify(leads[0]),
+      /Consent Test|test@example|2395550100|patient_condition|diabetes|private@example|gclid|Test_Click|gad_source|gad_campaignid/,
+    );
   } finally {
     await context.close();
     await browser.close();
@@ -558,7 +700,13 @@ test("the mobile action-bar form emits one sanitized lead after full consent", a
       (entry) => entry[1] === "generate_lead",
     );
     assert.equal(leads.length, 1);
-    assert.deepEqual(Object.keys(leads[0][2]).sort(), ["form_id", "source_page"]);
+    assert.deepEqual(Object.keys(leads[0][2]).sort(), [
+      "form_id",
+      "page_location",
+      "page_path",
+      "page_referrer",
+      "source_page",
+    ]);
     assert.equal(leads[0][2].form_id, "mobile_action_bar_form");
     assert.equal(leads[0][2].source_page, "/");
     assert.doesNotMatch(JSON.stringify(leads[0]), /Mobile Consent Test|mobile@example|2395550102/);
@@ -603,7 +751,13 @@ test("the insurance callback emits one sanitized lead without plan or language v
       (entry) => entry[1] === "generate_lead",
     );
     assert.equal(leads.length, 1);
-    assert.deepEqual(Object.keys(leads[0][2]).sort(), ["form_id", "source_page"]);
+    assert.deepEqual(Object.keys(leads[0][2]).sort(), [
+      "form_id",
+      "page_location",
+      "page_path",
+      "page_referrer",
+      "source_page",
+    ]);
     assert.equal(leads[0][2].form_id, "insurance_lp_callback");
     assert.equal(leads[0][2].source_page, "/insurance-accepted");
     assert.doesNotMatch(

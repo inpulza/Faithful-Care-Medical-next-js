@@ -18,7 +18,78 @@ declare global {
     __fcmsLastTrackedPage?: string;
     __fcmsConsentState?: ConsentCategories;
     __fcmsAnalyticsInitialized?: boolean;
+    __fcmsInitialPageLocation?: string;
   }
+}
+
+function sanitizedReferrer() {
+  if (!document.referrer) return "";
+  try {
+    const referrer = new URL(document.referrer);
+    return referrer.origin === window.location.origin
+      ? `${referrer.origin}${referrer.pathname}`
+      : referrer.origin;
+  } catch {
+    return "";
+  }
+}
+
+function currentPageContext() {
+  return {
+    page_path: window.location.pathname,
+    page_location: `${window.location.origin}${window.location.pathname}`,
+    page_referrer: sanitizedReferrer(),
+  };
+}
+
+function sanitizeSourcePage(sourcePage: string) {
+  try {
+    const source = new URL(sourcePage, window.location.origin);
+    return source.origin === window.location.origin ? source.pathname : window.location.pathname;
+  } catch {
+    return window.location.pathname;
+  }
+}
+
+const AD_CLICK_PARAMETERS = ["gclid", "dclid", "gbraid", "wbraid"] as const;
+const AD_AGGREGATE_PARAMETERS = ["gad", "gad_source", "gad_campaignid"] as const;
+const VALID_AD_CLICK_ID = /^[A-Za-z0-9._~-]{1,512}$/;
+const VALID_AD_AGGREGATE_ID = /^[0-9]{1,20}$/;
+
+function prepareBrowserUrlForTracking(state: ConsentCategories) {
+  const originalUrl = new URL(window.location.href);
+  const safeHash = originalUrl.hash === "#main" || originalUrl.hash === "#callback"
+    ? originalUrl.hash
+    : "";
+  const retainedParameters = new URLSearchParams();
+  if (state.advertising) {
+    for (const name of AD_CLICK_PARAMETERS) {
+      const values = originalUrl.searchParams.getAll(name);
+      const value = values.length === 1 ? values[0] : "";
+      if (VALID_AD_CLICK_ID.test(value)) retainedParameters.set(name, value);
+    }
+    for (const name of AD_AGGREGATE_PARAMETERS) {
+      const values = originalUrl.searchParams.getAll(name);
+      const value = values.length === 1 ? values[0] : "";
+      if (VALID_AD_AGGREGATE_ID.test(value)) retainedParameters.set(name, value);
+    }
+  }
+  const serializedParameters = retainedParameters.toString();
+  const retainedSearch = serializedParameters ? `?${serializedParameters}` : "";
+  const clarityEligible = !originalUrl.search && !originalUrl.hash && !document.referrer;
+
+  if (originalUrl.search !== retainedSearch || originalUrl.hash !== safeHash) {
+    window.history.replaceState(
+      window.history.state,
+      "",
+      `${originalUrl.pathname}${retainedSearch}${safeHash}`,
+    );
+  }
+
+  return {
+    clarityEligible,
+    initialPageLocation: `${originalUrl.origin}${originalUrl.pathname}`,
+  };
 }
 
 function loadTrackingTag(id: string, src: string) {
@@ -30,9 +101,15 @@ function loadTrackingTag(id: string, src: string) {
   document.head.appendChild(script);
 }
 
-function ensureAnalyticsLoaded(state: ConsentCategories) {
+function ensureAnalyticsLoaded(
+  state: ConsentCategories,
+  prepared = prepareBrowserUrlForTracking(state),
+) {
   if (window.__fcmsAnalyticsInitialized) return;
   window.__fcmsAnalyticsInitialized = true;
+  const { clarityEligible, initialPageLocation } = prepared;
+  const pageContext = currentPageContext();
+  window.__fcmsInitialPageLocation = initialPageLocation;
 
   window.clarity?.("consentv2", {
     ad_Storage: "denied",
@@ -42,16 +119,21 @@ function ensureAnalyticsLoaded(state: ConsentCategories) {
   window.gtag?.("config", GA4_MEASUREMENT_ID, {
     allow_google_signals: false,
     allow_ad_personalization_signals: false,
+    page_location: initialPageLocation,
+    page_path: pageContext.page_path,
+    page_referrer: pageContext.page_referrer,
     send_page_view: false,
   });
   loadTrackingTag(
     "fcms-google-tag",
     `https://www.googletagmanager.com/gtag/js?id=${GA4_MEASUREMENT_ID}`,
   );
-  loadTrackingTag(
-    "fcms-clarity-tag",
-    `https://www.clarity.ms/tag/${CLARITY_PROJECT_ID}?ref=next`,
-  );
+  if (clarityEligible) {
+    loadTrackingTag(
+      "fcms-clarity-tag",
+      `https://www.clarity.ms/tag/${CLARITY_PROJECT_ID}?ref=next`,
+    );
+  }
 }
 
 function deleteCookie(name: string) {
@@ -87,6 +169,7 @@ export function updateTrackingConsent(state: ConsentCategories): boolean {
   if (typeof window === "undefined") return false;
   const trackingWasLoaded = window.__fcmsAnalyticsInitialized === true;
   window.__fcmsConsentState = state;
+  const prepared = prepareBrowserUrlForTracking(state);
 
   window.gtag?.("consent", "update", {
     ad_storage: state.advertising ? "granted" : "denied",
@@ -100,7 +183,7 @@ export function updateTrackingConsent(state: ConsentCategories): boolean {
       ad_Storage: "denied",
       analytics_Storage: "granted",
     });
-    ensureAnalyticsLoaded(state);
+    ensureAnalyticsLoaded(state, prepared);
     trackPageView();
   } else {
     if (window.__fcmsAnalyticsInitialized) {
@@ -127,7 +210,17 @@ export function trackEvent(name: string, parameters: TrackingParameters = {}) {
   ) {
     return;
   }
-  window.gtag("event", name, parameters);
+  const pageContext = currentPageContext();
+  const pageLocation = name === "page_view" && window.__fcmsInitialPageLocation
+    ? window.__fcmsInitialPageLocation
+    : pageContext.page_location;
+  window.gtag("event", name, {
+    ...parameters,
+    page_path: pageContext.page_path,
+    page_location: pageLocation,
+    page_referrer: pageContext.page_referrer,
+  });
+  if (name === "page_view") window.__fcmsInitialPageLocation = undefined;
 }
 
 export function trackLead(formId: string, sourcePage: string) {
@@ -136,7 +229,7 @@ export function trackLead(formId: string, sourcePage: string) {
   }
   trackEvent("generate_lead", {
     form_id: formId,
-    source_page: sourcePage,
+    source_page: sanitizeSourcePage(sourcePage),
   });
 }
 
@@ -148,7 +241,6 @@ export function trackPageView() {
 
   trackEvent("page_view", {
     page_path: pagePath,
-    page_location: `${window.location.origin}${window.location.pathname}`,
     page_title: document.title,
   });
 }

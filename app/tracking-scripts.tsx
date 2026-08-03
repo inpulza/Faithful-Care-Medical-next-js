@@ -47,6 +47,10 @@ const bootstrap = `
   };
   window.__fcmsConsentState = state;
   window.__fcmsAnalyticsInitialized = false;
+  var clarityEligible = true;
+  var pagePath = window.location.pathname;
+  var pageLocation = window.location.origin + pagePath;
+  var pageReferrer = "";
 
   window.gtag("consent", "default", {
     ad_storage: "denied",
@@ -59,6 +63,53 @@ const bootstrap = `
   });
 
   if (state.analytics) {
+    try {
+      var originalUrl = new URL(window.location.href);
+      var referrerUrl = document.referrer ? new URL(document.referrer) : null;
+      var safeHash = originalUrl.hash === "#main" || originalUrl.hash === "#callback"
+        ? originalUrl.hash
+        : "";
+      var retainedSearch = "";
+      if (state.advertising) {
+        var retainedParameters = new URLSearchParams();
+        ["gclid", "dclid", "gbraid", "wbraid"].forEach(function (name) {
+          var values = originalUrl.searchParams.getAll(name);
+          var value = values.length === 1 ? values[0] : "";
+          if (/^[A-Za-z0-9._~-]{1,512}$/.test(value)) {
+            retainedParameters.set(name, value);
+          }
+        });
+        ["gad", "gad_source", "gad_campaignid"].forEach(function (name) {
+          var values = originalUrl.searchParams.getAll(name);
+          var value = values.length === 1 ? values[0] : "";
+          if (/^[0-9]{1,20}$/.test(value)) {
+            retainedParameters.set(name, value);
+          }
+        });
+        var serializedParameters = retainedParameters.toString();
+        retainedSearch = serializedParameters ? "?" + serializedParameters : "";
+      }
+      clarityEligible = !originalUrl.search && !originalUrl.hash && !referrerUrl;
+      if (referrerUrl) {
+        pageReferrer = referrerUrl.origin === originalUrl.origin
+          ? referrerUrl.origin + referrerUrl.pathname
+          : referrerUrl.origin;
+      }
+      if (originalUrl.search !== retainedSearch || originalUrl.hash !== safeHash) {
+        window.history.replaceState(
+          window.history.state,
+          "",
+          originalUrl.pathname + retainedSearch + safeHash
+        );
+      }
+      pagePath = originalUrl.pathname;
+      pageLocation = originalUrl.origin + originalUrl.pathname;
+      window.__fcmsInitialPageLocation = pageLocation;
+    } catch (error) {
+      clarityEligible = false;
+      window.__fcmsInitialPageLocation = pageLocation;
+    }
+
     window.gtag("consent", "update", {
       ad_storage: state.advertising ? "granted" : "denied",
       ad_user_data: state.advertising ? "granted" : "denied",
@@ -75,6 +126,9 @@ const bootstrap = `
     window.gtag("config", ${JSON.stringify(GA4_MEASUREMENT_ID)}, {
       allow_google_signals: false,
       allow_ad_personalization_signals: false,
+      page_location: pageLocation,
+      page_path: pagePath,
+      page_referrer: pageReferrer,
       send_page_view: false
     });
   }
@@ -94,10 +148,12 @@ const bootstrap = `
       "fcms-google-tag",
       "https://www.googletagmanager.com/gtag/js?id=${GA4_MEASUREMENT_ID}"
     );
-    loadTrackingTag(
-      "fcms-clarity-tag",
-      "https://www.clarity.ms/tag/${CLARITY_PROJECT_ID}?ref=next"
-    );
+    if (clarityEligible) {
+      loadTrackingTag(
+        "fcms-clarity-tag",
+        "https://www.clarity.ms/tag/${CLARITY_PROJECT_ID}?ref=next"
+      );
+    }
   }
 })();
 `;

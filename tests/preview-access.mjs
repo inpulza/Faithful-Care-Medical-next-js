@@ -17,6 +17,7 @@ export async function previewFetch(path, init = {}) {
   return fetch(target, {
     ...init,
     headers,
+    ...(bypassSecret ? { redirect: "manual" } : {}),
   });
 }
 
@@ -27,6 +28,7 @@ export async function unlockPreview(context) {
 
   if (bypassSecret) {
     const response = await context.request.get(baseUrl, {
+      maxRedirects: 0,
       headers: {
         "x-vercel-protection-bypass": bypassSecret,
         "x-vercel-set-bypass-cookie": "true",

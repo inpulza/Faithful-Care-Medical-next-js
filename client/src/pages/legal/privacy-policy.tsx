@@ -27,7 +27,7 @@ export default function PrivacyPolicy() {
       <ul>
         <li>Standard server logs (IP address, browser type, pages visited, referring URL, timestamps).</li>
         <li>Cookies and similar technologies (see Cookies and tracking below).</li>
-        <li>Aggregate analytics and website-interaction data through Google Analytics 4 and Microsoft Clarity.</li>
+        <li>Analytics and website-interaction/session data through Google Analytics 4 and Microsoft Clarity.</li>
       </ul>
 
       <h2>How we use information</h2>
@@ -65,6 +65,12 @@ export default function PrivacyPolicy() {
         Rejecting non-essential cookies leaves those services off. If you later withdraw
         Analytics permission, the Website stops sending new analytics events and removes the
         related first-party cookies it can access.
+      </p>
+      <p>
+        If you allow Advertising, the Website may retain only Google's ad-click and aggregate
+        campaign identifiers from the landing URL for campaign attribution. Other landing-page
+        parameters are removed before analytics events are sent. Microsoft Clarity is not loaded
+        for visits that arrive with URL parameters, fragments, or referrer data.
       </p>
 
       <h2>Third-party services</h2>
