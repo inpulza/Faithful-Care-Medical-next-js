@@ -3,23 +3,35 @@ import assert from "node:assert/strict";
 export const baseUrl = process.env.BASE_URL || "http://127.0.0.1:3100";
 
 const bypassSecret = process.env.VERCEL_AUTOMATION_BYPASS_SECRET;
-const explicitAccessUrl = process.env.PREVIEW_ACCESS_URL;
-
-const previewAccessUrl = explicitAccessUrl || (bypassSecret
-  ? `${baseUrl}/?x-vercel-protection-bypass=${encodeURIComponent(bypassSecret)}&x-vercel-set-bypass-cookie=true`
-  : undefined);
+const previewAccessUrl = process.env.PREVIEW_ACCESS_URL;
+const baseOrigin = new URL(baseUrl).origin;
 
 export async function previewFetch(path, init = {}) {
+  const target = new URL(path, `${baseUrl}/`);
   const headers = new Headers(init.headers);
-  if (bypassSecret) headers.set("x-vercel-protection-bypass", bypassSecret);
+  if (bypassSecret) {
+    assert.equal(target.origin, baseOrigin, "Preview bypass headers must stay on the configured origin");
+    headers.set("x-vercel-protection-bypass", bypassSecret);
+  }
 
-  return fetch(new URL(path, `${baseUrl}/`), {
+  return fetch(target, {
     ...init,
     headers,
   });
 }
 
 export async function unlockPreview(context) {
+  if (bypassSecret) {
+    const response = await context.request.get(baseUrl, {
+      headers: {
+        "x-vercel-protection-bypass": bypassSecret,
+        "x-vercel-set-bypass-cookie": "true",
+      },
+    });
+    assert.equal(response.status(), 200, "Protected Preview header authentication should settle successfully");
+    return;
+  }
+
   if (!previewAccessUrl) return;
 
   const accessPage = await context.newPage();
