@@ -288,6 +288,40 @@ test("returning consent leaves tracking off on sensitive unknown paths", async (
   }
 });
 
+test("fresh and cross-tab consent cannot enable tracking on an unknown path", async () => {
+  const browser = await chromium.launch();
+  const context = await createHumanContext(browser);
+  try {
+    const knownPage = await context.newPage();
+    const unknownPage = await context.newPage();
+    await Promise.all([
+      knownPage.goto(`${baseUrl}/`, { waitUntil: "networkidle" }),
+      unknownPage.goto(`${baseUrl}/`, { waitUntil: "networkidle" }),
+    ]);
+    await unknownPage.evaluate(() => {
+      window.history.replaceState(window.history.state, "", "/patient-jane-diabetes");
+    });
+    assert.equal(new URL(unknownPage.url()).pathname, "/patient-jane-diabetes");
+
+    await knownPage.getByTestId("button-cookie-accept-all").click();
+    await unknownPage.getByTestId("cookie-banner").waitFor({ state: "hidden" });
+    await unknownPage.waitForTimeout(300);
+
+    assert.equal(await knownPage.locator("#fcms-google-tag").count(), 1);
+    assert.equal(await unknownPage.locator("#fcms-google-tag").count(), 0);
+    assert.equal(await unknownPage.locator("#fcms-clarity-tag").count(), 0);
+    assert.equal((await commands(unknownPage, "google", "config")).length, 0);
+    assert.equal((await commands(unknownPage, "google", "event")).length, 0);
+    assert.doesNotMatch(
+      JSON.stringify(await unknownPage.evaluate(() => window.dataLayer)) ?? "",
+      /patient|jane|diabetes/,
+    );
+  } finally {
+    await context.close();
+    await browser.close();
+  }
+});
+
 test("Spanish mobile consent is localized, focus-trapped, scrollable, and denied by default", async () => {
   const browser = await chromium.launch();
   const context = await createHumanContext(browser, { mobile: true });

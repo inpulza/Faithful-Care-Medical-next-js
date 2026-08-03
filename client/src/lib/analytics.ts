@@ -182,6 +182,26 @@ export function updateTrackingConsent(state: ConsentCategories): boolean {
   const trackingWasLoaded = window.__fcmsAnalyticsInitialized === true;
   window.__fcmsConsentState = state;
   const prepared = prepareBrowserUrlForTracking(state);
+  const trackingPathAllowed = safeTrackingPath(window.location.pathname) !== "/404";
+
+  if (!trackingPathAllowed) {
+    window.__fcmsLastTrackedPage = undefined;
+    if (trackingWasLoaded) {
+      window.gtag?.("consent", "update", {
+        ad_storage: "denied",
+        ad_user_data: "denied",
+        ad_personalization: "denied",
+        analytics_storage: "denied",
+      });
+      window.clarity?.("consentv2", {
+        ad_Storage: "denied",
+        analytics_Storage: "denied",
+      });
+      window.clarity?.("consent", false);
+      clearCookiesWithPrefixes(["_ga", "_gcl_", "_clck", "_clsk"]);
+    }
+    return trackingWasLoaded;
+  }
 
   window.gtag?.("consent", "update", {
     ad_storage: state.advertising ? "granted" : "denied",
