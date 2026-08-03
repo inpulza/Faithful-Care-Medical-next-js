@@ -10,7 +10,32 @@ function formatDuration(seconds: number) {
 
 export function SocialVideoCarousel({ placement }: { placement: SocialVideoPlacement }) {
   const scrollerRef = React.useRef<HTMLUListElement>(null);
+  const [canScrollPrevious, setCanScrollPrevious] = React.useState(false);
+  const [canScrollNext, setCanScrollNext] = React.useState(true);
   const videos = socialVideosFor(placement);
+
+  const updateScrollControls = React.useCallback(() => {
+    const scroller = scrollerRef.current;
+    if (!scroller) return;
+    const maxScrollLeft = Math.max(0, scroller.scrollWidth - scroller.clientWidth);
+    const leadingInset = Number.parseFloat(window.getComputedStyle(scroller).paddingInlineStart) || 0;
+    setCanScrollPrevious(scroller.scrollLeft > leadingInset + 1);
+    setCanScrollNext(scroller.scrollLeft < maxScrollLeft - 1);
+  }, []);
+
+  React.useEffect(() => {
+    const scroller = scrollerRef.current;
+    if (!scroller) return;
+    const resizeObserver = new ResizeObserver(updateScrollControls);
+    resizeObserver.observe(scroller);
+    scroller.addEventListener("scroll", updateScrollControls, { passive: true });
+    const frame = requestAnimationFrame(updateScrollControls);
+    return () => {
+      cancelAnimationFrame(frame);
+      resizeObserver.disconnect();
+      scroller.removeEventListener("scroll", updateScrollControls);
+    };
+  }, [updateScrollControls]);
 
   const scroll = (direction: -1 | 1) => {
     const scroller = scrollerRef.current;
@@ -32,7 +57,7 @@ export function SocialVideoCarousel({ placement }: { placement: SocialVideoPlace
 
   return (
     <section
-      className="bg-[hsl(216_48%_96%)] py-14 md:py-20"
+      className="py-14 md:py-20"
       aria-labelledby={`social-video-title-${placement}`}
       data-testid={`social-video-section-${placement}`}
     >
@@ -55,7 +80,8 @@ export function SocialVideoCarousel({ placement }: { placement: SocialVideoPlace
             <button
               type="button"
               onClick={() => scroll(-1)}
-              className="inline-flex h-12 w-12 items-center justify-center rounded-full border border-deep-navy/15 bg-white text-deep-navy transition hover:border-primary hover:text-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+              disabled={!canScrollPrevious}
+              className="inline-flex h-12 w-12 items-center justify-center rounded-full border border-deep-navy/15 bg-white text-deep-navy transition hover:border-primary hover:text-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:cursor-not-allowed disabled:opacity-35 disabled:hover:border-deep-navy/15 disabled:hover:text-deep-navy"
               aria-label="Show previous videos"
               data-testid={`social-video-previous-${placement}`}
             >
@@ -64,7 +90,8 @@ export function SocialVideoCarousel({ placement }: { placement: SocialVideoPlace
             <button
               type="button"
               onClick={() => scroll(1)}
-              className="inline-flex h-12 w-12 items-center justify-center rounded-full bg-primary text-white transition hover:bg-primary/90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+              disabled={!canScrollNext}
+              className="inline-flex h-12 w-12 items-center justify-center rounded-full bg-primary text-white transition hover:bg-primary/90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:cursor-not-allowed disabled:opacity-35 disabled:hover:bg-primary"
               aria-label="Show next videos"
               data-testid={`social-video-next-${placement}`}
             >
@@ -85,14 +112,19 @@ export function SocialVideoCarousel({ placement }: { placement: SocialVideoPlace
               className="w-[78vw] max-w-[330px] shrink-0 snap-start sm:w-[44vw] lg:w-[calc((100%-4.5rem)/4)]"
               data-testid={`social-video-card-${video.slug}`}
             >
-              <article className="group flex h-full flex-col overflow-hidden rounded-[1.5rem] bg-white shadow-[0_18px_50px_rgba(8,31,63,0.09)]">
+              <article
+                lang={video.language}
+                className="group flex h-full flex-col overflow-hidden rounded-[1.5rem] bg-white ring-1 ring-[rgba(8,31,63,0.06)]"
+              >
                 <a
                   href={video.tiktokUrl}
                   target="_blank"
                   rel="noopener noreferrer"
                   onClick={() => trackVideoClick(video.slug, "tiktok")}
                   className="flex flex-1 flex-col focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-primary"
-                  aria-label={`${video.title}. Watch on TikTok. ${formatDuration(video.durationSeconds)}.`}
+                  aria-label={video.language === "es"
+                    ? `${video.title}. Ver en TikTok. ${formatDuration(video.durationSeconds)}.`
+                    : `${video.title}. Watch on TikTok. ${formatDuration(video.durationSeconds)}.`}
                   data-testid={`social-video-link-${video.slug}`}
                 >
                   <div className="relative aspect-[9/16] overflow-hidden bg-deep-navy/5">
@@ -135,10 +167,12 @@ export function SocialVideoCarousel({ placement }: { placement: SocialVideoPlace
                     rel="noopener noreferrer"
                     onClick={() => trackVideoClick(video.slug, "instagram")}
                     className="inline-flex min-h-11 items-center gap-2 text-sm font-semibold text-deep-navy/65 transition hover:text-primary focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-primary"
-                    aria-label={`View ${video.title} on Instagram`}
+                    aria-label={video.language === "es"
+                      ? `Ver ${video.title} en Instagram`
+                      : `View ${video.title} on Instagram`}
                   >
                     <InstagramLogo size={18} aria-hidden="true" />
-                    Also on Instagram
+                    {video.language === "es" ? "También en Instagram" : "Also on Instagram"}
                   </a>
                 </div>
               </article>

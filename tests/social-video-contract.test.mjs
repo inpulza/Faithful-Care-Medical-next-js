@@ -20,10 +20,18 @@ test("social video catalog contains only verified, complete, unique entries", ()
     assert.match(video.thumbnailUrl, /^\/images\/social-videos\/[a-z0-9-]+\.webp$/);
     assert.match(video.tiktokUrl, /^https:\/\/www\.tiktok\.com\/@addysrevemd\/video\/\d+$/);
     assert.match(video.instagramUrl, /^https:\/\/www\.instagram\.com\/addysreve\/reel\/[A-Za-z0-9_-]+\/$/);
-    assert.ok(video.placements.includes("home"));
+    assert.deepEqual(video.placements, [
+      "home",
+      "naples",
+      "insurance-accepted",
+      "primary-care",
+      "palliative-care",
+    ]);
   }
 
-  assert.deepEqual(socialVideosFor("naples").map(({ slug }) => slug), SOCIAL_VIDEOS.map(({ slug }) => slug));
+  for (const placement of SOCIAL_VIDEOS[0].placements) {
+    assert.deepEqual(socialVideosFor(placement).map(({ slug }) => slug), SOCIAL_VIDEOS.map(({ slug }) => slug));
+  }
 });
 
 test("organization identity graph uses the central verified profile registry", () => {
@@ -36,4 +44,3 @@ test("organization identity graph uses the central verified profile registry", (
   for (const profile of Object.values(SOCIAL_PROFILES)) assert.ok(sameAs.includes(profile));
   assert.equal(sameAs.some((url) => /youtube/i.test(url)), false, "must not invent an unverified YouTube channel");
 });
-

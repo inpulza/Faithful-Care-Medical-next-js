@@ -4,7 +4,20 @@ export const SOCIAL_PROFILES = {
   tiktok: "https://www.tiktok.com/@addysrevemd",
 } as const;
 
-export type SocialVideoPlacement = "home" | "naples";
+export type SocialVideoPlacement =
+  | "home"
+  | "naples"
+  | "insurance-accepted"
+  | "primary-care"
+  | "palliative-care";
+
+const CORE_PLACEMENTS: readonly SocialVideoPlacement[] = [
+  "home",
+  "naples",
+  "insurance-accepted",
+  "primary-care",
+  "palliative-care",
+];
 
 export interface SocialVideo {
   slug: string;
@@ -30,7 +43,7 @@ export const SOCIAL_VIDEOS: readonly SocialVideo[] = [
     thumbnailUrl: "/images/social-videos/care-plan-for-a-sick-person.webp",
     tiktokUrl: "https://www.tiktok.com/@addysrevemd/video/7668073597205744909",
     instagramUrl: "https://www.instagram.com/addysreve/reel/DbZIuqogQ5z/",
-    placements: ["home", "naples"],
+    placements: CORE_PLACEMENTS,
   },
   {
     slug: "medical-appointment-checklist",
@@ -42,7 +55,7 @@ export const SOCIAL_VIDEOS: readonly SocialVideo[] = [
     thumbnailUrl: "/images/social-videos/medical-appointment-checklist.webp",
     tiktokUrl: "https://www.tiktok.com/@addysrevemd/video/7665847025333751054",
     instagramUrl: "https://www.instagram.com/addysreve/reel/DbJr7A2CbKb/",
-    placements: ["home", "naples"],
+    placements: CORE_PLACEMENTS,
   },
   {
     slug: "hidden-symptom-in-older-adults",
@@ -54,7 +67,7 @@ export const SOCIAL_VIDEOS: readonly SocialVideo[] = [
     thumbnailUrl: "/images/social-videos/hidden-symptom-in-older-adults.webp",
     tiktokUrl: "https://www.tiktok.com/@addysrevemd/video/7664362738478550285",
     instagramUrl: "https://www.instagram.com/addysreve/reel/Da_Y38MiY2t/",
-    placements: ["home", "naples"],
+    placements: CORE_PLACEMENTS,
   },
   {
     slug: "palliative-care-vs-hospice",
@@ -66,7 +79,7 @@ export const SOCIAL_VIDEOS: readonly SocialVideo[] = [
     thumbnailUrl: "/images/social-videos/palliative-care-vs-hospice.webp",
     tiktokUrl: "https://www.tiktok.com/@addysrevemd/video/7663620417768246542",
     instagramUrl: "https://www.instagram.com/addysreve/reel/Da6PQKNDaYN/",
-    placements: ["home", "naples"],
+    placements: CORE_PLACEMENTS,
   },
   {
     slug: "managing-aging-parents",
@@ -78,7 +91,7 @@ export const SOCIAL_VIDEOS: readonly SocialVideo[] = [
     thumbnailUrl: "/images/social-videos/managing-aging-parents.webp",
     tiktokUrl: "https://www.tiktok.com/@addysrevemd/video/7662878311541968141",
     instagramUrl: "https://www.instagram.com/addysreve/reel/Da1FmZ6lSev/",
-    placements: ["home", "naples"],
+    placements: CORE_PLACEMENTS,
   },
   {
     slug: "when-to-call-911",
@@ -90,11 +103,10 @@ export const SOCIAL_VIDEOS: readonly SocialVideo[] = [
     thumbnailUrl: "/images/social-videos/when-to-call-911.webp",
     tiktokUrl: "https://www.tiktok.com/@addysrevemd/video/7661394118538530062",
     instagramUrl: "https://www.instagram.com/addysreve/reel/DaqyXs9FSGH/",
-    placements: ["home", "naples"],
+    placements: CORE_PLACEMENTS,
   },
 ] as const;
 
 export function socialVideosFor(placement: SocialVideoPlacement): readonly SocialVideo[] {
   return SOCIAL_VIDEOS.filter((video) => video.placements.includes(placement));
 }
-
