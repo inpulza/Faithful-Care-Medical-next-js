@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { createServer } from "node:http";
 import { test } from "node:test";
-import { request as playwrightRequest } from "playwright";
+import { chromium, request as playwrightRequest } from "playwright";
 
 async function listen(server) {
   await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
@@ -27,8 +27,10 @@ test("Preview bypass headers never follow a cross-origin redirect", async () => 
   const sourceUrl = await listen(source);
   const previousBaseUrl = process.env.BASE_URL;
   const previousSecret = process.env.VERCEL_AUTOMATION_BYPASS_SECRET;
+  const previousCookie = process.env.VERCEL_PREVIEW_BYPASS_COOKIE;
   process.env.BASE_URL = sourceUrl;
   process.env.VERCEL_AUTOMATION_BYPASS_SECRET = "synthetic-preview-bypass";
+  delete process.env.VERCEL_PREVIEW_BYPASS_COOKIE;
 
   const api = await playwrightRequest.newContext();
   try {
@@ -54,6 +56,8 @@ test("Preview bypass headers never follow a cross-origin redirect", async () => 
     else process.env.BASE_URL = previousBaseUrl;
     if (previousSecret === undefined) delete process.env.VERCEL_AUTOMATION_BYPASS_SECRET;
     else process.env.VERCEL_AUTOMATION_BYPASS_SECRET = previousSecret;
+    if (previousCookie === undefined) delete process.env.VERCEL_PREVIEW_BYPASS_COOKIE;
+    else process.env.VERCEL_PREVIEW_BYPASS_COOKIE = previousCookie;
   }
 });
 
@@ -67,8 +71,10 @@ test("Preview unlock accepts Vercel's same-origin cookie redirect", async () => 
   const sourceUrl = await listen(source);
   const previousBaseUrl = process.env.BASE_URL;
   const previousSecret = process.env.VERCEL_AUTOMATION_BYPASS_SECRET;
+  const previousCookie = process.env.VERCEL_PREVIEW_BYPASS_COOKIE;
   process.env.BASE_URL = sourceUrl;
   process.env.VERCEL_AUTOMATION_BYPASS_SECRET = "synthetic-preview-bypass";
+  delete process.env.VERCEL_PREVIEW_BYPASS_COOKIE;
 
   const api = await playwrightRequest.newContext();
   try {
@@ -87,47 +93,90 @@ test("Preview unlock accepts Vercel's same-origin cookie redirect", async () => 
     else process.env.BASE_URL = previousBaseUrl;
     if (previousSecret === undefined) delete process.env.VERCEL_AUTOMATION_BYPASS_SECRET;
     else process.env.VERCEL_AUTOMATION_BYPASS_SECRET = previousSecret;
+    if (previousCookie === undefined) delete process.env.VERCEL_PREVIEW_BYPASS_COOKIE;
+    else process.env.VERCEL_PREVIEW_BYPASS_COOKIE = previousCookie;
   }
 });
 
-test("Preview OIDC is attached only to requests for the configured Preview origin", async () => {
+test("Preview cookie fetch never follows a cross-origin redirect", async () => {
+  const sourceRequests = [];
+  const destinationRequests = [];
+  const destination = createServer((request, response) => {
+    destinationRequests.push(request.headers);
+    response.writeHead(200).end("destination");
+  });
+  const destinationUrl = (await listen(destination)).replace("127.0.0.1", "localhost");
+  const source = createServer((request, response) => {
+    sourceRequests.push(request.headers);
+    response.writeHead(302, { Location: `${destinationUrl}/captured` }).end();
+  });
+  const sourceUrl = await listen(source);
   const previousBaseUrl = process.env.BASE_URL;
   const previousSecret = process.env.VERCEL_AUTOMATION_BYPASS_SECRET;
-  const previousOidc = process.env.VERCEL_OIDC_TOKEN;
-  process.env.BASE_URL = "https://preview.example.test";
+  const previousCookie = process.env.VERCEL_PREVIEW_BYPASS_COOKIE;
+  process.env.BASE_URL = sourceUrl;
   delete process.env.VERCEL_AUTOMATION_BYPASS_SECRET;
-  process.env.VERCEL_OIDC_TOKEN = "synthetic-short-lived-oidc";
-
-  let routeHandler;
-  const context = {
-    setDefaultNavigationTimeout() {},
-    async route(pattern, handler) {
-      assert.equal(pattern, "**/*");
-      routeHandler = handler;
-    },
-  };
+  process.env.VERCEL_PREVIEW_BYPASS_COOKIE = "synthetic-domain-scoped-cookie";
 
   try {
-    const { unlockPreview } = await import(`./preview-access.mjs?oidc=${Date.now()}`);
-    await unlockPreview(context);
-    assert.equal(typeof routeHandler, "function");
-
-    const calls = [];
-    const makeRoute = (url) => ({
-      request: () => ({ url: () => url, headers: () => ({ accept: "text/html" }) }),
-      fallback: (options) => calls.push({ url, options }),
-    });
-    await routeHandler(makeRoute("https://preview.example.test/primary-care"));
-    await routeHandler(makeRoute("https://www.tiktok.com/@addysrevemd"));
-
-    assert.equal(calls[0].options.headers["x-vercel-trusted-oidc-idp-token"], "synthetic-short-lived-oidc");
-    assert.equal(calls[1].options, undefined, "OIDC must never be attached to a third-party request");
+    const { previewFetch } = await import(`./preview-access.mjs?cookie-fetch=${Date.now()}`);
+    const response = await previewFetch("/");
+    assert.equal(response.status, 302);
+    assert.equal(sourceRequests[0].cookie, "_vercel_jwt=synthetic-domain-scoped-cookie");
+    assert.equal(destinationRequests.length, 0);
   } finally {
+    await new Promise((resolve, reject) => source.close((error) => error ? reject(error) : resolve()));
+    await new Promise((resolve, reject) => destination.close((error) => error ? reject(error) : resolve()));
     if (previousBaseUrl === undefined) delete process.env.BASE_URL;
     else process.env.BASE_URL = previousBaseUrl;
     if (previousSecret === undefined) delete process.env.VERCEL_AUTOMATION_BYPASS_SECRET;
     else process.env.VERCEL_AUTOMATION_BYPASS_SECRET = previousSecret;
-    if (previousOidc === undefined) delete process.env.VERCEL_OIDC_TOKEN;
-    else process.env.VERCEL_OIDC_TOKEN = previousOidc;
+    if (previousCookie === undefined) delete process.env.VERCEL_PREVIEW_BYPASS_COOKIE;
+    else process.env.VERCEL_PREVIEW_BYPASS_COOKIE = previousCookie;
+  }
+});
+
+test("Preview cookie stays domain scoped through a real browser redirect", async () => {
+  const sourceRequests = [];
+  const destinationRequests = [];
+  const destination = createServer((request, response) => {
+    destinationRequests.push(request.headers);
+    response.writeHead(200, { "Content-Type": "text/html" }).end("destination");
+  });
+  const destinationUrl = (await listen(destination)).replace("127.0.0.1", "localhost");
+  const source = createServer((request, response) => {
+    sourceRequests.push(request.headers);
+    response.writeHead(302, { Location: `${destinationUrl}/captured` }).end();
+  });
+  const sourceUrl = await listen(source);
+  const previousBaseUrl = process.env.BASE_URL;
+  const previousSecret = process.env.VERCEL_AUTOMATION_BYPASS_SECRET;
+  const previousCookie = process.env.VERCEL_PREVIEW_BYPASS_COOKIE;
+  process.env.BASE_URL = sourceUrl;
+  delete process.env.VERCEL_AUTOMATION_BYPASS_SECRET;
+  process.env.VERCEL_PREVIEW_BYPASS_COOKIE = "synthetic-domain-scoped-cookie";
+
+  const browser = await chromium.launch();
+  try {
+    const { unlockPreview } = await import(`./preview-access.mjs?cookie-browser=${Date.now()}`);
+    const context = await browser.newContext();
+    await unlockPreview(context);
+    const page = await context.newPage();
+    const response = await page.goto(sourceUrl, { waitUntil: "domcontentloaded" });
+    assert.equal(response?.status(), 200);
+    assert.equal(sourceRequests[0].cookie, "_vercel_jwt=synthetic-domain-scoped-cookie");
+    assert.equal(destinationRequests.length, 1);
+    assert.equal(destinationRequests[0].cookie, undefined, "Preview cookie must not cross into the redirect destination");
+    await context.close();
+  } finally {
+    await browser.close();
+    await new Promise((resolve, reject) => source.close((error) => error ? reject(error) : resolve()));
+    await new Promise((resolve, reject) => destination.close((error) => error ? reject(error) : resolve()));
+    if (previousBaseUrl === undefined) delete process.env.BASE_URL;
+    else process.env.BASE_URL = previousBaseUrl;
+    if (previousSecret === undefined) delete process.env.VERCEL_AUTOMATION_BYPASS_SECRET;
+    else process.env.VERCEL_AUTOMATION_BYPASS_SECRET = previousSecret;
+    if (previousCookie === undefined) delete process.env.VERCEL_PREVIEW_BYPASS_COOKIE;
+    else process.env.VERCEL_PREVIEW_BYPASS_COOKIE = previousCookie;
   }
 });
