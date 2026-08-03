@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 export const baseUrl = process.env.BASE_URL || "http://127.0.0.1:3100";
 
 const bypassSecret = process.env.VERCEL_AUTOMATION_BYPASS_SECRET;
+const trustedOidcToken = process.env.VERCEL_OIDC_TOKEN;
 const previewAccessUrl = process.env.PREVIEW_ACCESS_URL;
 const baseOrigin = new URL(baseUrl).origin;
 
@@ -12,6 +13,9 @@ export async function previewFetch(path, init = {}) {
   if (bypassSecret) {
     assert.equal(target.origin, baseOrigin, "Preview bypass headers must stay on the configured origin");
     headers.set("x-vercel-protection-bypass", bypassSecret);
+  } else if (trustedOidcToken) {
+    assert.equal(target.origin, baseOrigin, "Preview OIDC headers must stay on the configured origin");
+    headers.set("x-vercel-trusted-oidc-idp-token", trustedOidcToken);
   }
 
   return fetch(target, {
@@ -22,8 +26,22 @@ export async function previewFetch(path, init = {}) {
 }
 
 export async function unlockPreview(context) {
-  if (bypassSecret || previewAccessUrl) {
+  if (bypassSecret || trustedOidcToken || previewAccessUrl) {
     context.setDefaultNavigationTimeout(60_000);
+  }
+
+  if (trustedOidcToken) {
+    await context.route("**/*", (route) => {
+      const request = route.request();
+      if (new URL(request.url()).origin !== baseOrigin) return route.fallback();
+      return route.fallback({
+        headers: {
+          ...request.headers(),
+          "x-vercel-trusted-oidc-idp-token": trustedOidcToken,
+        },
+      });
+    });
+    return;
   }
 
   if (bypassSecret) {

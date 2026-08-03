@@ -89,3 +89,45 @@ test("Preview unlock accepts Vercel's same-origin cookie redirect", async () => 
     else process.env.VERCEL_AUTOMATION_BYPASS_SECRET = previousSecret;
   }
 });
+
+test("Preview OIDC is attached only to requests for the configured Preview origin", async () => {
+  const previousBaseUrl = process.env.BASE_URL;
+  const previousSecret = process.env.VERCEL_AUTOMATION_BYPASS_SECRET;
+  const previousOidc = process.env.VERCEL_OIDC_TOKEN;
+  process.env.BASE_URL = "https://preview.example.test";
+  delete process.env.VERCEL_AUTOMATION_BYPASS_SECRET;
+  process.env.VERCEL_OIDC_TOKEN = "synthetic-short-lived-oidc";
+
+  let routeHandler;
+  const context = {
+    setDefaultNavigationTimeout() {},
+    async route(pattern, handler) {
+      assert.equal(pattern, "**/*");
+      routeHandler = handler;
+    },
+  };
+
+  try {
+    const { unlockPreview } = await import(`./preview-access.mjs?oidc=${Date.now()}`);
+    await unlockPreview(context);
+    assert.equal(typeof routeHandler, "function");
+
+    const calls = [];
+    const makeRoute = (url) => ({
+      request: () => ({ url: () => url, headers: () => ({ accept: "text/html" }) }),
+      fallback: (options) => calls.push({ url, options }),
+    });
+    await routeHandler(makeRoute("https://preview.example.test/primary-care"));
+    await routeHandler(makeRoute("https://www.tiktok.com/@addysrevemd"));
+
+    assert.equal(calls[0].options.headers["x-vercel-trusted-oidc-idp-token"], "synthetic-short-lived-oidc");
+    assert.equal(calls[1].options, undefined, "OIDC must never be attached to a third-party request");
+  } finally {
+    if (previousBaseUrl === undefined) delete process.env.BASE_URL;
+    else process.env.BASE_URL = previousBaseUrl;
+    if (previousSecret === undefined) delete process.env.VERCEL_AUTOMATION_BYPASS_SECRET;
+    else process.env.VERCEL_AUTOMATION_BYPASS_SECRET = previousSecret;
+    if (previousOidc === undefined) delete process.env.VERCEL_OIDC_TOKEN;
+    else process.env.VERCEL_OIDC_TOKEN = previousOidc;
+  }
+});
