@@ -21,6 +21,10 @@ export async function previewFetch(path, init = {}) {
 }
 
 export async function unlockPreview(context) {
+  if (bypassSecret || previewAccessUrl) {
+    context.setDefaultNavigationTimeout(60_000);
+  }
+
   if (bypassSecret) {
     const response = await context.request.get(baseUrl, {
       headers: {
