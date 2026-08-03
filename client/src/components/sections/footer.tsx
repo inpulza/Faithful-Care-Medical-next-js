@@ -1,4 +1,4 @@
-import { Link } from "@/lib/router";
+import { Link, useLocation } from "@/lib/router";
 import { navigationData } from "@/lib/navigation-data";
 import { cn } from "@/lib/utils";
 import { openCookiePreferences } from "@/hooks/use-consent";
@@ -17,6 +17,10 @@ interface FooterProps {
 }
 
 export function Footer({ className }: FooterProps) {
+  const [location] = useLocation();
+  const cookiePreferencesLabel = location.startsWith("/es")
+    ? "Preferencias de cookies"
+    : "Cookie Preferences";
   const serviceCategories = navigationData.filter(c => c.id !== "locations" && c.id !== "insurance");
   const locationCategory = navigationData.find(c => c.id === "locations");
 
@@ -229,7 +233,7 @@ export function Footer({ className }: FooterProps) {
                   className="text-white/60 hover:text-secondary transition-colors text-sm text-left"
                   data-testid="footer-link-cookie-preferences"
                 >
-                  Cookie Preferences
+                  {cookiePreferencesLabel}
                 </button>
               </li>
             </ul>

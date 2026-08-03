@@ -4,7 +4,7 @@ import { test } from "node:test";
 const baseUrl = process.env.BASE_URL || "http://127.0.0.1:3100";
 const { publicRoutes, redirectRules } = await import(new URL("../app/lib/route-contract.ts", import.meta.url).href);
 const datedLegalRoutes = new Map([
-  ["/privacy-policy", "2026-01-01"],
+  ["/privacy-policy", "2026-08-03"],
   ["/notice-of-privacy-practices", "2026-01-01"],
   ["/terms-of-use", "2026-01-01"],
   ["/accessibility-statement", "2026-01-01"],

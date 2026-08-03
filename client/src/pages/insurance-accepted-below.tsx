@@ -22,24 +22,16 @@ import type { FaqItem } from "@/components/sections/faq-section";
 import {
   CLINIC_FULL_ADDRESS,
   CLINIC_GMAPS_DIRECTIONS_URL,
-  CLINIC_GMAPS_EMBED_URL,
 } from "@/lib/clinic-location";
 import { cn } from "@/lib/utils";
+import { trackEvent, trackLead } from "@/lib/analytics";
+import { PrivacySafeGoogleMap } from "@/components/privacy-safe-google-map";
 
 const PHONE_DISPLAY = "(239) 423-0205";
 const PHONE_HREF = "tel:+12394230205";
 
-type DataLayerEvent = Record<string, unknown> & { event: string };
-
-function pushEvent(event: DataLayerEvent) {
-  if (typeof window === "undefined") return;
-  window.dataLayer = window.dataLayer || [];
-  window.dataLayer.push(event);
-}
-
 function trackCta(section: string, label: string, kind: "call" | "click" = "click") {
-  pushEvent({
-    event: kind === "call" ? "cta_call" : "cta_click",
+  trackEvent(kind === "call" ? "cta_call" : "cta_click", {
     cta_section: section,
     cta_label: label,
   });
@@ -298,14 +290,7 @@ function CallbackForm() {
         setError(result.error || `Something went wrong. Please call us at ${PHONE_DISPLAY}.`);
         return;
       }
-      pushEvent({
-        event: "generate_lead",
-        cta_section: "callback_form",
-        cta_label: "Request a callback",
-        form_id: "insurance_lp_callback",
-        insurance: formData.insurance || null,
-        language: formData.language,
-      });
+      trackLead("insurance_lp_callback", "/insurance-accepted");
       setSubmitted(true);
       setFormData({ name: "", phone: "", email: "", insurance: "", language: "English", consent: false });
     } catch {
@@ -337,7 +322,7 @@ function CallbackForm() {
           </p>
         </div>
       ) : (
-        <form onSubmit={handleSubmit} className="flex flex-col gap-5" data-testid="form-callback">
+        <form onSubmit={handleSubmit} className="flex flex-col gap-5" data-testid="form-callback" data-clarity-mask="true">
           <div>
             <label className="block text-sm font-semibold text-deep-navy mb-1.5" htmlFor="lp-name">
               Full name
@@ -478,44 +463,14 @@ function CallbackForm() {
 }
 
 function MapCallback() {
-  const [loaded, setLoaded] = React.useState(false);
   return (
-    <div
-      className="rounded-3xl overflow-hidden border border-primary/20 flex-1 relative bg-primary/5"
-      style={{ aspectRatio: "4 / 3" }}
-      data-testid="map-callback-wrapper"
-    >
-      {loaded ? (
-        <iframe
-          src={CLINIC_GMAPS_EMBED_URL}
-          style={{ border: 0, display: "block", width: "100%", height: "100%" }}
-          allowFullScreen
-          loading="lazy"
-          referrerPolicy="no-referrer-when-downgrade"
-          sandbox="allow-scripts allow-same-origin allow-popups allow-forms"
-          title="Faithful Care Medical Services map, 9955 Tamiami Trail N, Suite 2, Naples, FL"
-          data-testid="map-callback-embed"
-        />
-      ) : (
-        <button
-          type="button"
-          onClick={() => setLoaded(true)}
-          className="absolute inset-0 w-full h-full flex flex-col items-center justify-center gap-3 text-deep-navy hover:bg-primary/10 transition-colors"
-          data-testid="cta-load-map"
-          aria-label="Load interactive map of Faithful Care Medical Services"
-        >
-          <div className="w-14 h-14 rounded-2xl bg-white border border-primary/20 flex items-center justify-center shadow-sm">
-            <MapPin weight="fill" className="w-7 h-7 text-primary" aria-hidden="true" />
-          </div>
-          <p className="font-semibold text-deep-navy text-base md:text-lg">
-            Load interactive map
-          </p>
-          <p className="text-sm text-deep-navy/75 px-6 text-center max-w-xs">
-            {CLINIC_FULL_ADDRESS}
-          </p>
-        </button>
-      )}
-    </div>
+    <PrivacySafeGoogleMap
+      className="aspect-[4/3] rounded-3xl overflow-hidden border border-primary/20 flex-1 relative bg-primary/5"
+      iframeTestId="map-callback-embed"
+      loadButtonTestId="cta-load-map"
+      title="Faithful Care Medical Services map, 9955 Tamiami Trail N, Suite 2, Naples, FL"
+      wrapperTestId="map-callback-wrapper"
+    />
   );
 }
 
@@ -574,7 +529,7 @@ function CallbackAndMap() {
                 href={CLINIC_GMAPS_DIRECTIONS_URL}
                 target="_blank"
                 rel="noopener noreferrer"
-                onClick={() => pushEvent({ event: "directions_click", cta_section: "callback_card", cta_label: "Get directions" })}
+                onClick={() => trackEvent("directions_click", { cta_section: "callback_card", cta_label: "Get directions" })}
                 className="mt-6 inline-flex items-center gap-2 bg-white text-primary px-5 py-3 rounded-full font-semibold text-base hover:bg-white/90 transition-colors"
                 data-testid="cta-directions-callback"
               >
@@ -775,7 +730,7 @@ export default function InsuranceBelowFold({ faqs }: BelowFoldProps) {
         const idx = trigger.getAttribute("data-testid")?.split("-").pop();
         const isOpen = trigger.getAttribute("aria-expanded") === "true";
         if (!isOpen) {
-          pushEvent({ event: "faq_open", cta_section: "faq", cta_label: "faq_" + idx, index: idx });
+          trackEvent("faq_open", { cta_section: "faq", cta_label: "faq_" + idx, index: idx });
         }
       }
     };

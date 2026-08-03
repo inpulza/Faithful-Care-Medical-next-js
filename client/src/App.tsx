@@ -11,6 +11,7 @@ import { Footer } from "@/components/sections/footer";
 import { MobileActionBar } from "@/components/mobile-action-bar";
 import { PageTransitionProvider } from "@/components/page-transition";
 import { CookieBanner } from "@/components/cookie-banner";
+import { TrackingPageviews } from "@/components/tracking-pageviews";
 import { toast } from "@/hooks/use-toast";
 
 
@@ -172,6 +173,7 @@ function Layout({ children }: { children: React.ReactNode }) {
         Skip to main content
       </a>
       <MegaMenu />
+      <TrackingPageviews />
       <div className="flex-1">
         {children}
       </div>

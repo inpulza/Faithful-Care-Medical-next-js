@@ -16,8 +16,64 @@ const HIDDEN_PATHS = new Set<string>([
   "/notice-of-privacy-practices",
 ]);
 
+const COOKIE_COPY = {
+  en: {
+    bannerAria: "Cookie consent",
+    title: "We value your privacy",
+    body: "We use necessary cookies to run this site. Analytics tools load only with your permission. You can accept all, reject non-essential cookies, or customize your choices. See our",
+    privacyPolicy: "Privacy Policy",
+    acceptAll: "Accept All",
+    reject: "Reject Non-Essential",
+    customize: "Customize",
+    drawerTitle: "Cookie preferences",
+    close: "Close",
+    drawerIntro: "Choose how Faithful Care can use cookies on this site. You can change your choices at any time from the footer.",
+    necessaryTitle: "Necessary",
+    necessaryDescription: "Required for the site to function (security, page navigation, and form submission). Always on.",
+    analyticsTitle: "Analytics",
+    analyticsDescription: "Loads Google Analytics 4 and Microsoft Clarity only after you allow it, helping us improve traffic and site usability.",
+    advertisingTitle: "Advertising",
+    advertisingDescription: "Supports measurement for Google Ads campaigns when an advertising tag is enabled.",
+    personalizationTitle: "Ad personalization",
+    personalizationDescription: "Allows advertising platforms to personalize ads when campaigns are enabled. It is not required to remember your cookie choice.",
+    save: "Save my preferences",
+    readOur: "Read our",
+    and: "and",
+    hipaaNotice: "HIPAA Notice",
+    details: "for full details.",
+  },
+  es: {
+    bannerAria: "Consentimiento de cookies",
+    title: "Valoramos tu privacidad",
+    body: "Usamos cookies necesarias para que este sitio funcione. Las herramientas de analítica solo se cargan con tu permiso. Puedes aceptar todo, rechazar las cookies no esenciales o personalizar tus opciones. Consulta nuestra",
+    privacyPolicy: "Política de privacidad",
+    acceptAll: "Aceptar todo",
+    reject: "Rechazar no esenciales",
+    customize: "Personalizar",
+    drawerTitle: "Preferencias de cookies",
+    close: "Cerrar",
+    drawerIntro: "Elige cómo Faithful Care puede usar cookies en este sitio. Puedes cambiar tus opciones en cualquier momento desde el pie de página.",
+    necessaryTitle: "Necesarias",
+    necessaryDescription: "Son imprescindibles para la seguridad, la navegación y el envío de formularios. Siempre están activas.",
+    analyticsTitle: "Analítica",
+    analyticsDescription: "Carga Google Analytics 4 y Microsoft Clarity solo después de que lo permitas, para ayudarnos a mejorar el tráfico y la experiencia del sitio.",
+    advertisingTitle: "Publicidad",
+    advertisingDescription: "Permite medir campañas de Google Ads cuando exista una etiqueta publicitaria activa.",
+    personalizationTitle: "Personalización de anuncios",
+    personalizationDescription: "Permite que las plataformas publicitarias personalicen anuncios cuando haya campañas activas. No es necesaria para recordar tu elección de cookies.",
+    save: "Guardar mis preferencias",
+    readOur: "Consulta nuestra",
+    and: "y el",
+    hipaaNotice: "Aviso HIPAA",
+    details: "para conocer todos los detalles.",
+  },
+} as const;
+
+type CookieCopy = (typeof COOKIE_COPY)[keyof typeof COOKIE_COPY];
+
 export function CookieBanner() {
   const [location] = useLocation();
+  const copy = COOKIE_COPY[location.startsWith("/es") ? "es" : "en"];
   const { decision, state, setState, save, acceptAll, rejectAll, hasDecision } = useConsent();
   const [drawerOpen, setDrawerOpen] = React.useState(false);
   const [crawler, setCrawler] = React.useState(true);
@@ -75,7 +131,7 @@ export function CookieBanner() {
             transition={{ duration: motionDuration, ease: [0.25, 0.1, 0.25, 1] }}
             className="fixed inset-x-3 bottom-3 md:inset-x-auto md:right-6 md:bottom-6 md:w-[560px] md:max-w-[calc(100vw-3rem)] z-[100]"
             role="dialog"
-            aria-label="Cookie consent"
+            aria-label={copy.bannerAria}
             aria-describedby="cookie-banner-text"
             data-testid="cookie-banner"
           >
@@ -86,7 +142,7 @@ export function CookieBanner() {
                 </div>
                 <div>
                   <h2 className="font-serif text-[20px] leading-tight text-foreground">
-                    We value your privacy
+                    {copy.title}
                   </h2>
                 </div>
               </div>
@@ -94,14 +150,12 @@ export function CookieBanner() {
                 id="cookie-banner-text"
                 className="text-[15px] leading-[1.55] text-foreground/80 mb-4"
               >
-                We use cookies to run this site, measure how it performs, and (with your
-                consent) support advertising. You can accept all, reject non-essential, or
-                customize your choices. See our{" "}
+                {copy.body}{" "}
                 <a
                   href="/privacy-policy"
                   className="text-primary underline underline-offset-2 hover:text-primary/80"
                 >
-                  Privacy Policy
+                  {copy.privacyPolicy}
                 </a>
                 .
               </p>
@@ -112,7 +166,7 @@ export function CookieBanner() {
                   className="w-full rounded-full bg-primary text-white text-base font-semibold px-6 min-h-[56px] whitespace-nowrap hover:bg-primary/90 transition-colors"
                   data-testid="button-cookie-accept-all"
                 >
-                  Accept All
+                  {copy.acceptAll}
                 </button>
                 <div className="flex flex-col sm:flex-row gap-2">
                   <button
@@ -121,7 +175,7 @@ export function CookieBanner() {
                     className="flex-1 rounded-full border border-primary/40 text-primary text-base font-semibold px-6 min-h-[56px] whitespace-nowrap hover:bg-primary/5 transition-colors"
                     data-testid="button-cookie-reject"
                   >
-                    Reject Non-Essential
+                    {copy.reject}
                   </button>
                   <button
                     type="button"
@@ -132,7 +186,7 @@ export function CookieBanner() {
                     className="flex-1 rounded-full border border-primary/40 text-primary text-base font-semibold px-6 min-h-[56px] whitespace-nowrap hover:bg-primary/5 transition-colors"
                     data-testid="button-cookie-customize"
                   >
-                    Customize
+                    {copy.customize}
                   </button>
                 </div>
               </div>
@@ -151,6 +205,7 @@ export function CookieBanner() {
         onRejectAll={handleRejectAllFromDrawer}
         canCloseWithoutDecision={hasDecision}
         reducedMotion={reducedMotion}
+        copy={copy}
       />
     </>
   );
@@ -166,6 +221,7 @@ interface DrawerProps {
   onRejectAll: () => void;
   canCloseWithoutDecision: boolean;
   reducedMotion: boolean;
+  copy: CookieCopy;
 }
 
 function CookiePreferencesDrawer({
@@ -178,16 +234,16 @@ function CookiePreferencesDrawer({
   onRejectAll,
   canCloseWithoutDecision,
   reducedMotion,
+  copy,
 }: DrawerProps) {
   const drawerRef = React.useRef<HTMLDivElement>(null);
-  const closeRef = React.useRef<HTMLButtonElement>(null);
 
   React.useEffect(() => {
     if (!open) return;
     const previousActive = document.activeElement as HTMLElement | null;
     const previousOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
-    closeRef.current?.focus();
+    drawerRef.current?.focus();
 
     const handleKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
@@ -201,7 +257,10 @@ function CookiePreferencesDrawer({
       if (focusable.length === 0) return;
       const first = focusable[0];
       const last = focusable[focusable.length - 1];
-      if (e.shiftKey && document.activeElement === first) {
+      if (document.activeElement === drawerRef.current) {
+        e.preventDefault();
+        (e.shiftKey ? last : first).focus();
+      } else if (e.shiftKey && document.activeElement === first) {
         e.preventDefault();
         last.focus();
       } else if (!e.shiftKey && document.activeElement === last) {
@@ -244,13 +303,14 @@ function CookiePreferencesDrawer({
             animate={{ y: 0, opacity: 1 }}
             exit={{ y: reducedMotion ? 0 : "100%", opacity: reducedMotion ? 0 : 1 }}
             transition={{ duration: motionDuration, ease: [0.25, 0.1, 0.25, 1] }}
-            className="relative w-full md:w-[460px] md:h-full bg-white md:max-h-screen overflow-y-auto rounded-t-3xl md:rounded-none border-t md:border-t-0 md:border-l border-primary/20 shadow-2xl"
+            className="relative w-full max-h-screen max-h-[100dvh] md:w-[460px] md:h-full md:max-h-screen bg-white overflow-y-auto rounded-t-3xl md:rounded-none border-t md:border-t-0 md:border-l border-primary/20 shadow-2xl"
             role="dialog"
             aria-modal="true"
             aria-labelledby="cookie-drawer-title"
+            tabIndex={-1}
             data-testid="cookie-preferences-drawer"
           >
-            <div className="sticky top-0 bg-white border-b border-primary/15 px-6 py-5 flex items-start justify-between gap-4">
+            <div className="sticky top-0 z-10 bg-white border-b border-primary/15 px-6 py-5 flex items-start justify-between gap-4">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
                   <ShieldCheck className="w-5 h-5 text-primary" weight="duotone" aria-hidden="true" />
@@ -259,17 +319,16 @@ function CookiePreferencesDrawer({
                   id="cookie-drawer-title"
                   className="font-serif text-[22px] leading-tight text-foreground"
                 >
-                  Cookie preferences
+                  {copy.drawerTitle}
                 </h2>
               </div>
               <button
-                ref={closeRef}
                 type="button"
                 onClick={() => {
                   if (canCloseWithoutDecision) onClose();
                 }}
                 className="w-16 h-16 rounded-full border border-primary/30 flex items-center justify-center text-primary hover:bg-primary/5 disabled:opacity-40 disabled:cursor-not-allowed"
-                aria-label="Close"
+                aria-label={copy.close}
                 disabled={!canCloseWithoutDecision}
                 data-testid="button-cookie-drawer-close"
               >
@@ -279,35 +338,34 @@ function CookiePreferencesDrawer({
 
             <div className="px-6 py-6">
               <p className="text-[15px] leading-[1.55] text-foreground/80 mb-6">
-                Choose how Faithful Care can use cookies on this site. You can change your
-                choices at any time from the footer.
+                {copy.drawerIntro}
               </p>
 
               <CategoryRow
-                title="Necessary"
-                description="Required for the site to function (security, page navigation, form submission). Always on."
+                title={copy.necessaryTitle}
+                description={copy.necessaryDescription}
                 checked
                 disabled
                 onChange={() => {}}
                 testId="cookie-toggle-necessary"
               />
               <CategoryRow
-                title="Analytics"
-                description="Helps us understand how visitors use the site (Google Analytics 4) so we can improve it. Anonymous, aggregate measurement."
+                title={copy.analyticsTitle}
+                description={copy.analyticsDescription}
                 checked={state.analytics}
                 onChange={(v) => setState((s) => ({ ...s, analytics: v }))}
                 testId="cookie-toggle-analytics"
               />
               <CategoryRow
-                title="Advertising"
-                description="Supports measurement and (when enabled) personalization for Google Ads campaigns."
+                title={copy.advertisingTitle}
+                description={copy.advertisingDescription}
                 checked={state.advertising}
                 onChange={(v) => setState((s) => ({ ...s, advertising: v }))}
                 testId="cookie-toggle-advertising"
               />
               <CategoryRow
-                title="Personalization"
-                description="Remembers your choices and preferences to make future visits smoother."
+                title={copy.personalizationTitle}
+                description={copy.personalizationDescription}
                 checked={state.personalization}
                 onChange={(v) => setState((s) => ({ ...s, personalization: v }))}
                 testId="cookie-toggle-personalization"
@@ -320,7 +378,7 @@ function CookiePreferencesDrawer({
                   className="rounded-full bg-primary text-white text-base font-semibold px-5 min-h-[64px] hover:bg-primary/90 transition-colors"
                   data-testid="button-cookie-drawer-accept-all"
                 >
-                  Accept All
+                  {copy.acceptAll}
                 </button>
                 <button
                   type="button"
@@ -328,7 +386,7 @@ function CookiePreferencesDrawer({
                   className="rounded-full border border-primary/40 text-primary text-base font-semibold px-5 min-h-[64px] hover:bg-primary/5 transition-colors"
                   data-testid="button-cookie-drawer-reject"
                 >
-                  Reject Non-Essential
+                  {copy.reject}
                 </button>
                 <button
                   type="button"
@@ -336,23 +394,23 @@ function CookiePreferencesDrawer({
                   className="sm:col-span-2 rounded-full border border-primary text-primary text-base font-semibold px-5 min-h-[64px] hover:bg-primary hover:text-white transition-colors"
                   data-testid="button-cookie-drawer-save"
                 >
-                  Save my preferences
+                  {copy.save}
                 </button>
               </div>
 
               <p className="mt-6 text-xs leading-relaxed text-foreground/60">
-                Read our{" "}
+                {copy.readOur}{" "}
                 <a href="/privacy-policy" className="text-primary underline underline-offset-2">
-                  Privacy Policy
+                  {copy.privacyPolicy}
                 </a>{" "}
-                and{" "}
+                {copy.and}{" "}
                 <a
                   href="/notice-of-privacy-practices"
                   className="text-primary underline underline-offset-2"
                 >
-                  HIPAA Notice
+                  {copy.hipaaNotice}
                 </a>{" "}
-                for full details.
+                {copy.details}
               </p>
             </div>
           </motion.div>

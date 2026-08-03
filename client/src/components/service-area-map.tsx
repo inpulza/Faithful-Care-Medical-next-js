@@ -1,8 +1,11 @@
 import * as React from "react";
-import { useRef, useEffect, useState } from "react";
+import { geoMercator, geoPath } from "d3-geo";
 import { motion } from "framer-motion";
-import type { Map as LeafletMap } from "leaflet";
+import type { GeoPermissibleObjects } from "d3-geo";
+import floridaGeoJson from "@/assets/data/florida-outline.json";
 
+const MAP_WIDTH = 1000;
+const MAP_HEIGHT = 620;
 const NAPLES_CENTER: [number, number] = [26.142, -81.795];
 
 const SERVICE_DESTINATIONS: { name: string; lat: number; lng: number; county: string }[] = [
@@ -27,6 +30,24 @@ const LOCATION_LINKS: { name: string; href?: string }[] = [
   { name: "Cape Coral", href: "/locations/cape-coral" },
 ];
 
+const projection = geoMercator()
+  .center([-81.65, 26.45])
+  .scale(27_000)
+  .translate([MAP_WIDTH / 2, MAP_HEIGHT / 2]);
+const floridaPath = geoPath(projection)(
+  floridaGeoJson as unknown as GeoPermissibleObjects,
+) ?? "";
+
+function projectPoint(lat: number, lng: number): [number, number] {
+  return projection([lng, lat]) ?? [0, 0];
+}
+
+const naplesPoint = projectPoint(...NAPLES_CENTER);
+const destinationPoints = SERVICE_DESTINATIONS.map((destination) => ({
+  ...destination,
+  point: projectPoint(destination.lat, destination.lng),
+}));
+
 interface ServiceAreaMapProps {
   eyebrow?: string;
   title?: React.ReactNode;
@@ -48,130 +69,6 @@ export default function ServiceAreaMap({
   mapAriaLabel = "Map showing Faithful Care service area across Southwest Florida",
   locationLinks = LOCATION_LINKS,
 }: ServiceAreaMapProps = {}) {
-  const containerRef = useRef<HTMLDivElement>(null);
-  const mapRef = useRef<HTMLDivElement>(null);
-  const mapInstanceRef = useRef<LeafletMap | null>(null);
-  const [shouldLoad, setShouldLoad] = useState(false);
-
-  useEffect(() => {
-    if (!containerRef.current) return;
-    if (typeof IntersectionObserver === "undefined") {
-      setShouldLoad(true);
-      return;
-    }
-    const obs = new IntersectionObserver(
-      (entries) => {
-        for (const e of entries) {
-          if (e.isIntersecting) {
-            setShouldLoad(true);
-            obs.disconnect();
-            break;
-          }
-        }
-      },
-      { rootMargin: "300px 0px" }
-    );
-    obs.observe(containerRef.current);
-    return () => obs.disconnect();
-  }, []);
-
-  useEffect(() => {
-    if (!shouldLoad || !mapRef.current || mapInstanceRef.current) return;
-
-    let cancelled = false;
-    let cleanup: (() => void) | null = null;
-
-    (async () => {
-      await import("leaflet/dist/leaflet.css");
-      if (cancelled) return;
-      const { default: L } = await import("leaflet");
-      if (cancelled || !mapRef.current || mapInstanceRef.current) return;
-
-      const map = L.map(mapRef.current, {
-        center: [26.45, -81.65],
-        zoom: 9,
-        zoomControl: false,
-        scrollWheelZoom: false,
-        dragging: false,
-        doubleClickZoom: false,
-        touchZoom: false,
-        boxZoom: false,
-        keyboard: false,
-        attributionControl: false,
-      });
-
-      L.tileLayer("https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png", {
-        maxZoom: 19,
-      }).addTo(map);
-
-      mapInstanceRef.current = map;
-
-      const naplesIcon = L.divIcon({
-        html: `
-          <div style="position:relative;width:40px;height:40px;">
-            <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:40px;height:40px;border-radius:50%;background:hsla(216,100%,50%,0.15);animation:pulse-ring 2s ease-out infinite;"></div>
-          </div>
-        `,
-        className: "",
-        iconSize: [40, 40],
-        iconAnchor: [20, 20],
-      });
-
-      const naplesMarker = L.marker(NAPLES_CENTER, {
-        icon: naplesIcon,
-        interactive: false,
-        keyboard: false,
-        alt: "Faithful Care Medical Services in Naples, Florida",
-      }).addTo(map);
-      const naplesEl = naplesMarker.getElement();
-      if (naplesEl) {
-        naplesEl.setAttribute("aria-label", "Faithful Care Medical Services in Naples, Florida");
-        naplesEl.removeAttribute("role");
-        naplesEl.removeAttribute("tabindex");
-      }
-      naplesMarker.bindTooltip("Faithful Care, Naples", {
-        permanent: true,
-        direction: "top",
-        offset: [0, -24],
-        className: "map-naples-tooltip",
-      });
-
-      SERVICE_DESTINATIONS.forEach((dest) => {
-        const line = L.polyline(
-          [NAPLES_CENTER, [dest.lat, dest.lng]],
-          {
-            color: "hsl(216, 100%, 50%)",
-            weight: 1.5,
-            opacity: 0.4,
-            dashArray: "6 8",
-          }
-        ).addTo(map);
-        const el = line.getElement();
-        if (el) el.classList.add("animated-dash-line");
-      });
-
-      L.circle([26.44, -81.75], {
-        radius: 62000,
-        color: "hsl(216, 100%, 50%)",
-        weight: 1.5,
-        opacity: 0.25,
-        fillColor: "hsl(216, 100%, 50%)",
-        fillOpacity: 0.04,
-        dashArray: "8 6",
-      }).addTo(map);
-
-      cleanup = () => {
-        map.remove();
-        mapInstanceRef.current = null;
-      };
-    })();
-
-    return () => {
-      cancelled = true;
-      if (cleanup) cleanup();
-    };
-  }, [shouldLoad]);
-
   return (
     <section className="section-gap bg-white" data-testid="section-service-area">
       <div className="container-radical">
@@ -186,18 +83,13 @@ export default function ServiceAreaMap({
             <span className="w-2 h-2 rounded-full bg-secondary" />
             <p className="text-sm font-semibold uppercase tracking-widest text-secondary">{eyebrow}</p>
           </div>
-          <h2 className="h2 text-deep-navy">
-            {title}
-          </h2>
-          <p className="body-md text-deep-navy/60 mt-6 max-w-2xl mx-auto">
-            {description}
-          </p>
+          <h2 className="h2 text-deep-navy">{title}</h2>
+          <p className="body-md text-deep-navy/60 mt-6 max-w-2xl mx-auto">{description}</p>
         </motion.div>
       </div>
 
       <div className="container-radical">
         <motion.div
-          ref={containerRef}
           className="relative w-full"
           initial={{ opacity: 0, y: 32 }}
           whileInView={{ opacity: 1, y: 0 }}
@@ -205,16 +97,69 @@ export default function ServiceAreaMap({
           transition={{ duration: 0.8, delay: 0.2 }}
         >
           <div
-            className="relative w-full overflow-hidden rounded-2xl border border-primary/30"
+            className="relative w-full overflow-hidden rounded-2xl border border-primary/30 bg-[#f4f9ff]"
             style={{ zIndex: 0, isolation: "isolate" }}
           >
-            <div
-              ref={mapRef}
-              className="w-full bg-white"
-              style={{ height: "clamp(380px, calc(55vh + 20px), 740px)" }}
-              data-testid="map-leaflet"
+            <svg
+              viewBox={`0 0 ${MAP_WIDTH} ${MAP_HEIGHT}`}
+              className="block w-full"
+              style={{ height: "clamp(300px, 62vw, 620px)" }}
+              preserveAspectRatio="xMidYMid meet"
+              role="img"
               aria-label={mapAriaLabel}
-            />
+              data-testid="map-service-area-vector"
+            >
+              <title>{mapAriaLabel}</title>
+              <defs>
+                <radialGradient id="service-area-glow" cx="50%" cy="50%" r="50%">
+                  <stop offset="0%" stopColor="#1473e6" stopOpacity="0.18" />
+                  <stop offset="100%" stopColor="#1473e6" stopOpacity="0" />
+                </radialGradient>
+              </defs>
+              <rect width={MAP_WIDTH} height={MAP_HEIGHT} fill="#f4f9ff" />
+              <path d={floridaPath} fill="#e6f1ff" stroke="#0b5fc7" strokeOpacity="0.28" strokeWidth="2" />
+              <circle cx={naplesPoint[0]} cy={naplesPoint[1]} r="235" fill="url(#service-area-glow)" />
+              {destinationPoints.map((destination) => (
+                <g key={destination.name}>
+                  <line
+                    x1={naplesPoint[0]}
+                    y1={naplesPoint[1]}
+                    x2={destination.point[0]}
+                    y2={destination.point[1]}
+                    stroke="#1473e6"
+                    strokeOpacity="0.38"
+                    strokeWidth="2"
+                    strokeDasharray="7 9"
+                    vectorEffect="non-scaling-stroke"
+                  />
+                  <circle
+                    cx={destination.point[0]}
+                    cy={destination.point[1]}
+                    r="6"
+                    fill="#16a6a1"
+                    stroke="#ffffff"
+                    strokeWidth="3"
+                    vectorEffect="non-scaling-stroke"
+                  />
+                  <text
+                    x={destination.point[0] + (destination.point[0] < naplesPoint[0] ? -11 : 11)}
+                    y={destination.point[1] - 10}
+                    textAnchor={destination.point[0] < naplesPoint[0] ? "end" : "start"}
+                    className="fill-deep-navy text-[30px] font-semibold md:text-[15px]"
+                  >
+                    {destination.name}
+                  </text>
+                </g>
+              ))}
+              <circle cx={naplesPoint[0]} cy={naplesPoint[1]} r="14" fill="#0b5fc7" stroke="#ffffff" strokeWidth="5" />
+              <text
+                x={naplesPoint[0] + 22}
+                y={naplesPoint[1] + 5}
+                className="fill-deep-navy text-[32px] font-bold md:text-[17px]"
+              >
+                Faithful Care, Naples
+              </text>
+            </svg>
           </div>
 
           <div className="absolute top-4 right-4 md:top-5 md:right-6 z-10">
@@ -243,8 +188,8 @@ export default function ServiceAreaMap({
                   viewport={{ once: true }}
                   transition={{ duration: 0.35, delay: 0.3 + i * 0.06 }}
                   data-testid={`location-link-${i}`}
-                  onClick={(e) => {
-                    e.preventDefault();
+                  onClick={(event) => {
+                    event.preventDefault();
                     window.scrollTo({ top: 0, behavior: "instant" });
                     window.location.href = loc.href!;
                   }}
@@ -268,14 +213,11 @@ export default function ServiceAreaMap({
                   data-testid={`location-link-${i}`}
                 >
                   <span className="w-2 h-2 rounded-full bg-primary shrink-0" />
-                  <span className="text-sm font-medium text-deep-navy whitespace-nowrap">
-                    {loc.name}
-                  </span>
+                  <span className="text-sm font-medium text-deep-navy whitespace-nowrap">{loc.name}</span>
                 </motion.div>
               )
             )}
           </div>
-
         </motion.div>
 
         <div className="md:hidden mt-4 grid grid-cols-2 gap-2">
@@ -290,8 +232,8 @@ export default function ServiceAreaMap({
                 viewport={{ once: true }}
                 transition={{ duration: 0.3, delay: 0.1 + i * 0.04 }}
                 data-testid={`location-link-mobile-${i}`}
-                onClick={(e) => {
-                  e.preventDefault();
+                onClick={(event) => {
+                  event.preventDefault();
                   window.scrollTo({ top: 0, behavior: "instant" });
                   window.location.href = loc.href!;
                 }}
@@ -312,9 +254,7 @@ export default function ServiceAreaMap({
                 data-testid={`location-link-mobile-${i}`}
               >
                 <span className="w-1.5 h-1.5 rounded-full bg-primary shrink-0" />
-                <span className="text-sm font-medium text-deep-navy whitespace-nowrap">
-                  {loc.name}
-                </span>
+                <span className="text-sm font-medium text-deep-navy whitespace-nowrap">{loc.name}</span>
               </motion.div>
             )
           )}

@@ -9,6 +9,7 @@ import { cn } from "@/lib/utils";
 import { useLocation } from "@/lib/router";
 import { assetUrl } from "@/lib/asset-url";
 import type { MapConfig } from "@/lib/page-content";
+import { trackLead } from "@/lib/analytics";
 
 const LazyHeroLocationMap = React.lazy(() => import("@/components/hero-location-map").then(m => ({ default: m.HeroLocationMap })));
 
@@ -483,6 +484,7 @@ function ContactFormCard({ expanded = false, lang = "en" }: { expanded?: boolean
         return;
       }
 
+      trackLead(expanded ? "contact_page_form" : "hero_contact_form", location);
       setSubmitted(true);
       setTimeout(() => setSubmitted(false), 5000);
       setFormData({ name: "", email: "", phone: "", service: "", message: "" });
@@ -516,7 +518,7 @@ function ContactFormCard({ expanded = false, lang = "en" }: { expanded?: boolean
           </p>
         </div>
       ) : expanded ? (
-        <form onSubmit={handleSubmit} className="flex flex-col gap-6" data-testid="hero-contact-form">
+        <form onSubmit={handleSubmit} className="flex flex-col gap-6" data-testid="hero-contact-form" data-clarity-mask="true">
           <div>
             <h3 className="font-serif text-2xl lg:text-3xl font-bold text-[hsl(var(--foreground))]" data-testid="text-expanded-form-title">
               {t.expandedTitle}
@@ -632,7 +634,7 @@ function ContactFormCard({ expanded = false, lang = "en" }: { expanded?: boolean
           </p>
         </form>
       ) : (
-        <form onSubmit={handleSubmit} className="flex flex-col gap-4" data-testid="hero-contact-form">
+        <form onSubmit={handleSubmit} className="flex flex-col gap-4" data-testid="hero-contact-form" data-clarity-mask="true">
           <div className="flex flex-col lg:flex-row items-end gap-4">
           <div className="flex-1 w-full lg:w-auto">
             <label className="block text-sm font-semibold text-[hsl(var(--foreground))] mb-1.5" htmlFor="contact-name">

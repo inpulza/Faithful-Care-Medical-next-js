@@ -10,6 +10,8 @@ out/
 coverage/
 playwright-report/
 test-results/
+.playwright-cli/
+.codex-tmp/
 
 .DS_Store
 Thumbs.db
