@@ -68,11 +68,7 @@ export function organizationSchema() {
       SOCIAL_PROFILES.instagram,
       SOCIAL_PROFILES.tiktok,
     ],
-    founder: {
-      "@type": "Person",
-      "@id": `${DOMAIN}/#physician`,
-      name: "Dr. Addys Reve",
-    },
+    founder: { "@id": `${DOMAIN}/#physician` },
   };
 }
 
@@ -131,7 +127,7 @@ export function websiteSchema() {
     name: BUSINESS_NAME,
     url: DOMAIN,
     publisher: { "@id": `${DOMAIN}/#organization` },
-    inLanguage: "en-US",
+    inLanguage: ["en-US", "es-US"],
   };
 }
 
@@ -225,14 +221,17 @@ export function medicalServiceSchema(opts: {
   description: string;
   url: string;
   serviceType: string;
-  category: "Primary Care" | "Palliative Care";
+  category: string;
+  inLanguage?: "en-US" | "es-US";
 }) {
   return {
     "@context": "https://schema.org",
     "@type": "Service",
+    "@id": `${DOMAIN}${opts.url}#service`,
     name: opts.name,
     description: opts.description,
     url: `${DOMAIN}${opts.url}`,
+    inLanguage: opts.inLanguage ?? "en-US",
     serviceType: opts.serviceType,
     provider: { "@id": `${DOMAIN}/#clinic` },
     areaServed: {

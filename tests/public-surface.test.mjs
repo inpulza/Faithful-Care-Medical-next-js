@@ -20,6 +20,21 @@ function jsonLdSchemas(html) {
     .map((match) => JSON.parse(match[1]));
 }
 
+function graphTypes(schemas) {
+  const types = new Set();
+  const visit = (value) => {
+    if (!value || typeof value !== "object") return;
+    if (value["@type"]) {
+      for (const type of Array.isArray(value["@type"]) ? value["@type"] : [value["@type"]]) {
+        types.add(type);
+      }
+    }
+    for (const child of Array.isArray(value) ? value : Object.values(value)) visit(child);
+  };
+  for (const schema of schemas.filter((schema) => Array.isArray(schema["@graph"]))) visit(schema);
+  return types;
+}
+
 test("all 37 canonical routes return indexable localized HTML", async () => {
   const results = await Promise.all(publicRoutes.map(async (route) => {
     const response = await previewFetch(route.path, { redirect: "manual" });
@@ -50,13 +65,22 @@ test("all 37 canonical routes return indexable localized HTML", async () => {
     } else {
       assert.equal("dateModified" in webpage, false, `${route.path} gained an undeclared dateModified`);
     }
-    if (route.path === "/") {
+    if (!datedLegalRoutes.has(route.path) && route.path !== "/medical-disclaimer") {
       const graph = schemas.find((schema) => Array.isArray(schema["@graph"]));
       const ids = new Set(graph?.["@graph"].map((entity) => entity["@id"]));
       for (const id of ["#organization", "#clinic", "#website", "#physician"]) {
-        assert.ok(ids.has(`https://faithfulcaremedical.com/${id}`), `home missing ${id}`);
+        assert.ok(ids.has(`https://faithfulcaremedical.com/${id}`), `${route.path} missing ${id}`);
       }
-    } else if (route.path !== "/es") {
+      const types = graphTypes(schemas);
+      for (const type of ["MedicalClinic", "Physician", "PostalAddress", "GeoCoordinates", "OpeningHoursSpecification"])
+        assert.ok(types.has(type), `${route.path} missing ${type}`);
+    }
+    if (["/primary-care", "/palliative-care"].includes(route.path)) {
+      const faqPages = schemas.filter((schema) => schema["@type"] === "FAQPage");
+      assert.equal(faqPages.length, 1, `${route.path} must publish its visible FAQ`);
+      assert.ok(faqPages[0].mainEntity.length >= 3, `${route.path} FAQ is incomplete`);
+    }
+    if (route.path !== "/" && route.path !== "/es") {
       const breadcrumbs = schemas.filter((schema) => schema["@type"] === "BreadcrumbList");
       assert.equal(breadcrumbs.length, 1, `${route.path} must publish one breadcrumb`);
       assert.ok(breadcrumbs[0].itemListElement.length >= 2, `${route.path} valid breadcrumb`);

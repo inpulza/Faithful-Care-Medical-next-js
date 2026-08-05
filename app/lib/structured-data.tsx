@@ -2,6 +2,7 @@ import type { PublicRoute } from "./route-contract";
 import {
   breadcrumbSchema,
   medicalClinicSchema,
+  medicalServiceSchema,
   organizationSchema,
   physicianSchema,
   websiteSchema,
@@ -10,6 +11,52 @@ import {
 const DOMAIN = "https://faithfulcaremedical.com";
 
 type Schema = Record<string, any>;
+
+const legalPaths = new Set([
+  "/privacy-policy",
+  "/notice-of-privacy-practices",
+  "/terms-of-use",
+  "/medical-disclaimer",
+  "/accessibility-statement",
+]);
+
+const routeServiceOverrides: Record<string, {
+  name: string;
+  serviceType: string;
+  category: string;
+  inLanguage: "en-US" | "es-US";
+}> = {
+  "/primary-care": {
+    name: "Primary Care Services",
+    serviceType: "Primary care",
+    category: "Primary Care",
+    inLanguage: "en-US",
+  },
+  "/palliative-care": {
+    name: "Palliative Care Services",
+    serviceType: "Palliative care",
+    category: "Palliative Care",
+    inLanguage: "en-US",
+  },
+  "/es/medico-de-familia-naples": {
+    name: "Servicios de medicina familiar y atenciÃ³n primaria",
+    serviceType: "AtenciÃ³n primaria",
+    category: "Medicina familiar",
+    inLanguage: "es-US",
+  },
+  "/es/cuidados-paliativos-naples": {
+    name: "Servicios de cuidados paliativos",
+    serviceType: "Cuidados paliativos",
+    category: "Cuidados paliativos",
+    inLanguage: "es-US",
+  },
+  "/es/seguros-y-medicare": {
+    name: "VerificaciÃ³n de cobertura de seguros y Medicare",
+    serviceType: "VerificaciÃ³n de cobertura mÃ©dica",
+    category: "Seguro mÃ©dico",
+    inLanguage: "es-US",
+  },
+};
 
 const breadcrumbLabelOverrides: Record<string, string> = {
   "/": "Home",
@@ -40,6 +87,7 @@ function concisePageName(route: PublicRoute): string {
 }
 
 function pageSchema(route: PublicRoute): Schema {
+  const mainEntityId = serviceEntityId(route);
   return {
     "@context": "https://schema.org",
     "@type": "WebPage",
@@ -50,11 +98,45 @@ function pageSchema(route: PublicRoute): Schema {
     inLanguage: route.lang === "es" ? "es-US" : "en-US",
     isPartOf: { "@id": `${DOMAIN}/#website` },
     publisher: { "@id": `${DOMAIN}/#organization` },
+    ...(mainEntityId ? { mainEntity: { "@id": mainEntityId } } : {}),
     ...(route.dateModified ? { dateModified: route.dateModified } : {}),
     ...(route.path === "/about"
       ? { mainEntity: { "@id": `${DOMAIN}/#physician` } }
       : {}),
   };
+}
+
+function serviceEntityId(route: PublicRoute): string | null {
+  if (route.path === "/insurance-accepted") {
+    return `${route.canonical}#insurance-verification`;
+  }
+  if (route.path.startsWith("/locations/")) {
+    return `${DOMAIN}/#service-area-${route.path.replace("/locations/", "")}`;
+  }
+  if (
+    route.path === "/primary-care" ||
+    route.path === "/palliative-care" ||
+    route.path.startsWith("/primary-care/") ||
+    route.path.startsWith("/palliative-care/") ||
+    route.path in routeServiceOverrides
+  ) {
+    return `${route.canonical}#service`;
+  }
+  return null;
+}
+
+function routeServiceSchema(route: PublicRoute): Schema | null {
+  const service = routeServiceOverrides[route.path];
+  if (!service) return null;
+  return medicalServiceSchema({
+    ...service,
+    description: route.description,
+    url: route.path,
+  });
+}
+
+function includesMedicalIdentity(route: PublicRoute): boolean {
+  return !legalPaths.has(route.path);
 }
 
 function breadcrumbItems(route: PublicRoute): { name: string; path: string }[] | null {
@@ -89,8 +171,11 @@ export function siteIdentityGraphSchema(): Schema {
 
 export function schemasForRoute(route: PublicRoute): Schema[] {
   const schemas: Schema[] = [];
-  if (route.path === "/") schemas.push(siteIdentityGraphSchema());
+  if (includesMedicalIdentity(route)) schemas.push(siteIdentityGraphSchema());
   schemas.push(pageSchema(route));
+
+  const service = routeServiceSchema(route);
+  if (service) schemas.push(service);
 
   const items = breadcrumbItems(route);
   if (items) schemas.push(breadcrumbSchema(items));

@@ -30,6 +30,7 @@ test("base organization and clinic schemas publish stable, valid identity signal
   ];
   assert.deepEqual(clinic.medicalSpecialty, expectedSpecialties);
   assert.deepEqual(physician.medicalSpecialty, expectedSpecialties);
+  assert.deepEqual(organization.founder, { "@id": physician["@id"] });
   assert.doesNotMatch(physician.description, /board-certified/i);
   assert.equal("availableLanguage" in clinic, false);
   assert.equal("availableLanguage" in physician, false);
@@ -57,6 +58,8 @@ test("service schemas use Service properties rather than invalid MedicalTherapy 
   });
 
   assert.equal(service["@type"], "Service");
+  assert.equal(service["@id"], "https://faithfulcaremedical.com/primary-care/checkups-prevention#service");
+  assert.equal(service.inLanguage, "en-US");
   assert.deepEqual(service.provider, { "@id": "https://faithfulcaremedical.com/#clinic" });
   assert.deepEqual(service.availableChannel.servicePhone, {
     "@type": "ContactPoint",
