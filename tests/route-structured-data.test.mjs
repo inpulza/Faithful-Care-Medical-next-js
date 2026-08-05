@@ -105,6 +105,18 @@ test("service hubs and Spanish service pages publish addressable services connec
   }
 });
 
+test("Spanish service schema preserves readable accents without mojibake", () => {
+  const familyDoctor = schemasForRoute(routeForPath("/es/medico-de-familia-naples"))
+    .find((schema) => schema["@type"] === "Service");
+  const insurance = schemasForRoute(routeForPath("/es/seguros-y-medicare"))
+    .find((schema) => schema["@type"] === "Service");
+
+  assert.equal(familyDoctor.serviceType, "Atenci\u00f3n primaria");
+  assert.equal(insurance.name, "Verificaci\u00f3n de cobertura de seguros y Medicare");
+  assert.equal(insurance.category, "Seguro m\u00e9dico");
+  assert.doesNotMatch(JSON.stringify([familyDoctor, insurance]), /Ã|Â/);
+});
+
 test("every non-home route gets a breadcrumb with at least two real URLs", async () => {
   const { publicRoutes } = await import(routeContractUrl.href);
   for (const route of publicRoutes.filter(({ path }) => !["/", "/es"].includes(path))) {

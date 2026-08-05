@@ -39,8 +39,8 @@ const routeServiceOverrides: Record<string, {
     inLanguage: "en-US",
   },
   "/es/medico-de-familia-naples": {
-    name: "Servicios de medicina familiar y atenciÃ³n primaria",
-    serviceType: "AtenciÃ³n primaria",
+    name: "Servicios de medicina familiar y atenci\u00f3n primaria",
+    serviceType: "Atenci\u00f3n primaria",
     category: "Medicina familiar",
     inLanguage: "es-US",
   },
@@ -51,9 +51,9 @@ const routeServiceOverrides: Record<string, {
     inLanguage: "es-US",
   },
   "/es/seguros-y-medicare": {
-    name: "VerificaciÃ³n de cobertura de seguros y Medicare",
-    serviceType: "VerificaciÃ³n de cobertura mÃ©dica",
-    category: "Seguro mÃ©dico",
+    name: "Verificaci\u00f3n de cobertura de seguros y Medicare",
+    serviceType: "Verificaci\u00f3n de cobertura m\u00e9dica",
+    category: "Seguro m\u00e9dico",
     inLanguage: "es-US",
   },
 };
