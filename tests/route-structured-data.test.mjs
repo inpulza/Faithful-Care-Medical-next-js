@@ -44,6 +44,9 @@ test("nested routes publish connected WebPage and valid hierarchical breadcrumbs
 
   assert.deepEqual(webpage?.publisher, { "@id": "https://faithfulcaremedical.com/#organization" });
   assert.deepEqual(webpage?.isPartOf, { "@id": "https://faithfulcaremedical.com/#website" });
+  assert.deepEqual(webpage?.mainEntity, {
+    "@id": "https://faithfulcaremedical.com/primary-care/checkups-prevention#service",
+  });
   assert.deepEqual(
     breadcrumb?.itemListElement.map(({ name, item }) => ({ name, item })),
     [
@@ -52,6 +55,72 @@ test("nested routes publish connected WebPage and valid hierarchical breadcrumbs
       { name: "Annual Checkups & Preventive Care", item: route.canonical },
     ],
   );
+});
+
+test("every commercial page restores the canonical medical identity graph", async () => {
+  const { publicRoutes } = await import(routeContractUrl.href);
+  const legalPaths = new Set([
+    "/privacy-policy",
+    "/notice-of-privacy-practices",
+    "/terms-of-use",
+    "/medical-disclaimer",
+    "/accessibility-statement",
+  ]);
+  const medicalRoutes = publicRoutes.filter(({ path }) => !legalPaths.has(path));
+
+  for (const route of medicalRoutes) {
+    const schemas = schemasForRoute(route);
+    const graph = schemas.find((schema) => Array.isArray(schema["@graph"]));
+    assert.ok(graph, `${route.path} missing medical identity graph`);
+    const types = new Set(graph["@graph"].map((entity) => entity["@type"]));
+    for (const type of ["Organization", "MedicalClinic", "WebSite", "IndividualPhysician"]) {
+      assert.ok(types.has(type), `${route.path} missing ${type}`);
+    }
+  }
+});
+
+test("existing location and insurance services are connected as each page main entity", () => {
+  for (const path of ["/insurance-accepted", "/locations/naples", "/locations/marco-island"]) {
+    const route = routeForPath(path);
+    const webpage = schemasForRoute(route).find((schema) => schema["@type"] === "WebPage");
+    assert.match(webpage.mainEntity["@id"], /(#insurance-verification|#service-area-)/);
+  }
+});
+
+test("service hubs and Spanish service pages publish addressable services connected to WebPage", () => {
+  for (const path of [
+    "/primary-care",
+    "/palliative-care",
+    "/es/medico-de-familia-naples",
+    "/es/cuidados-paliativos-naples",
+    "/es/seguros-y-medicare",
+  ]) {
+    const route = routeForPath(path);
+    const schemas = schemasForRoute(route);
+    const webpage = schemas.find((schema) => schema["@type"] === "WebPage");
+    const service = schemas.find((schema) => schema["@type"] === "Service");
+    assert.equal(service?.["@id"], `${route.canonical}#service`, `${path} service id`);
+    assert.deepEqual(webpage?.mainEntity, { "@id": service["@id"] }, `${path} mainEntity`);
+    assert.equal("inLanguage" in service, false);
+    assert.equal(
+      service.availableChannel.serviceUrl,
+      route.lang === "es"
+        ? "https://faithfulcaremedical.com/es/contacto"
+        : "https://faithfulcaremedical.com/contact",
+    );
+  }
+});
+
+test("Spanish service schema preserves readable accents without mojibake", () => {
+  const familyDoctor = schemasForRoute(routeForPath("/es/medico-de-familia-naples"))
+    .find((schema) => schema["@type"] === "Service");
+  const insurance = schemasForRoute(routeForPath("/es/seguros-y-medicare"))
+    .find((schema) => schema["@type"] === "Service");
+
+  assert.equal(familyDoctor.serviceType, "Atenci\u00f3n primaria");
+  assert.equal(insurance.name, "Verificaci\u00f3n de cobertura de seguros y Medicare");
+  assert.equal(insurance.category, "Seguro m\u00e9dico");
+  assert.doesNotMatch(JSON.stringify([familyDoctor, insurance]), /Ã|Â/);
 });
 
 test("every non-home route gets a breadcrumb with at least two real URLs", async () => {

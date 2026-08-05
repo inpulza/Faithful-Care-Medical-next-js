@@ -9,6 +9,8 @@ import { navigationData } from "@/lib/navigation-data";
 import { pageContentMap } from "@/lib/page-content";
 import { CLINIC_GMAPS_DIRECTIONS_URL } from "@/lib/clinic-location";
 import { SocialVideoCarousel } from "@/components/social-video-carousel";
+import { JsonLdArray } from "@/components/json-ld";
+import { faqPageSchema } from "@/lib/schemas";
 
 const InsuranceMembership = React.lazy(() =>
   import("@/components/sections/insurance-membership").then(m => ({ default: m.InsuranceMembership }))
@@ -44,6 +46,16 @@ export interface CareHubPageProps {
     title: string;
     description: string;
   };
+}
+
+function faqAnswerText(node: React.ReactNode): string {
+  if (typeof node === "string" || typeof node === "number") return String(node);
+  if (node === null || node === undefined || typeof node === "boolean") return "";
+  if (Array.isArray(node)) return node.map(faqAnswerText).join(" ");
+  if (React.isValidElement<{ children?: React.ReactNode }>(node)) {
+    return faqAnswerText(node.props.children);
+  }
+  return "";
 }
 
 export function InfoSection({ section, categoryId }: { section: HubInfoSection; categoryId: string }) {
@@ -145,8 +157,16 @@ export function CareHubPage({
 
   if (!content || !category) return null;
 
+  const faqSchema = faq
+    ? faqPageSchema(faq.items.map((item) => ({
+        question: item.question,
+        answer: faqAnswerText(item.answer).replace(/\s+/g, " ").trim(),
+      })))
+    : null;
+
   return (
     <div className="bg-white text-[hsl(var(--foreground))]">
+      <JsonLdArray schemas={[faqSchema]} />
       <main id="main">
         <PageHero
           title={content.title}

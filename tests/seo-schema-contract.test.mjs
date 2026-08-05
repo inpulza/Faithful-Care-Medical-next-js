@@ -30,6 +30,12 @@ test("base organization and clinic schemas publish stable, valid identity signal
   ];
   assert.deepEqual(clinic.medicalSpecialty, expectedSpecialties);
   assert.deepEqual(physician.medicalSpecialty, expectedSpecialties);
+  assert.equal(physician["@type"], "IndividualPhysician");
+  assert.deepEqual(physician.practicesAt, { "@id": clinic["@id"] });
+  assert.equal(physician.usNPI, "1205414729");
+  assert.equal("worksFor" in physician, false);
+  assert.equal("givenName" in physician, false);
+  assert.deepEqual(organization.founder, { "@id": physician["@id"] });
   assert.doesNotMatch(physician.description, /board-certified/i);
   assert.equal("availableLanguage" in clinic, false);
   assert.equal("availableLanguage" in physician, false);
@@ -57,7 +63,10 @@ test("service schemas use Service properties rather than invalid MedicalTherapy 
   });
 
   assert.equal(service["@type"], "Service");
+  assert.equal(service["@id"], "https://faithfulcaremedical.com/primary-care/checkups-prevention#service");
+  assert.equal("inLanguage" in service, false);
   assert.deepEqual(service.provider, { "@id": "https://faithfulcaremedical.com/#clinic" });
+  assert.deepEqual(service.areaServed, medicalClinicSchema().areaServed);
   assert.deepEqual(service.availableChannel.servicePhone, {
     "@type": "ContactPoint",
     telephone: "+1-239-423-0205",
@@ -89,6 +98,7 @@ test("insurance page schema is a coverage-verification service without unsupport
 
   assert.equal(insurance["@type"], "Service");
   assert.deepEqual(insurance.provider, { "@id": "https://faithfulcaremedical.com/#clinic" });
+  assert.deepEqual(insurance.areaServed, medicalClinicSchema().areaServed);
   assert.equal("acceptsInsurance" in insurance, false);
   assert.equal("medicalSpecialty" in insurance, false);
   assert.equal("keywords" in insurance, false);
