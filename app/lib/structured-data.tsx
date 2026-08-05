@@ -24,37 +24,31 @@ const routeServiceOverrides: Record<string, {
   name: string;
   serviceType: string;
   category: string;
-  inLanguage: "en-US" | "es-US";
 }> = {
   "/primary-care": {
     name: "Primary Care Services",
     serviceType: "Primary care",
     category: "Primary Care",
-    inLanguage: "en-US",
   },
   "/palliative-care": {
     name: "Palliative Care Services",
     serviceType: "Palliative care",
     category: "Palliative Care",
-    inLanguage: "en-US",
   },
   "/es/medico-de-familia-naples": {
     name: "Servicios de medicina familiar y atenci\u00f3n primaria",
     serviceType: "Atenci\u00f3n primaria",
     category: "Medicina familiar",
-    inLanguage: "es-US",
   },
   "/es/cuidados-paliativos-naples": {
     name: "Servicios de cuidados paliativos",
     serviceType: "Cuidados paliativos",
     category: "Cuidados paliativos",
-    inLanguage: "es-US",
   },
   "/es/seguros-y-medicare": {
     name: "Verificaci\u00f3n de cobertura de seguros y Medicare",
     serviceType: "Verificaci\u00f3n de cobertura m\u00e9dica",
     category: "Seguro m\u00e9dico",
-    inLanguage: "es-US",
   },
 };
 
@@ -132,6 +126,7 @@ function routeServiceSchema(route: PublicRoute): Schema | null {
     ...service,
     description: route.description,
     url: route.path,
+    contactPath: route.lang === "es" ? "/es/contacto" : "/contact",
   });
 }
 

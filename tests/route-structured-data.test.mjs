@@ -73,7 +73,7 @@ test("every commercial page restores the canonical medical identity graph", asyn
     const graph = schemas.find((schema) => Array.isArray(schema["@graph"]));
     assert.ok(graph, `${route.path} missing medical identity graph`);
     const types = new Set(graph["@graph"].map((entity) => entity["@type"]));
-    for (const type of ["Organization", "MedicalClinic", "WebSite", "Physician"]) {
+    for (const type of ["Organization", "MedicalClinic", "WebSite", "IndividualPhysician"]) {
       assert.ok(types.has(type), `${route.path} missing ${type}`);
     }
   }
@@ -101,7 +101,13 @@ test("service hubs and Spanish service pages publish addressable services connec
     const service = schemas.find((schema) => schema["@type"] === "Service");
     assert.equal(service?.["@id"], `${route.canonical}#service`, `${path} service id`);
     assert.deepEqual(webpage?.mainEntity, { "@id": service["@id"] }, `${path} mainEntity`);
-    assert.equal(service.inLanguage, route.lang === "es" ? "es-US" : "en-US");
+    assert.equal("inLanguage" in service, false);
+    assert.equal(
+      service.availableChannel.serviceUrl,
+      route.lang === "es"
+        ? "https://faithfulcaremedical.com/es/contacto"
+        : "https://faithfulcaremedical.com/contact",
+    );
   }
 });
 

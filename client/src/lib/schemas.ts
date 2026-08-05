@@ -40,6 +40,17 @@ const MEDICAL_SPECIALTIES = [
   { "@id": "https://schema.org/Gynecologic" },
 ];
 
+const SERVICE_AREAS = [
+  { "@type": "City" as const, name: "Naples" },
+  { "@type": "City" as const, name: "Marco Island" },
+  { "@type": "City" as const, name: "Golden Gate" },
+  { "@type": "City" as const, name: "Immokalee" },
+  { "@type": "City" as const, name: "Bonita Springs" },
+  { "@type": "City" as const, name: "Estero" },
+  { "@type": "City" as const, name: "Fort Myers" },
+  { "@type": "City" as const, name: "Cape Coral" },
+];
+
 export function organizationSchema() {
   return {
     "@context": "https://schema.org",
@@ -86,16 +97,7 @@ export function medicalClinicSchema() {
     telephone: PHONE,
     address: ADDRESS,
     geo: GEO,
-    areaServed: [
-      { "@type": "City", name: "Naples" },
-      { "@type": "City", name: "Marco Island" },
-      { "@type": "City", name: "Golden Gate" },
-      { "@type": "City", name: "Immokalee" },
-      { "@type": "City", name: "Bonita Springs" },
-      { "@type": "City", name: "Estero" },
-      { "@type": "City", name: "Fort Myers" },
-      { "@type": "City", name: "Cape Coral" },
-    ],
+    areaServed: SERVICE_AREAS,
     medicalSpecialty: MEDICAL_SPECIALTIES,
     availableService: [
       { "@type": "MedicalTherapy", name: "Primary Care Services", url: `${DOMAIN}/primary-care/checkups-prevention` },
@@ -134,14 +136,9 @@ export function websiteSchema() {
 export function physicianSchema() {
   return {
     "@context": "https://schema.org",
-    "@type": "Physician",
+    "@type": "IndividualPhysician",
     "@id": `${DOMAIN}/#physician`,
     name: "Dr. Addys Reve",
-    givenName: "Addys",
-    familyName: "Reve",
-    honorificPrefix: "Dr.",
-    honorificSuffix: "MD",
-    jobTitle: "Founder and Primary Care Physician",
     description:
       "Primary care physician focused on adult and geriatric medicine. Founder of Faithful Care Medical Services in Naples, FL.",
     image: `${DOMAIN}/images/dr-addys-reve.webp`,
@@ -152,7 +149,8 @@ export function physicianSchema() {
       { "@type": "MedicalTherapy", name: "Palliative Care Services", url: `${DOMAIN}/palliative-care/about-palliative-care` },
       { "@type": "MedicalTherapy", name: "Chronic Disease Management", url: `${DOMAIN}/primary-care/chronic-disease` },
     ],
-    worksFor: { "@id": `${DOMAIN}/#organization` },
+    practicesAt: { "@id": `${DOMAIN}/#clinic` },
+    usNPI: PROVIDER_NPI.value,
     address: ADDRESS,
     geo: GEO,
     contactPoint: { "@id": `${DOMAIN}/#appointments` },
@@ -222,7 +220,7 @@ export function medicalServiceSchema(opts: {
   url: string;
   serviceType: string;
   category: string;
-  inLanguage?: "en-US" | "es-US";
+  contactPath?: "/contact" | "/es/contacto";
 }) {
   return {
     "@context": "https://schema.org",
@@ -231,17 +229,13 @@ export function medicalServiceSchema(opts: {
     name: opts.name,
     description: opts.description,
     url: `${DOMAIN}${opts.url}`,
-    inLanguage: opts.inLanguage ?? "en-US",
     serviceType: opts.serviceType,
     provider: { "@id": `${DOMAIN}/#clinic` },
-    areaServed: {
-      "@type": "State",
-      name: "Florida",
-    },
+    areaServed: SERVICE_AREAS,
     category: opts.category,
     availableChannel: {
       "@type": "ServiceChannel",
-      serviceUrl: `${DOMAIN}/contact`,
+      serviceUrl: `${DOMAIN}${opts.contactPath ?? "/contact"}`,
       servicePhone: { "@type": "ContactPoint", telephone: PHONE },
       serviceSmsNumber: { "@type": "ContactPoint", telephone: PHONE },
     },
@@ -260,7 +254,7 @@ export function insuranceLpClinicSchema() {
     serviceType: "Insurance coverage verification",
     category: "Health insurance",
     provider: { "@id": `${DOMAIN}/#clinic` },
-    areaServed: { "@type": "State", name: "Florida" },
+    areaServed: SERVICE_AREAS,
     availableChannel: {
       "@type": "ServiceChannel",
       serviceUrl: `${DOMAIN}/contact`,

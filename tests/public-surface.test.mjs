@@ -72,7 +72,7 @@ test("all 37 canonical routes return indexable localized HTML", async () => {
         assert.ok(ids.has(`https://faithfulcaremedical.com/${id}`), `${route.path} missing ${id}`);
       }
       const types = graphTypes(schemas);
-      for (const type of ["MedicalClinic", "Physician", "PostalAddress", "GeoCoordinates", "OpeningHoursSpecification"])
+      for (const type of ["MedicalClinic", "IndividualPhysician", "PostalAddress", "GeoCoordinates", "OpeningHoursSpecification"])
         assert.ok(types.has(type), `${route.path} missing ${type}`);
     }
     if (["/primary-care", "/palliative-care"].includes(route.path)) {
