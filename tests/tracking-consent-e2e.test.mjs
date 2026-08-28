@@ -166,7 +166,7 @@ test("legacy consent is not reinterpreted after the advertising taxonomy change"
   try {
     const page = await context.newPage();
     await page.goto(`${baseUrl}/`, { waitUntil: "networkidle" });
-    assert.equal(await page.getByTestId("cookie-banner").isVisible(), true);
+    await page.getByTestId("cookie-banner").waitFor({ state: "visible" });
     assert.equal(await page.locator("#fcms-google-tag").count(), 0);
     assert.equal(await page.locator("#fcms-clarity-tag").count(), 0);
   } finally {
