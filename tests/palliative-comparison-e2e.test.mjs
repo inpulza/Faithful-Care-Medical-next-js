@@ -84,6 +84,8 @@ test("the palliative and hospice comparison preserves table semantics responsive
 
         const footnoteContrast = await contrastRatio(section.getByTestId("comparison-footnote"));
         assert.ok(footnoteContrast >= 4.5, `comparison footnote contrast was ${footnoteContrast.toFixed(2)}:1`);
+        const eyebrowContrast = await contrastRatio(section.locator("p").filter({ hasText: "Palliative care and hospice" }).first());
+        assert.ok(eyebrowContrast >= 4.5, `comparison eyebrow contrast was ${eyebrowContrast.toFixed(2)}:1`);
         if (viewport.name === "mobile") {
           const mobileRightHeading = section.getByTestId("comparison-mobile-right-heading").first();
           const headingContrast = await contrastRatio(mobileRightHeading);

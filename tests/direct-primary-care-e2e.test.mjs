@@ -116,6 +116,12 @@ async function assertDpcPage(page) {
     assert.ok(await contrastRatio(note) >= 4.5, "enrollment notes must meet 4.5:1 contrast");
   }
 
+  const detailCard = page.getByTestId("detail-card-0");
+  await detailCard.scrollIntoViewIfNeeded();
+  await detailCard.hover();
+  assert.ok(await contrastRatio(page.getByTestId("detail-card-title-0")) >= 4.5, "hovered detail-card title must meet 4.5:1 contrast");
+  assert.ok(await contrastRatio(page.getByTestId("detail-card-desc-0")) >= 4.5, "hovered detail-card copy must meet 4.5:1 contrast");
+
   if (page.viewportSize()?.width < 768) {
     assert.equal(await page.getByTestId("button-mobile-contact-fab").isVisible(), false);
     await page.getByTestId("mobile-action-bar").waitFor({ state: "visible" });
@@ -238,6 +244,12 @@ test("Direct Primary Care exposes every marquee item when motion is reduced", as
       assert.ok(imageBox.y >= sectionBox.y - 1);
       assert.ok(imageBox.y + imageBox.height <= sectionBox.y + sectionBox.height + 1);
     }
+
+    await page.emulateMedia({ reducedMotion: "no-preference" });
+    await page.waitForFunction(() => {
+      const track = document.querySelector('[class*="mq-track-"]');
+      return track && getComputedStyle(track).animationName !== "none";
+    });
 
     assert.deepEqual(errors.pageErrors, []);
     assert.deepEqual(errors.consoleErrors, []);

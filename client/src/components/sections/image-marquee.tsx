@@ -66,7 +66,7 @@ export function ImageMarquee({ items, speed = 50, className }: ImageMarqueeProps
     });
     window.addEventListener("resize", measure);
     return () => window.removeEventListener("resize", measure);
-  }, [items, isMobile]);
+  }, [items, isMobile, reducedMotion]);
 
   const duration = singleSetWidth > 0 ? singleSetWidth / speed : 30;
 

@@ -42,7 +42,7 @@ export function ComparisonTableSection({
         >
           <div className="mb-5 flex items-center justify-center gap-2">
             <span className="h-2 w-2 rounded-full bg-secondary" />
-            <p className="text-sm font-semibold uppercase tracking-widest text-secondary">{eyebrow}</p>
+            <p className="text-sm font-semibold uppercase tracking-widest text-deep-navy">{eyebrow}</p>
           </div>
           <h2 className="h2 text-deep-navy">{title}</h2>
           <p className="body-lg mx-auto mt-5 max-w-2xl text-deep-navy/65">{description}</p>
