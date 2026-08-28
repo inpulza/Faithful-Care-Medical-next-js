@@ -161,3 +161,39 @@ test("Direct Primary Care membership CTA reaches contact on desktop and mobile",
     await browser.close();
   }
 });
+
+test("Direct Primary Care exposes every marquee item when motion is reduced", async () => {
+  const browser = await chromium.launch();
+  const context = await browser.newContext({
+    viewport: { width: 390, height: 844 },
+    reducedMotion: "reduce",
+  });
+  await unlockPreview(context);
+  const page = await context.newPage();
+  const errors = collectBrowserErrors(page);
+
+  try {
+    const response = await page.goto(`${baseUrl}${path}`, { waitUntil: "networkidle" });
+    assert.equal(response?.status(), 200);
+    const marquee = page.getByTestId("section-image-marquee");
+    await marquee.scrollIntoViewIfNeeded();
+    await page.waitForFunction(() => !document.querySelector('[class*="mq-track-"]'));
+
+    const accessibleImages = marquee.locator("img");
+    assert.equal(await accessibleImages.count(), 4);
+    const sectionBox = await marquee.boundingBox();
+    assert.ok(sectionBox);
+    for (let index = 0; index < 4; index += 1) {
+      const imageBox = await accessibleImages.nth(index).boundingBox();
+      assert.ok(imageBox, `reduced-motion marquee image ${index + 1} must be visible`);
+      assert.ok(imageBox.y >= sectionBox.y - 1);
+      assert.ok(imageBox.y + imageBox.height <= sectionBox.y + sectionBox.height + 1);
+    }
+
+    assert.deepEqual(errors.pageErrors, []);
+    assert.deepEqual(errors.consoleErrors, []);
+  } finally {
+    await context.close();
+    await browser.close();
+  }
+});

@@ -60,6 +60,20 @@ test("the Spanish new-patient journey works from the footer on desktop and mobil
         const mainText = (await page.locator("main").innerText()).replace(/\s+/g, " ");
         assert.match(mainText, /identificaci[oó]n con foto/i);
 
+        if (viewport.name === "mobile") {
+          await page.getByTestId("action-bar-appointment").click();
+          const actionSheet = page.getByTestId("action-bar-contact-sheet");
+          await actionSheet.waitFor({ state: "visible" });
+          assert.equal(await actionSheet.getAttribute("lang"), "es");
+          assert.match(await actionSheet.innerText(), /pedir una cita/i);
+          await actionSheet.getByLabel("Nombre completo").waitFor({ state: "visible" });
+          await actionSheet.getByLabel("Correo electrónico").waitFor({ state: "visible" });
+          await actionSheet.getByLabel("Motivo").waitFor({ state: "visible" });
+          assert.match(await page.getByTestId("button-ab-contact-submit").innerText(), /pedir cita/i);
+          await page.getByTestId("button-action-bar-contact-close").click();
+          await actionSheet.waitFor({ state: "hidden" });
+        }
+
         const emergencyQuestion = page.getByTestId("faq-trigger-6");
         await emergencyQuestion.scrollIntoViewIfNeeded();
         await emergencyQuestion.click();

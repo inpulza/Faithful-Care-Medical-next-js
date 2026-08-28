@@ -139,6 +139,25 @@ export function ImageMarquee({ items, speed = 50, className }: ImageMarqueeProps
       );
     });
 
+  if (reducedMotion) {
+    return (
+      <section
+        className={`relative ${className || ""}`}
+        style={{
+          minHeight: MARQUEE_HEIGHT,
+          backgroundColor: BG_COLOR,
+          marginTop: "clamp(32px, 4vw, 56px)",
+          marginBottom: "clamp(32px, 4vw, 56px)",
+        }}
+        data-testid="section-image-marquee"
+      >
+        <div className="container-radical flex flex-wrap items-center justify-center gap-y-3 py-3">
+          {renderItems(items, "static")}
+        </div>
+      </section>
+    );
+  }
+
   return (
     <section
       className={`relative ${className || ""}`}

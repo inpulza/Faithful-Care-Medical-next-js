@@ -49,38 +49,46 @@ export function ComparisonTableSection({
         </motion.div>
 
         <div className="overflow-hidden rounded-3xl border border-deep-navy/10 bg-[#f5f8fb] shadow-[0_24px_70px_rgba(9,39,75,0.08)]">
-          <div className="hidden grid-cols-[0.7fr_1fr_1fr] border-b border-deep-navy/10 bg-deep-navy px-8 py-6 text-white md:grid">
-            <span className="text-sm font-semibold uppercase tracking-wider text-white/45">Compare</span>
-            <span className="text-lg font-semibold">{leftHeading}</span>
-            <span className="text-lg font-semibold">{rightHeading}</span>
-          </div>
-
-          {rows.map((row, index) => (
-            <motion.article
-              key={row.label}
-              className="grid grid-cols-1 gap-4 border-b border-deep-navy/8 p-5 last:border-b-0 md:grid-cols-[0.7fr_1fr_1fr] md:gap-8 md:px-8 md:py-7"
-              initial={reducedMotion ? { opacity: 1, y: 0 } : { opacity: 0, y: 14 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.45, delay: index * 0.04 }}
-            >
-              <h3 className="font-semibold text-deep-navy">{row.label}</h3>
-              <div>
-                <p className="mb-1 text-xs font-semibold uppercase tracking-wider text-primary md:hidden">{leftHeading}</p>
-                <p className="flex gap-3 leading-relaxed text-deep-navy/70">
-                  <CheckCircle className="mt-0.5 h-5 w-5 flex-none text-primary" weight="fill" aria-hidden="true" />
-                  <span>{row.left}</span>
-                </p>
-              </div>
-              <div>
-                <p className="mb-1 text-xs font-semibold uppercase tracking-wider text-secondary md:hidden">{rightHeading}</p>
-                <p className="flex gap-3 leading-relaxed text-deep-navy/70">
-                  <Info className="mt-0.5 h-5 w-5 flex-none text-secondary" weight="fill" aria-hidden="true" />
-                  <span>{row.right}</span>
-                </p>
-              </div>
-            </motion.article>
-          ))}
+          <table className="w-full border-collapse">
+            <caption className="sr-only">{title}. {description}</caption>
+            <thead className="sr-only md:not-sr-only md:table-header-group">
+              <tr className="bg-deep-navy text-left text-white">
+                <th scope="col" className="w-[23%] px-8 py-6 text-sm font-semibold uppercase tracking-wider text-white/45">Compare</th>
+                <th scope="col" className="w-[38.5%] px-8 py-6 text-lg font-semibold">{leftHeading}</th>
+                <th scope="col" className="w-[38.5%] px-8 py-6 text-lg font-semibold">{rightHeading}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((row, index) => (
+                <motion.tr
+                  key={row.label}
+                  className="grid grid-cols-1 gap-4 border-b border-deep-navy/8 p-5 last:border-b-0 md:table-row md:p-0"
+                  initial={reducedMotion ? { opacity: 1, y: 0 } : { opacity: 0, y: 14 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ duration: 0.45, delay: index * 0.04 }}
+                >
+                  <th scope="row" className="block text-left font-semibold text-deep-navy md:table-cell md:w-[23%] md:px-8 md:py-7 md:align-top">
+                    {row.label}
+                  </th>
+                  <td className="block md:table-cell md:w-[38.5%] md:px-8 md:py-7 md:align-top">
+                    <p className="mb-1 text-xs font-semibold uppercase tracking-wider text-primary md:hidden" aria-hidden="true">{leftHeading}</p>
+                    <p className="flex gap-3 leading-relaxed text-deep-navy/70">
+                      <CheckCircle className="mt-0.5 h-5 w-5 flex-none text-primary" weight="fill" aria-hidden="true" />
+                      <span>{row.left}</span>
+                    </p>
+                  </td>
+                  <td className="block md:table-cell md:w-[38.5%] md:px-8 md:py-7 md:align-top">
+                    <p className="mb-1 text-xs font-semibold uppercase tracking-wider text-secondary md:hidden" aria-hidden="true">{rightHeading}</p>
+                    <p className="flex gap-3 leading-relaxed text-deep-navy/70">
+                      <Info className="mt-0.5 h-5 w-5 flex-none text-secondary" weight="fill" aria-hidden="true" />
+                      <span>{row.right}</span>
+                    </p>
+                  </td>
+                </motion.tr>
+              ))}
+            </tbody>
+          </table>
         </div>
 
         {(note || sources.length > 0) && (
