@@ -53,7 +53,7 @@ export function ComparisonTableSection({
             <caption className="sr-only">{title}. {description}</caption>
             <thead className="sr-only md:not-sr-only md:table-header-group">
               <tr className="bg-deep-navy text-left text-white">
-                <th scope="col" className="w-[23%] px-8 py-6 text-sm font-semibold uppercase tracking-wider text-white/45">Compare</th>
+                <th scope="col" className="w-[23%] px-8 py-6 text-sm font-semibold uppercase tracking-wider text-white">Compare</th>
                 <th scope="col" className="w-[38.5%] px-8 py-6 text-lg font-semibold">{leftHeading}</th>
                 <th scope="col" className="w-[38.5%] px-8 py-6 text-lg font-semibold">{rightHeading}</th>
               </tr>
@@ -79,7 +79,13 @@ export function ComparisonTableSection({
                     </p>
                   </td>
                   <td className="block md:table-cell md:w-[38.5%] md:px-8 md:py-7 md:align-top">
-                    <p className="mb-1 text-xs font-semibold uppercase tracking-wider text-secondary md:hidden" aria-hidden="true">{rightHeading}</p>
+                    <p
+                      className="mb-1 text-xs font-semibold uppercase tracking-wider text-deep-navy md:hidden"
+                      aria-hidden="true"
+                      data-testid="comparison-mobile-right-heading"
+                    >
+                      {rightHeading}
+                    </p>
                     <p className="flex gap-3 leading-relaxed text-deep-navy/70">
                       <Info className="mt-0.5 h-5 w-5 flex-none text-secondary" weight="fill" aria-hidden="true" />
                       <span>{row.right}</span>
@@ -93,7 +99,7 @@ export function ComparisonTableSection({
 
         {(note || sources.length > 0) && (
           <div
-            className="mt-6 flex flex-col gap-3 text-sm leading-relaxed text-deep-navy/75 md:flex-row md:items-start md:justify-between"
+            className="mt-6 flex flex-col gap-3 text-sm leading-relaxed text-deep-navy md:flex-row md:items-start md:justify-between"
             data-testid="comparison-footnote"
           >
             {note && <p className="max-w-3xl">{note}</p>}

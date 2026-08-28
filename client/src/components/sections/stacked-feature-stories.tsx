@@ -79,7 +79,7 @@ export function StackedFeatureStories({
                   <div className="grid grid-cols-1 items-center gap-6 md:grid-cols-2 md:gap-10">
                     <div className="order-2 md:order-1">
                       <div className="mb-4 hidden items-center gap-3 md:flex">
-                        <span className="font-mono text-lg font-semibold tracking-wider text-primary/40">
+                        <span className="font-mono text-lg font-semibold tracking-wider text-primary">
                           {String(index + 1).padStart(2, "0")} / {String(stories.length).padStart(2, "0")}
                         </span>
                         <div className="h-px flex-1 bg-primary/10" />
@@ -105,7 +105,10 @@ export function StackedFeatureStories({
                         </Button>
                       )}
                       {story.note && (
-                        <div className="mt-5 flex items-center gap-3 text-sm font-medium text-deep-navy/45">
+                        <div
+                          className="mt-5 flex items-center gap-3 text-sm font-medium text-deep-navy"
+                          data-testid={`${testId}-story-${index}-note`}
+                        >
                           <span className="h-2 w-2 rounded-full bg-secondary" />
                           <span>{story.note}</span>
                         </div>

@@ -27,7 +27,16 @@ function collectBrowserErrors(page) {
 
 async function contrastRatio(locator) {
   return locator.evaluate((element) => {
-    const parse = (value) => value.match(/[\d.]+/g).slice(0, 3).map(Number);
+    const canvas = document.createElement("canvas");
+    canvas.width = 1;
+    canvas.height = 1;
+    const context = canvas.getContext("2d", { willReadFrequently: true });
+    const parse = (value) => {
+      context.clearRect(0, 0, 1, 1);
+      context.fillStyle = value;
+      context.fillRect(0, 0, 1, 1);
+      return Array.from(context.getImageData(0, 0, 1, 1).data);
+    };
     const luminance = (rgb) => {
       const linear = rgb.map((channel) => {
         const value = channel / 255;
@@ -35,9 +44,24 @@ async function contrastRatio(locator) {
       });
       return 0.2126 * linear[0] + 0.7152 * linear[1] + 0.0722 * linear[2];
     };
-    const foreground = luminance(parse(getComputedStyle(element).color));
-    const background = luminance(parse(getComputedStyle(element.closest("section")).backgroundColor));
-    return (Math.max(foreground, background) + 0.05) / (Math.min(foreground, background) + 0.05);
+    let backgroundElement = element;
+    let background = [255, 255, 255, 255];
+    while (backgroundElement) {
+      const candidate = parse(getComputedStyle(backgroundElement).backgroundColor);
+      if (candidate[3] === 255) {
+        background = candidate;
+        break;
+      }
+      backgroundElement = backgroundElement.parentElement;
+    }
+    const foregroundColor = parse(getComputedStyle(element).color);
+    const alpha = foregroundColor[3] / 255;
+    const composited = foregroundColor.slice(0, 3).map((channel, index) =>
+      channel * alpha + background[index] * (1 - alpha),
+    );
+    const foreground = luminance(composited);
+    const backgroundLuminance = luminance(background.slice(0, 3));
+    return (Math.max(foreground, backgroundLuminance) + 0.05) / (Math.min(foreground, backgroundLuminance) + 0.05);
   });
 }
 
@@ -87,6 +111,9 @@ async function assertDpcPage(page) {
   assert.ok(await contrastRatio(storiesHeader.locator("h2")) >= 3, "the large stories heading must meet 3:1 contrast");
   for (const paragraph of await storiesHeader.locator("p").all()) {
     assert.ok(await contrastRatio(paragraph) >= 4.5, "stories header body text must meet 4.5:1 contrast");
+  }
+  for (const note of await page.locator('[data-testid^="section-dpc-enrollment-story-"][data-testid$="-note"]').all()) {
+    assert.ok(await contrastRatio(note) >= 4.5, "enrollment notes must meet 4.5:1 contrast");
   }
 
   if (page.viewportSize()?.width < 768) {

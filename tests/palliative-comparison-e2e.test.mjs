@@ -9,6 +9,46 @@ const viewports = [
   { name: "mobile", width: 390, height: 844 },
 ];
 
+async function contrastRatio(locator) {
+  return locator.evaluate((element) => {
+    const canvas = document.createElement("canvas");
+    canvas.width = 1;
+    canvas.height = 1;
+    const context = canvas.getContext("2d", { willReadFrequently: true });
+    const parse = (value) => {
+      context.clearRect(0, 0, 1, 1);
+      context.fillStyle = value;
+      context.fillRect(0, 0, 1, 1);
+      return Array.from(context.getImageData(0, 0, 1, 1).data);
+    };
+    const luminance = (rgb) => {
+      const linear = rgb.map((channel) => {
+        const value = channel / 255;
+        return value <= 0.04045 ? value / 12.92 : ((value + 0.055) / 1.055) ** 2.4;
+      });
+      return 0.2126 * linear[0] + 0.7152 * linear[1] + 0.0722 * linear[2];
+    };
+    let backgroundElement = element;
+    let background = [255, 255, 255, 255];
+    while (backgroundElement) {
+      const candidate = parse(getComputedStyle(backgroundElement).backgroundColor);
+      if (candidate[3] === 255) {
+        background = candidate;
+        break;
+      }
+      backgroundElement = backgroundElement.parentElement;
+    }
+    const foregroundColor = parse(getComputedStyle(element).color);
+    const alpha = foregroundColor[3] / 255;
+    const composited = foregroundColor.slice(0, 3).map((channel, index) =>
+      channel * alpha + background[index] * (1 - alpha),
+    );
+    const foreground = luminance(composited);
+    const backgroundLuminance = luminance(background.slice(0, 3));
+    return (Math.max(foreground, backgroundLuminance) + 0.05) / (Math.min(foreground, backgroundLuminance) + 0.05);
+  });
+}
+
 test("the palliative and hospice comparison preserves table semantics responsively", async () => {
   const browser = await chromium.launch();
 
@@ -42,20 +82,13 @@ test("the palliative and hospice comparison preserves table semantics responsive
         assert.equal(await table.locator('th[scope="row"]').count(), 5);
         assert.equal(await table.locator("tbody tr").count(), 5);
 
-        const footnoteContrast = await section.getByTestId("comparison-footnote").evaluate((element) => {
-          const parse = (value) => value.match(/[\d.]+/g).slice(0, 3).map(Number);
-          const luminance = (rgb) => {
-            const linear = rgb.map((channel) => {
-              const value = channel / 255;
-              return value <= 0.04045 ? value / 12.92 : ((value + 0.055) / 1.055) ** 2.4;
-            });
-            return 0.2126 * linear[0] + 0.7152 * linear[1] + 0.0722 * linear[2];
-          };
-          const foreground = luminance(parse(getComputedStyle(element).color));
-          const background = luminance([255, 255, 255]);
-          return (Math.max(foreground, background) + 0.05) / (Math.min(foreground, background) + 0.05);
-        });
+        const footnoteContrast = await contrastRatio(section.getByTestId("comparison-footnote"));
         assert.ok(footnoteContrast >= 4.5, `comparison footnote contrast was ${footnoteContrast.toFixed(2)}:1`);
+        if (viewport.name === "mobile") {
+          const mobileRightHeading = section.getByTestId("comparison-mobile-right-heading").first();
+          const headingContrast = await contrastRatio(mobileRightHeading);
+          assert.ok(headingContrast >= 4.5, `mobile hospice label contrast was ${headingContrast.toFixed(2)}:1`);
+        }
 
         const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
         assert.ok(overflow <= 1, `comparison overflows by ${overflow}px at ${viewport.name}`);
