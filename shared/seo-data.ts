@@ -165,6 +165,10 @@ export const seoMap = {
     title: "Contacto: Faithful Care Naples",
     description: "Dirección, teléfono y horario de Faithful Care en North Naples. Atendemos en español. Llame para pedir su cita.",
   },
+  "/es/pacientes-nuevos": {
+    title: "Pacientes Nuevos en Naples | Faithful Care",
+    description: "Faithful Care acepta pacientes adultos y mayores nuevos en Naples. Sepa qué traer, cómo verificar su seguro y qué esperar en su primera consulta.",
+  },
 } satisfies Record<string, PageSeo>;
 
 export interface HreflangPair {
@@ -178,6 +182,7 @@ export const HREFLANG_PAIRS: HreflangPair[] = [
   { en: "/palliative-care", es: "/es/cuidados-paliativos-naples" },
   { en: "/insurance-accepted", es: "/es/seguros-y-medicare" },
   { en: "/contact", es: "/es/contacto" },
+  { en: "/new-patients", es: "/es/pacientes-nuevos" },
 ];
 
 export function hreflangPairForPath(path: string): HreflangPair | null {

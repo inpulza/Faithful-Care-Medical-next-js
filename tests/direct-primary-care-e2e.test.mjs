@@ -46,14 +46,30 @@ async function assertDpcPage(page) {
     "DPC page must reuse the membership UI without unrelated insurance logos",
   );
 
-  for (const testId of ["button-insurance-cta", "button-before-enrollment-cta"]) {
-    const button = page.getByTestId(testId);
-    await button.scrollIntoViewIfNeeded();
-    const box = await button.boundingBox();
+  for (const testId of ["section-dpc-enrollment", "section-dpc-included", "section-dpc-outside"]) {
+    const section = page.getByTestId(testId);
+    await section.scrollIntoViewIfNeeded();
+    await section.waitFor({ state: "visible" });
+    const box = await section.boundingBox();
     const viewport = page.viewportSize();
     assert.ok(box && viewport, `${testId} must have a measurable viewport box`);
-    assert.ok(box.x >= 0, `${testId} overflows the left viewport edge`);
+    assert.ok(box.x >= -0.5, `${testId} overflows the left viewport edge`);
     assert.ok(box.x + box.width <= viewport.width + 0.5, `${testId} overflows the right viewport edge`);
+  }
+
+  const accessibleMarqueeImages = await page
+    .getByTestId("section-image-marquee")
+    .locator("img")
+    .evaluateAll((images) => images.filter((image) => !image.closest('[aria-hidden="true"]')).length);
+  assert.equal(accessibleMarqueeImages, 4, "screen readers must receive only one marquee image set");
+
+  const agreementImage = page.getByTestId("section-dpc-enrollment-story-1").locator("img");
+  assert.match(await agreementImage.getAttribute("src"), /planning-transitions\.webp$/);
+  assert.match(await agreementImage.getAttribute("alt"), /holding a document/i);
+
+  if (page.viewportSize()?.width < 768) {
+    assert.equal(await page.getByTestId("button-mobile-contact-fab").isVisible(), false);
+    await page.getByTestId("mobile-action-bar").waitFor({ state: "visible" });
   }
 }
 
@@ -119,6 +135,11 @@ test("Direct Primary Care membership CTA reaches contact on desktop and mobile",
         const response = await page.goto(`${baseUrl}${path}`, { waitUntil: "networkidle" });
         assert.equal(response?.status(), 200, `DPC status at ${viewport.name}`);
         await assertDpcPage(page);
+        assert.equal(
+          await page.evaluate(() => performance.getEntriesByType("resource").some((entry) => entry.name.includes("gradient-gray"))),
+          false,
+          `DPC must not download the legacy 1.17 MB gradient at ${viewport.name}`,
+        );
 
         const cta = page
           .locator('main a[href="/contact"]')

@@ -92,12 +92,9 @@ test("homepage interactive controls expose valid names, contrast, and touch targ
     assert.equal(mobileResponse?.status(), 200);
 
     const contactFab = mobilePage.getByTestId("button-mobile-contact-fab");
-    await contactFab.waitFor({ state: "visible" });
-    assert.equal(
-      await contactFab.getAttribute("aria-label"),
-      normalizeLabel(await contactFab.innerText()),
-      "the FAB accessible name must contain its visible label verbatim",
-    );
+    assert.equal(await contactFab.isVisible(), false, "the tablet FAB must not duplicate the mobile action bar");
+    await mobilePage.getByTestId("mobile-action-bar").waitFor({ state: "visible" });
+    await mobilePage.getByTestId("action-bar-appointment").waitFor({ state: "visible" });
 
     const dots = mobilePage.locator('[data-testid^="dpc-dot-"]');
     await dots.first().scrollIntoViewIfNeeded();

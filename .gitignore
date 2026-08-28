@@ -12,6 +12,7 @@ playwright-report/
 test-results/
 .playwright-cli/
 .codex-tmp/
+/output/
 
 .DS_Store
 Thumbs.db
