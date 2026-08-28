@@ -201,7 +201,7 @@ export function DpcSection({ contextHeading, contextDescription }: DpcSectionPro
             <p className="body-md text-deep-navy/60 leading-relaxed mb-6">
               {contextDescription}
             </p>
-            <Link href="/contact">
+            <Link href="/direct-primary-care">
               <Button
                 size="lg"
                 className="group"

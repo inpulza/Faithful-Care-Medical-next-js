@@ -21,6 +21,10 @@ export const seoMap = {
     title: "Doctor That Accepts Humana, Aetna & More | Naples FL",
     description: "Lost your 2026 Humana or Aetna plan? In-network for Aetna primary care and Humana palliative care in Naples FL. Same-week visits. Call (239) 423-0205.",
   },
+  "/direct-primary-care": {
+    title: "Direct Primary Care in Naples, FL",
+    description: "Explore Faithful Care's Direct Primary Care membership in Naples, including written terms, included primary care services, exclusions, and how to ask about enrollment.",
+  },
   "/about": {
     title: "Dr. Addys Reve, MD | Primary Care Naples, FL",
     description: "Meet Dr. Addys Reve, MD. Unhurried, bilingual primary care for adults and seniors in Naples, Florida.",

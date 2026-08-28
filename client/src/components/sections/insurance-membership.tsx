@@ -204,7 +204,7 @@ export function InsuranceMembership({
   dpcParagraph1 = "This membership is a model where you pay one monthly fee directly to the practice for the covered primary care services listed in your agreement. Members can request priority appointments and contact the care team between visits.",
   dpcParagraph2 = "DPC is not health insurance and does not replace coverage for hospital care, specialists, or emergencies. Ask us for current pricing and inclusions, and consult a qualified tax adviser about HSA eligibility.",
   ctaText = "Ask About Membership",
-  ctaHref = "/contact",
+  ctaHref = "/direct-primary-care",
   benefits,
   carouselPrevLabel,
   carouselNextLabel,
