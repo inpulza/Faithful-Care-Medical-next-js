@@ -47,7 +47,7 @@ export default function EsteroLocation() {
           },
           {
             question: "What's different about your practice compared to the large medical systems?",
-            answer: <>We intentionally limit our patient panel so we can spend 30 to 60 minutes with each patient. You see the same doctor every visit, your calls are returned quickly, and your care plan is genuinely personalized. While <a href="https://www.leehealth.org" target="_blank" rel="noopener noreferrer">Lee Health</a> and other large systems serve the region well, our approach offers an alternative for patients who want a more personal relationship with their doctor.</>
+            answer: <>Our practice is designed around unhurried appointments, continuity when scheduling allows, and a personalized care plan. While <a href="https://www.leehealth.org" target="_blank" rel="noopener noreferrer">Lee Health</a> and other large systems serve the region well, our approach offers an alternative for patients who want a more personal relationship with their doctor.</>
           },
           {
             question: "Do you work with specialists in the Estero area?",

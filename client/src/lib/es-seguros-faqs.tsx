@@ -28,7 +28,7 @@ export const esSegurosFaqs: FaqItem[] = [
   },
   {
     question: "¿Qué pasa si no tengo seguro médico?",
-    answer: <>Puede atenderse con nuestra membresía de Direct Primary Care: una cuota mensual fija que cubre visitas ilimitadas de atención primaria, citas el mismo día y acceso directo a su doctora por teléfono o mensaje de texto, sin copagos. No es un seguro y no cubre hospital ni especialistas, así que muchos pacientes la combinan con un plan catastrófico de bajo costo. Llámenos al (239) 423-0205 para conocer los precios, o escríbanos desde la <a href="/es/contacto">página de contacto</a>.</>,
+    answer: <>Puede preguntar por nuestra membresía de Direct Primary Care. Una cuota mensual cubre los servicios de atención primaria y las opciones de comunicación indicadas en el acuerdo vigente. No es un seguro y no sustituye cobertura para hospitalización, especialistas o emergencias. Llámenos al (239) 423-0205 para recibir los precios, inclusiones y exclusiones actuales, o escríbanos desde la <a href="/es/contacto">página de contacto</a>.</>,
   },
   {
     question: "¿Y si mi seguro cambia a mitad de año?",

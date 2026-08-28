@@ -443,7 +443,7 @@ export default function EsHome() {
           ctaText="Conozca a la Dra. Addys Reve"
           ctaHref="/about"
           imageSrc="/images/dr-addys-reve.webp"
-          imageAlt="Dra. Addys Reve, MD, fundadora de Faithful Care Medical Services, especialista en atención primaria y paliativa en Naples, Florida"
+          imageAlt="Dra. Addys Reve, MD, fundadora de Faithful Care Medical Services, brindando atención primaria y paliativa en Naples, Florida"
           variant="primary"
         />
 
@@ -452,9 +452,9 @@ export default function EsHome() {
             eyebrow="Seguros y membresía"
             title={<>Humana, Aetna, Cigna, Medicare y Medicaid.<br className="hidden lg:block" /> ¿Sin seguro? No hay problema.</>}
             dpcHeading="¿Qué es Direct Primary Care?"
-            dpcBold="Atención primaria por membresía con acceso el mismo día."
-            dpcParagraph1="Es un modelo en el que usted paga una cuota mensual fija directamente a su médico. A cambio, tiene visitas ilimitadas, citas el mismo día y acceso directo a su doctora por teléfono o mensaje de texto."
-            dpcParagraph2="Sin reclamos al seguro, sin copagos y sin esperar semanas. Desde 2026, las membresías DPC son elegibles para cuentas HSA. Puede combinarla con un plan catastrófico de bajo costo para una cobertura completa."
+            dpcBold="Atención primaria por membresía con continuidad y prioridad de agenda."
+            dpcParagraph1="Es un modelo en el que usted paga una cuota mensual directamente a la clínica. El acuerdo vigente explica las visitas, las formas de comunicación y los servicios incluidos."
+            dpcParagraph2="La membresía DPC no es un seguro médico y no sustituye la cobertura para hospitalización, especialistas o emergencias. Pida el precio y el acuerdo actual, y consulte a un profesional fiscal sobre la elegibilidad de cuentas HSA."
             ctaText="Pregunte por la membresía"
             ctaHref="/es/contacto"
             benefits={esDpcBenefits}

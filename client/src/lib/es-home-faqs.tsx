@@ -12,15 +12,15 @@ export const esHomeFaqs: FaqItem[] = [
   },
   {
     question: "¿Qué es Direct Primary Care y en qué se diferencia de la medicina concierge?",
-    answer: <>Direct Primary Care (DPC) es un modelo de membresía en el que usted paga a su médico una cuota mensual fija por visitas ilimitadas de atención primaria, acceso directo por teléfono y texto, y citas más largas. No es un seguro y no reemplaza la cobertura de hospital ni de especialistas. La medicina concierge suele cobrar una cuota anual mucho más alta además de facturar al seguro; DPC es una cuota fija sin facturación al seguro por la atención primaria. Puede leer más en la <a href="https://www.dpcare.org" target="_blank" rel="noopener noreferrer">Direct Primary Care Coalition</a> (en inglés).</>,
+    answer: <>Direct Primary Care (DPC) es un modelo de membresía en el que una cuota mensual cubre los servicios de atención primaria y las opciones de comunicación indicadas en un acuerdo escrito. No es un seguro y no reemplaza la cobertura de hospitalización, especialistas o emergencias. Los acuerdos de medicina concierge y DPC varían; pida las condiciones vigentes de Faithful Care. Puede leer más sobre el modelo general en la <a href="https://www.dpcare.org" target="_blank" rel="noopener noreferrer">Direct Primary Care Coalition</a> (en inglés).</>,
   },
   {
     question: "¿Cuánto cuesta la membresía de Direct Primary Care?",
-    answer: "El precio depende de su edad y de su familia. Las membresías para adultos en Faithful Care van desde una cuota mensual baja para una persona hasta una tarifa familiar con descuento. No hay copagos ni cargos por visita, y los medicamentos que entregamos en la clínica se cobran a precio de mayorista. Llámenos para conocer los precios actuales y los planes familiares.",
+    answer: "El precio y los servicios incluidos dependen del acuerdo vigente. Llámenos para recibir por escrito la cuota actual, las inclusiones, las exclusiones, las opciones familiares y cualquier posible costo de medicamentos o servicios externos.",
   },
   {
     question: "¿Puedo conseguir una cita el mismo día o al día siguiente?",
-    answer: "Sí. Todos los días reservamos espacios en la agenda para casos urgentes. Si llama por la mañana con fiebre, una infección, una lesión o un síntoma repentino, haremos todo lo posible por verle ese mismo día, o a la mañana siguiente a más tardar. Los miembros tienen prioridad en la agenda.",
+    answer: "Reservamos capacidad para asuntos urgentes de atención primaria y hacemos lo posible por ofrecer una opción el mismo día o al día siguiente cuando la agenda lo permite. Los miembros tienen prioridad, pero la disponibilidad no está garantizada. Para una emergencia médica, llame al 911 o acuda al servicio de urgencias más cercano.",
   },
   {
     question: "¿Cuál es la diferencia entre cuidados paliativos y hospicio?",

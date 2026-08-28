@@ -8,7 +8,7 @@ export interface PageSeo {
   dateModified?: string;
 }
 
-export const seoMap: Record<string, PageSeo> = {
+export const seoMap = {
   "/": {
     title: "Primary & Palliative Care in Naples, FL | Faithful Care",
     description: "Primary and palliative care in Naples, FL. Same-day visits, chronic disease management, and compassionate support for adults and seniors. New patients welcome.",
@@ -115,7 +115,7 @@ export const seoMap: Record<string, PageSeo> = {
   },
   "/locations/cape-coral": {
     title: "Doctor for Cape Coral Patients, FL | Faithful Care",
-    description: "Cape Coral families: unhurried visits, same-day sick care, and a team that knows your name. Faithful Care in Naples, 45 min via I-75. All major insurance.",
+    description: "Cape Coral families: unhurried visits and same-day sick care when available at Faithful Care in Naples, about 45 min via I-75. Call to verify your insurance plan.",
   },
   "/privacy-policy": {
     title: "Privacy Policy | Faithful Care Medical Services",
@@ -161,7 +161,7 @@ export const seoMap: Record<string, PageSeo> = {
     title: "Contacto: Faithful Care Naples",
     description: "Dirección, teléfono y horario de Faithful Care en North Naples. Atendemos en español. Llame para pedir su cita.",
   },
-};
+} satisfies Record<string, PageSeo>;
 
 export interface HreflangPair {
   en: string;

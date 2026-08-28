@@ -228,8 +228,8 @@ export const serviceSectionsMap: Record<string, ServiceSectionData> = {
       ],
     },
     dpc: {
-      contextHeading: "Your annual checkup, included in one flat monthly fee.",
-      contextDescription: "With a DPC membership, your annual physical, all preventive screenings, and follow-up visits are covered under one predictable monthly fee. No copays when you walk in the door, no surprise bills after your labs come back. You also get direct phone and text access to Dr. Reve for questions between visits. For patients who value thorough, unhurried preventive care, DPC is the simplest way to stay on top of your health year-round.",
+      contextHeading: "Ask how preventive care fits the DPC membership.",
+      contextDescription: "Faithful Care's written DPC agreement explains which annual visits, preventive services, follow-ups, and communication options are included in the monthly fee. Laboratory, vaccine, imaging, specialist, and other outside charges may vary, so review the current terms before enrolling.",
     },
     tealCta: {
       subtitle: "When was your last checkup?",
@@ -363,8 +363,8 @@ export const serviceSectionsMap: Record<string, ServiceSectionData> = {
       ],
     },
     dpc: {
-      contextHeading: "Manage chronic conditions with unlimited visits and direct access.",
-      contextDescription: "Chronic disease management works best with frequent follow-ups and easy access to your doctor. DPC members get unlimited visits, so you can come in as often as needed without worrying about copays adding up. Need to adjust your diabetes medication? Call or text Dr. Reve directly. Have a question about a new symptom between visits? You'll get an answer the same day. For patients managing multiple conditions, DPC removes the financial barriers that often delay necessary care.",
+      contextHeading: "Manage chronic conditions with membership-based continuity.",
+      contextDescription: "Chronic disease management works best with consistent follow-ups and a clear way to contact the practice. Faithful Care's DPC membership is designed to support ongoing primary care under a written membership agreement. Ask the office for current visit, communication, pricing, and service details before enrolling.",
     },
     tealCta: {
       subtitle: "Take control of your health",
@@ -498,8 +498,8 @@ export const serviceSectionsMap: Record<string, ServiceSectionData> = {
       ],
     },
     dpc: {
-      contextHeading: "Same-day access is built into every DPC membership.",
-      contextDescription: "When you're a DPC member, same-day access isn't a special request. It's standard. Call or text Dr. Reve directly when you feel sick, and you'll be seen the same day without a copay. No phone trees, no waiting on hold, no scheduling weeks out. For urgent needs that don't require an ER, your DPC membership means faster care, lower costs, and a doctor who already knows your medical history. It's the way healthcare should work when you need it most.",
+      contextHeading: "Priority scheduling for DPC members.",
+      contextDescription: "DPC members can request priority scheduling for time-sensitive primary care concerns, including same-day or next-day options when appointments are available. The membership is not emergency care or health insurance; call 911 or go to the nearest emergency department for a medical emergency. Ask the office for the current membership agreement and included services.",
     },
     tealCta: {
       subtitle: "Feeling sick today?",
@@ -633,8 +633,8 @@ export const serviceSectionsMap: Record<string, ServiceSectionData> = {
       ],
     },
     dpc: {
-      contextHeading: "Women's health care with no barriers and no copays.",
-      contextDescription: "Women's health requires ongoing attention: annual screenings, hormonal evaluations, contraceptive management, and menopause support. With a DPC membership, all of these services are covered under one flat monthly fee. You can schedule same-day appointments for urgent concerns, reach Dr. Reve directly by phone or text with sensitive questions, and never worry about a copay for follow-up visits. It's healthcare designed around how women actually need to use it.",
+      contextHeading: "Membership-based continuity for women's health.",
+      contextDescription: "Women's health can require ongoing attention, including preventive visits, follow-ups, and care coordination. Faithful Care's DPC membership is designed to make routine primary care easier to plan. Included services, communication options, scheduling, and any outside laboratory or specialist charges are governed by the current written membership agreement.",
     },
     tealCta: {
       subtitle: "Your health deserves attention",
@@ -768,8 +768,8 @@ export const serviceSectionsMap: Record<string, ServiceSectionData> = {
       ],
     },
     dpc: {
-      contextHeading: "Senior care without the insurance headaches.",
-      contextDescription: "Seniors managing multiple conditions need frequent follow-ups, medication reviews, and specialist coordination. With a DPC membership, all of those visits are included for one monthly fee. No copays stacking up, no prior authorizations slowing down your care. Dr. Reve spends 30 to 60 minutes at every visit, and you can reach her by phone or text between appointments. For Medicare patients, DPC pairs perfectly with your existing coverage for a complete care solution.",
+      contextHeading: "Coordinated senior care through a membership model.",
+      contextDescription: "Seniors managing multiple conditions may benefit from consistent follow-ups, medication review, and specialist coordination. Faithful Care's DPC membership supports ongoing primary care under a written agreement. It is not health insurance and does not replace Medicare or other coverage for hospital care, specialists, emergencies, or services outside the agreement.",
     },
     tealCta: {
       subtitle: "Care that keeps you independent",
@@ -903,8 +903,8 @@ export const serviceSectionsMap: Record<string, ServiceSectionData> = {
       ],
     },
     dpc: {
-      contextHeading: "Get procedures and diagnostics included in your membership.",
-      contextDescription: "DPC members receive in-office procedures like joint injections, EKGs, and wound care at no additional cost per visit. Lab draws and rapid testing are included in your membership, and many results come back the same day. No separate facility fees, no insurance claims to file. If you need regular procedures or monitoring, a DPC membership can save you hundreds of dollars a year compared to traditional copays and facility charges.",
+      contextHeading: "Ask which procedures are included in membership care.",
+      contextDescription: "Some in-office procedures or tests may be available through the DPC membership, while laboratory, medication, supply, or outside-service charges can vary. Review the current written membership agreement with the office before scheduling so you understand what is included and what may have a separate cost.",
     },
     tealCta: {
       subtitle: "Skip the hospital",
@@ -1038,8 +1038,8 @@ export const serviceSectionsMap: Record<string, ServiceSectionData> = {
       ],
     },
     dpc: {
-      contextHeading: "Palliative support included with direct, unlimited access to Dr. Reve.",
-      contextDescription: "When you or a loved one is facing a serious illness, waiting days for a callback is not acceptable. DPC members get direct phone and text access to Dr. Reve for urgent symptom concerns, medication questions, and emotional support between visits. All palliative care consultations, care plan updates, and family meetings are included in your monthly membership. No copays, no prior authorizations, no barriers to the support you need most.",
+      contextHeading: "Ask how membership care can support ongoing communication.",
+      contextDescription: "When you or a loved one is facing a serious illness, clear communication and coordinated follow-up matter. The office can explain which primary-care and palliative-support services, communication channels, care-plan updates, and family meetings are included in the current DPC membership agreement.",
     },
     tealCta: {
       subtitle: "Facing a serious illness?",
@@ -1173,8 +1173,8 @@ export const serviceSectionsMap: Record<string, ServiceSectionData> = {
       ],
     },
     dpc: {
-      contextHeading: "Same-day symptom relief access with your DPC membership.",
-      contextDescription: "When a symptom flares up, you should not have to wait a week for relief. DPC members can call or text Dr. Reve directly when pain spikes, nausea returns, or breathing gets worse. Medication adjustments can often happen the same day without an office visit. All symptom management appointments, medication reviews, and follow-ups are included in your flat monthly fee. For patients dealing with ongoing symptoms from cancer, COPD, heart failure, or other conditions, DPC removes every barrier between you and the relief you need.",
+      contextHeading: "Membership support for ongoing symptom-management follow-up.",
+      contextDescription: "Patients living with serious illness may need timely follow-up when symptoms change. DPC members can use the communication and scheduling options described in their membership agreement. New or worsening symptoms still require clinical assessment, and emergency symptoms should be handled by calling 911 or visiting the nearest emergency department.",
     },
     tealCta: {
       subtitle: "Suffering with uncontrolled symptoms?",
@@ -1303,13 +1303,13 @@ export const serviceSectionsMap: Record<string, ServiceSectionData> = {
         },
         {
           question: "Does insurance cover family meetings and caregiver support?",
-          answer: "Family meetings that are part of a palliative care consultation are typically covered by Medicare and most insurance plans. We verify coverage before scheduling and explain any potential costs upfront. DPC members receive unlimited family consultations as part of their membership.",
+          answer: "Coverage for family meetings depends on the service, medical necessity, and the patient's specific plan. We verify available benefits before scheduling and explain expected costs. DPC members should review the current membership agreement to confirm whether a family consultation is included.",
         },
       ],
     },
     dpc: {
-      contextHeading: "Unlimited family access and caregiver support with DPC.",
-      contextDescription: "When your family is navigating a serious illness, questions don't just come up during office hours. DPC members can call or text Dr. Reve directly with concerns, medication questions, or when something changes unexpectedly. All family meetings, caregiver consultations, and support calls are included in the flat monthly fee. No limit on visits, no copays, and no insurance barriers. For families in Naples managing a loved one's care, DPC provides the constant access and support that makes a critical difference.",
+      contextHeading: "Caregiver communication and support through DPC.",
+      contextDescription: "When a family is navigating serious illness, questions can arise between scheduled visits. Faithful Care's current DPC membership agreement explains the available communication channels and whether family meetings or caregiver consultations are included. The office can review those terms with you before enrollment.",
     },
     tealCta: {
       subtitle: "Your family needs support too",
@@ -1443,8 +1443,8 @@ export const serviceSectionsMap: Record<string, ServiceSectionData> = {
       ],
     },
     dpc: {
-      contextHeading: "Advance planning included, with time to do it right.",
-      contextDescription: "Advance care planning requires unhurried, thoughtful conversations. DPC members get as much time as they need to work through their advance directives, living wills, and goals of care with Dr. Reve. There is no clock ticking on a 15-minute appointment. You also get direct access to Dr. Reve by phone or text for follow-up questions, document updates, and family discussions between visits. When transitions to hospice or other care settings arise, DPC members receive hands-on coordination from start to finish.",
+      contextHeading: "Ask how advance planning fits the DPC membership.",
+      contextDescription: "Advance care planning benefits from unhurried, thoughtful conversations. Faithful Care's current DPC agreement explains which planning visits, follow-up communication, document reviews, family discussions, and care-coordination services are included. Appointment time and coordination depend on clinical need, scheduling, and the services listed in that agreement.",
     },
     tealCta: {
       subtitle: "Protect your wishes",

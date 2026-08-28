@@ -1,5 +1,5 @@
 import * as React from "react";
-import { useLocation } from "@/lib/router";
+import { Link, useLocation } from "@/lib/router";
 import { PageHero, InsuranceLogos, TealCta, MeetYourDoctor, TestimonialsSection, DetailGrid, FaqSection, VisitSteps, marqueeDataMap } from "@/components/sections";
 const ImageMarquee = React.lazy(() =>
   import("@/components/sections/image-marquee").then(m => ({ default: m.ImageMarquee }))
@@ -11,6 +11,7 @@ import { pageContentMap } from "@/lib/page-content";
 import { serviceSectionsMap } from "@/lib/service-sections";
 import { JsonLdArray } from "@/components/json-ld";
 import { medicalServiceSchema, faqPageSchema } from "@/lib/schemas";
+import { ArrowRight } from "@phosphor-icons/react";
 
 const serviceMetadata: Record<string, { name: string; description: string; serviceType: string; category: "Primary Care" | "Palliative Care" }> = {
   "/primary-care/checkups-prevention": {
@@ -103,6 +104,7 @@ export function ServicePage() {
   const content = pageContentMap[location];
   const sections = serviceSectionsMap[location];
   const meta = serviceMetadata[location];
+  const isPalliativeService = location.startsWith("/palliative-care/");
 
   if (!content) {
     return (
@@ -160,6 +162,21 @@ export function ServicePage() {
         />
 
         <InsuranceLogos />
+
+        {isPalliativeService && (
+          <section className="bg-white pt-6 md:pt-8" aria-label="Palliative care overview">
+            <div className="container-radical">
+              <Link
+                href="/palliative-care"
+                className="inline-flex items-center gap-2 rounded-full border border-primary/25 bg-primary/5 px-5 py-3 font-semibold text-primary transition-colors hover:bg-primary hover:text-white"
+                data-testid="link-palliative-care-hub"
+              >
+                Explore all palliative care services
+                <ArrowRight size={18} aria-hidden="true" />
+              </Link>
+            </div>
+          </section>
+        )}
 
         {sections ? (
           <>

@@ -181,14 +181,14 @@ export function LocationServices({
                 <p className="text-base md:text-lg text-white/60 leading-relaxed mb-6 md:mb-8">
                   {palliativeCareDescription}
                 </p>
-                <Link href="/palliative-care/about-palliative-care">
+                <Link href="/palliative-care">
                   <Button
                     variant="outline"
                     size="lg"
                     className="bg-white border-white/30 text-deep-navy hover:bg-secondary hover:text-white hover:border-secondary"
                     data-testid="button-palliative-care-learn"
                   >
-                    Learn about palliative care
+                    Explore palliative care
                     <ArrowRight className="ml-1" weight="regular" size={18} />
                   </Button>
                 </Link>

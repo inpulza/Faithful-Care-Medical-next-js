@@ -12,7 +12,7 @@ export const contactFaqs: FaqItem[] = [
   },
   {
     question: "What payment and insurance options do you accept?",
-    answer: <>We accept Original Medicare (Parts A and B), Humana Medicare Advantage, Aetna (Medicare Advantage and commercial), Cigna commercial plans, and Florida Medicaid through Sunshine Health. We also offer a Direct Primary Care membership for patients who prefer a flat monthly fee with no copays. For plan-specific questions, you can verify benefits on <a href="https://www.medicare.gov" target="_blank" rel="noopener noreferrer">Medicare.gov</a> or call our office and we will check your coverage for you.</>,
+    answer: <>We accept Original Medicare (Parts A and B), Humana Medicare Advantage, Aetna (Medicare Advantage and commercial), Cigna commercial plans, and Florida Medicaid through Sunshine Health. We also offer a Direct Primary Care membership governed by a written agreement that explains the monthly fee, included services, and exclusions. For plan-specific questions, you can verify benefits on <a href="https://www.medicare.gov" target="_blank" rel="noopener noreferrer">Medicare.gov</a> or call our office and we will check your coverage for you.</>,
   },
   {
     question: "Do you offer telehealth or video visits?",

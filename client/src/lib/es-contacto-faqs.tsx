@@ -12,7 +12,7 @@ export const esContactoFaqs: FaqItem[] = [
   },
   {
     question: "¿Qué seguros y formas de pago aceptan?",
-    answer: <>Aceptamos Original Medicare (Partes A y B), Aetna (Medicare Advantage y planes comerciales), planes comerciales de Cigna y Florida Medicaid a través de Sunshine Health. Con Humana Medicare Advantage estamos dentro de la red para cuidados paliativos y ofrecemos beneficios fuera de la red para atención primaria. También tenemos una membresía de Direct Primary Care con cuota mensual fija y sin copagos. Vea los detalles en <a href="/es/seguros-y-medicare">seguros y Medicare</a>.</>,
+    answer: <>Aceptamos Original Medicare (Partes A y B), Aetna (Medicare Advantage y planes comerciales), planes comerciales de Cigna y Florida Medicaid a través de Sunshine Health. Con Humana Medicare Advantage estamos dentro de la red para cuidados paliativos y ofrecemos beneficios fuera de la red para atención primaria. También tenemos una membresía de Direct Primary Care con un acuerdo escrito que explica la cuota mensual, los servicios incluidos y las exclusiones. Vea los detalles en <a href="/es/seguros-y-medicare">seguros y Medicare</a>.</>,
   },
   {
     question: "¿Ofrecen consultas por video o por teléfono?",

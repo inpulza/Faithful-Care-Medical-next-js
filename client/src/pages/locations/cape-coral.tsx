@@ -13,7 +13,7 @@ export default function CapeCoralLocation() {
         driveTime: "40–50 minutes",
         driveDistance: "About 40 miles via I-75 South",
         population: "210,000+",
-        highlights: ["Accepting new patients", "Unhurried appointments", "Chronic disease experts", "Senior & geriatric care", "Palliative support", "All major insurance"],
+        highlights: ["New patient inquiries", "Unhurried appointments", "Chronic disease care", "Senior-focused care", "Palliative support", "Call to verify insurance"],
         localNote: "Cape Coral patients from Tarpon Point, Cape Harbour, Yacht Club, Pelican, Sandoval, and Del Prado are discovering that the drive down I-75 South to our Naples office is one of the best healthcare decisions they've made. Our practice intentionally limits our patient panel so that every visit feels personal, not rushed. If you've been waiting weeks to see your current doctor, it may be time for a change.",
         primaryCareDescription: "Cape Coral is one of the fastest-growing cities in Florida, and the demand for primary care doctors far exceeds the supply. Many Cape Coral residents wait weeks for a basic appointment. At Faithful Care, we offer the opposite: unhurried visits, same-day availability for urgent needs, and a physician who remembers your name.",
         primaryCareServices: [
@@ -39,7 +39,7 @@ export default function CapeCoralLocation() {
           },
           {
             question: "Why can't I find a doctor accepting patients in Cape Coral?",
-            answer: <>Cape Coral has grown faster than its healthcare infrastructure. Many practices have full panels and waitlists stretching months. The <a href="https://www.leehealth.org" target="_blank" rel="noopener noreferrer">Lee Health</a> system serves the region, but availability can be limited. At Faithful Care, we keep our practice intentionally small so we can always accept new patients and provide the attention each person deserves.</>
+            answer: <>Availability changes over time. Contact Faithful Care to ask whether we are accepting new patients and which appointment options are currently available. The <a href="https://www.leehealth.org" target="_blank" rel="noopener noreferrer">Lee Health</a> system is another regional care resource.</>
           },
           {
             question: "What insurance do you accept for Cape Coral patients?",

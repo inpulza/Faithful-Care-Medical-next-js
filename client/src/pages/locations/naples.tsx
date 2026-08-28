@@ -15,7 +15,7 @@ export default function NaplesLocation() {
         population: "22,000+",
         highlights: ["Same-day sick visits", "Medicare accepted", "Senior-friendly care", "Chronic disease management", "On-site labs & EKG", "Palliative care team"],
         localNote: "As Naples' trusted medical practice on Tamiami Trail North, we serve residents from Park Shore to Pelican Bay, Pine Ridge to Vineyards. Whether you live in gated communities along the Gulf or inland neighborhoods, we're centrally located and easy to reach. Many of our patients have been with us for years, because consistent, personal care matters.",
-        primaryCareDescription: "Naples residents have a dedicated primary care home steps from their neighborhood. At Faithful Care, we provide comprehensive medical care with 30 to 60 minute appointments, same-day sick visits, and a physician who knows your name, your history, and your health goals.",
+        primaryCareDescription: "Naples residents have a dedicated primary care home steps from their neighborhood. At Faithful Care, we provide comprehensive medical care with unhurried appointments, same-day sick visits when available, and a physician focused on your history and health goals.",
         primaryCareServices: [
           { icon: Stethoscope, title: "Annual Wellness Exams", description: "Thorough physicals with lab work, cardiovascular screening, and personalized prevention plans for Naples adults and seniors." },
           { icon: Heartbeat, title: "Chronic Disease Management", description: "Ongoing care for diabetes, hypertension, heart disease, thyroid disorders, and COPD with regular monitoring." },
@@ -47,7 +47,7 @@ export default function NaplesLocation() {
           },
           {
             question: "What is palliative care?",
-            answer: <>Palliative care is specialized medical care for patients with serious illness. It focuses on pain relief, symptom management, and quality of life, and it works alongside your existing treatments. It is not the same as hospice. Learn more at the <a href="https://www.nhpco.org" target="_blank" rel="noopener noreferrer">National Hospice and Palliative Care Organization</a>.</>
+            answer: <>Palliative care is specialized medical care for patients with serious illness. It focuses on pain relief, symptom management, and quality of life, and it works alongside your existing treatments. It is not the same as hospice. Explore <a href="/palliative-care">palliative care at Faithful Care</a>, or learn more from the <a href="https://www.nhpco.org" target="_blank" rel="noopener noreferrer">National Hospice and Palliative Care Organization</a>.</>
           },
           {
             question: "How long are your appointments?",
