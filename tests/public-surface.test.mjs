@@ -35,7 +35,7 @@ function graphTypes(schemas) {
   return types;
 }
 
-test("all 37 canonical routes return indexable localized HTML", async () => {
+test("all canonical routes return indexable localized HTML", async () => {
   const results = await Promise.all(publicRoutes.map(async (route) => {
     const response = await previewFetch(route.path, { redirect: "manual" });
     return { route, response, html: await response.text() };

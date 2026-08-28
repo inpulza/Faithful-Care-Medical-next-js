@@ -187,6 +187,12 @@ export const navigationData: NavCategory[] = [
         description: "Annual Wellness Visits, geriatric-focused care and medication review for Medicare patients",
         href: "/medicare",
         detailNote: "We accept Medicare and Medicare Advantage. Annual Wellness Visits, geriatric assessments and medication review, with the time older patients deserve."
+      },
+      {
+        title: "Direct Primary Care",
+        description: "A primary care membership with current written terms, inclusions and exclusions to review before enrollment",
+        href: "/direct-primary-care",
+        detailNote: "Direct Primary Care is a membership, not health insurance. Ask for the current written agreement to review the fee, included services, exclusions and separately charged care before enrolling."
       }
     ]
   }
