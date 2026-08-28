@@ -13,6 +13,7 @@ import { PageTransitionProvider } from "@/components/page-transition";
 import { CookieBanner } from "@/components/cookie-banner";
 import { TrackingPageviews } from "@/components/tracking-pageviews";
 import { toast } from "@/hooks/use-toast";
+import { seoMap } from "@shared/seo-data";
 
 
 const Home = React.lazy(() => import("@/pages/home"));
@@ -60,7 +61,7 @@ const EsCuidadosPaliativos = React.lazy(() => import("@/pages/es/cuidados-paliat
 const EsSegurosYMedicare = React.lazy(() => import("@/pages/es/seguros-y-medicare"));
 const EsContacto = React.lazy(() => import("@/pages/es/contacto"));
 
-const routeComponents: Record<string, React.LazyExoticComponent<React.ComponentType>> = {
+const routeComponents = {
   "/": Home,
   "/contact": Contact,
   "/insurance-accepted": InsuranceAccepted,
@@ -98,12 +99,18 @@ const routeComponents: Record<string, React.LazyExoticComponent<React.ComponentT
   "/terms-of-use": TermsOfUse,
   "/medical-disclaimer": MedicalDisclaimer,
   "/accessibility-statement": AccessibilityStatement,
-};
+} satisfies Record<keyof typeof seoMap, React.LazyExoticComponent<React.ComponentType>>;
+
+type PublicPath = keyof typeof seoMap;
+
+function isPublicPath(path: string): path is PublicPath {
+  return path in seoMap;
+}
 
 function Router() {
   const [rawLocation] = useLocation();
   const location = rawLocation === "/es/" ? "/es" : rawLocation;
-  const Component = routeComponents[location] ?? NotFound;
+  const Component = isPublicPath(location) ? routeComponents[location] : NotFound;
 
   return (
     <React.Suspense fallback={<div className="min-h-screen" aria-hidden="true" />}>

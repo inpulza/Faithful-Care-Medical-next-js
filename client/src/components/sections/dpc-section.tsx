@@ -6,40 +6,40 @@ import { Button } from "@/components/ui/button";
 
 const dpcBenefits = [
   {
-    title: "Unlimited Visits",
-    subtitle: "No copays, no limits",
-    description: "Visit your doctor as often as you need without worrying about copays or per-visit fees. Whether it's a quick follow-up or a comprehensive evaluation, every visit is included.",
-    features: ["No copays or per-visit fees", "Follow-ups included at no extra cost", "Preventive and sick visits covered"],
+    title: "Visits Included",
+    subtitle: "Defined by your agreement",
+    description: "The written membership agreement explains which primary-care visits and follow-ups are included, along with exclusions and possible outside charges.",
+    features: ["Written service terms", "Follow-ups based on the agreement", "Outside costs explained clearly"],
   },
   {
-    title: "Same-Day Access",
-    subtitle: "Sick today, seen today",
-    description: "When you're not feeling well, waiting weeks for an appointment isn't an option. Our members get priority scheduling with same-day and next-day availability.",
-    features: ["Same-day and next-day appointments", "Minimal wait times in office", "Weekend availability for urgent needs"],
+    title: "Priority Scheduling",
+    subtitle: "Options when available",
+    description: "Members can request priority scheduling for time-sensitive primary-care concerns, including same-day or next-day options when appointments are available.",
+    features: ["Priority appointment requests", "Same-day options when available", "Clear urgent-care guidance"],
   },
   {
     title: "Direct Communication",
     subtitle: "Your doctor, one call away",
-    description: "Reach your physician directly by phone, text, or video. No automated phone trees, no waiting for callbacks, no going through a front desk for simple questions.",
-    features: ["Direct phone and text access", "Video consultations available", "Quick answers without an office visit"],
+    description: "The current agreement explains which communication channels are available between visits and when an in-person assessment is needed.",
+    features: ["Practice-defined communication channels", "Video visits when appropriate", "Guidance on in-person care"],
   },
   {
     title: "Transparent Pricing",
-    subtitle: "One fee, everything included",
-    description: "Pay one flat monthly membership fee that covers all your primary care needs. No surprise bills, no hidden charges, no complicated insurance claims to file.",
-    features: ["Flat monthly membership fee", "No surprise bills or hidden costs", "HSA-eligible starting 2026"],
+    subtitle: "Written terms",
+    description: "The monthly fee and written agreement explain included primary-care services, exclusions, and possible outside charges.",
+    features: ["Monthly membership fee", "Written inclusions and exclusions", "Ask about current HSA rules"],
   },
   {
     title: "Longer Appointments",
-    subtitle: "30 to 60 minutes, every time",
-    description: "Your doctor spends 30 to 60 minutes with you at every visit. That means thorough exams, time to answer all your questions, and care plans you actually understand.",
-    features: ["30 to 60 minutes per visit", "Thorough physical examinations", "Time for all your questions"],
+    subtitle: "Time focused on your needs",
+    description: "Appointments are designed to allow a thorough evaluation, questions, and a care plan you can understand. Visit length varies with clinical need and scheduling.",
+    features: ["Patient-focused appointments", "Thorough physical examinations", "Time for your questions"],
   },
   {
-    title: "Wholesale Medications",
-    subtitle: "Prescriptions at cost",
-    description: "Many common medications are dispensed directly from our office at wholesale prices. Save significantly compared to retail pharmacy costs for the prescriptions you take every day.",
-    features: ["In-office medication dispensing", "Wholesale pricing on common drugs", "Savings vs. retail pharmacy prices"],
+    title: "Medication Support",
+    subtitle: "Clear options and pricing",
+    description: "Ask which medications or dispensing services are available, which have a separate cost, and whether coordination with a pharmacy is more appropriate.",
+    features: ["Availability confirmed by the practice", "Pricing explained before acceptance", "Pharmacy coordination when appropriate"],
   },
 ];
 
@@ -183,13 +183,13 @@ export function DpcSection({ contextHeading, contextDescription }: DpcSectionPro
               What is Direct Primary Care?
             </h3>
             <p className="body-md text-deep-navy font-bold leading-relaxed mb-4">
-              Membership Primary Care with Same-Day Access.
+              Membership primary care with priority scheduling.
             </p>
             <p className="body-md text-deep-navy/60 leading-relaxed mb-6">
-              This membership is a model where you pay one flat monthly fee directly to your doctor. In return, you get unlimited visits, same-day appointments, and direct access to your physician by phone or text.
+              This membership model uses a monthly fee for the primary-care services and communication options described in a written agreement. Ask the office for the current terms, price, inclusions, and exclusions.
             </p>
             <p className="body-md text-deep-navy/60 leading-relaxed">
-              No insurance claims, no copays, no waiting weeks. Starting in 2026, DPC memberships are HSA-eligible. Pair it with a low-cost catastrophic plan for complete coverage.
+              DPC is not health insurance and does not replace coverage for hospital care, specialists, or emergencies. Consult a qualified tax adviser about current HSA rules.
             </p>
           </motion.div>
           <motion.div

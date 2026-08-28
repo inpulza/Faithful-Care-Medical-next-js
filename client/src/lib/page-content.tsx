@@ -282,7 +282,7 @@ export const pageContentMap: Record<string, PageContent> = {
     title: <>Doctor Accepting Patients<br className="hidden md:block" /> from Cape Coral, FL</>,
     subtitleBold: "Personal Care Worth the Drive South.",
     subtitle: "Cape Coral is the largest city between Tampa and Miami, and one of the hardest places to find a doctor who isn't overbooked. Faithful Care Medical Services in Naples offers Cape Coral families a refreshing alternative: unhurried visits, same-day sick appointments, and a care team that knows your name.",
-    marqueeItems: ["Cape Coral, FL", "45 min via I-75", "Accepting new patients", "All major insurance"],
+    marqueeItems: ["Cape Coral, FL", "45 min via I-75", "New patient inquiries", "Call to verify insurance"],
     heroImage: heroCapeCoral,
     heroImageAlt: "Faithful Care Medical Services doctor accepting new patients from Cape Coral, Florida",
     heroImageMobile: heroCapCoralMobile,

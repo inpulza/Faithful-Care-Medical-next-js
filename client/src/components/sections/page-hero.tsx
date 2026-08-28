@@ -1032,9 +1032,10 @@ export function PageHero({
             >
               <TrustBadge isLight={false} compact realPatients={realPatients} />
               <Typography
-                as="h1"
+                as="div"
                 variant="h1"
                 className="!text-[clamp(26px,3.2vw,40px)]"
+                aria-hidden="true"
               >
                 {title}
               </Typography>
@@ -1074,15 +1075,19 @@ export function PageHero({
           )}>
             <div className={cn(!mapConfig && "md:hidden lg:block")}>
               <TrustBadge isLight={isLight} realPatients={realPatients} />
-              <Typography
-                as="h1"
-                variant="h1"
-                className={cn("!text-[clamp(32px,4vw,64px)]", isLight && "text-deep-navy lg:!text-white")}
-                data-testid="text-hero-title"
-              >
-                {title}
-              </Typography>
             </div>
+            <Typography
+              as="h1"
+              variant="h1"
+              className={cn(
+                "!text-[clamp(32px,4vw,64px)]",
+                !mapConfig && "md:sr-only lg:not-sr-only",
+                isLight && "text-deep-navy lg:!text-white",
+              )}
+              data-testid="text-hero-title"
+            >
+              {title}
+            </Typography>
             <Typography
               variant="body-lg"
               className={cn("max-w-2xl", isLight && "text-deep-navy/70 lg:!text-white/90")}

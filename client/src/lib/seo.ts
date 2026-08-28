@@ -55,13 +55,15 @@ export function usePageSeo() {
   const location = rawLocation === "/es/" ? "/es" : rawLocation;
 
   useEffect(() => {
-    const seo = seoMap[location];
-    if (!seo) return;
+    if (!(location in seoMap)) return;
 
-    const canonical = `${DOMAIN}${location}`;
+    const publicPath = location as keyof typeof seoMap;
+    const seo = seoMap[publicPath];
+
+    const canonical = `${DOMAIN}${publicPath}`;
 
     document.title = seo.title;
-    document.documentElement.lang = isSpanishPath(location) ? "es" : "en";
+    document.documentElement.lang = isSpanishPath(publicPath) ? "es" : "en";
 
     updateMetaTag("description", seo.description, false);
     updateMetaTag("og:title", seo.title);
@@ -73,6 +75,6 @@ export function usePageSeo() {
     updateMetaTag("twitter:image", DEFAULT_OG_IMAGE);
 
     updateCanonical(canonical);
-    updateHreflangLinks(location);
+    updateHreflangLinks(publicPath);
   }, [location]);
 }

@@ -403,16 +403,15 @@ export default function EsSegurosYMedicare() {
               </h2>
               <p className="body-lg text-deep-navy/70 leading-relaxed mb-6">
                 No hace falta tener seguro para tener médico. Con nuestra membresía de Direct Primary
-                Care usted paga una cuota mensual fija directamente a la clínica y recibe visitas
-                ilimitadas de atención primaria, citas el mismo día y acceso directo a su doctora por
-                teléfono o mensaje de texto, sin copagos ni cargos por consulta.
+                Care usted paga una cuota mensual directamente a la clínica. El acuerdo vigente
+                explica las visitas, las formas de comunicación, los servicios incluidos y cualquier
+                costo que pueda quedar fuera de la membresía.
               </p>
               <p className="text-deep-navy/75 leading-relaxed mb-6">
-                Muchos medicamentos comunes se entregan en la misma clínica a precio de mayorista, con
-                un ahorro real frente a la farmacia. La membresía no es un seguro y no cubre hospital
-                ni especialistas, así que varios de nuestros pacientes la combinan con un plan
-                catastrófico de bajo costo para quedar cubiertos ante una emergencia grande. Desde
-                2026, las membresías de Direct Primary Care son elegibles para cuentas HSA.
+                La membresía no es un seguro médico y no sustituye la cobertura para hospitalización,
+                especialistas o emergencias. Pida a la clínica el precio y el acuerdo actual antes de
+                inscribirse, y consulte a un profesional fiscal sobre las reglas vigentes de las
+                cuentas HSA.
               </p>
               <div className="text-center">
                 <Link

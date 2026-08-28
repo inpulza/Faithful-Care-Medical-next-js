@@ -12,15 +12,15 @@ export const homeFaqs: FaqItem[] = [
   },
   {
     question: "What is Direct Primary Care and how is it different from concierge medicine?",
-    answer: <>Direct Primary Care (DPC) is a membership model where you pay your doctor a flat monthly fee for unlimited primary care visits, direct phone and text access, and longer appointments. It is not insurance and it does not replace coverage for hospital stays or specialists. Concierge medicine usually charges a much higher annual retainer on top of insurance billing; DPC is a flat fee with no insurance billing for primary care. Read more about the model from the <a href="https://www.dpcare.org" target="_blank" rel="noopener noreferrer">Direct Primary Care Coalition</a>.</>,
+    answer: <>Direct Primary Care (DPC) is a membership model where a monthly fee covers the primary-care services and communication options listed in a written agreement. It is not insurance and does not replace coverage for hospital stays, specialists, or emergencies. Concierge arrangements and DPC agreements vary, so ask us for Faithful Care's current terms and included services. Read more about the general model from the <a href="https://www.dpcare.org" target="_blank" rel="noopener noreferrer">Direct Primary Care Coalition</a>.</>,
   },
   {
     question: "How much does a Direct Primary Care membership cost?",
-    answer: "Pricing depends on your age and household. Adult memberships at Faithful Care typically range from a low monthly fee for individuals to a discounted family rate. There are no copays, no per-visit charges, and prescription medications dispensed in our office are billed at wholesale cost. Call us for current pricing and family plans.",
+    answer: "Pricing depends on your age and household. Call us for the current membership agreement, pricing, included services, exclusions, and family options. If in-office medication dispensing is available for a prescription, we explain the price before you decide.",
   },
   {
     question: "Can I get a same-day or next-day appointment?",
-    answer: "Yes. We hold appointment slots open every day specifically for urgent issues. If you call in the morning with a fever, infection, injury, or sudden symptom, we will do everything we can to see you the same day, or the next morning at the latest. Members get priority scheduling.",
+    answer: "We reserve appointment capacity for urgent primary-care concerns and do our best to offer a same-day or next-day option when the schedule allows. Members receive priority scheduling, but availability is not guaranteed. Call 911 or go to the nearest emergency department for a medical emergency.",
   },
   {
     question: "What is the difference between palliative care and hospice?",

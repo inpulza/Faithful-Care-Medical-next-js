@@ -24,6 +24,6 @@ export const esMedicoFaqs: FaqItem[] = [
   },
   {
     question: "¿Qué pasa si no tengo seguro médico?",
-    answer: <>Puede atenderse con nuestra membresía de Direct Primary Care: una cuota mensual fija que cubre visitas ilimitadas, citas el mismo día y acceso directo a su doctora por teléfono o texto. No necesita seguro para ser miembro. Puede leer más sobre este modelo en la <a href="https://www.dpcare.org" target="_blank" rel="noopener noreferrer">Direct Primary Care Coalition</a> (en inglés), o llamarnos para conocer los precios.</>,
+    answer: <>Puede preguntar por nuestra membresía de Direct Primary Care. Una cuota mensual cubre los servicios de atención primaria y las opciones de comunicación indicadas en el acuerdo vigente. La membresía no es un seguro y no sustituye cobertura para hospitalización, especialistas o emergencias. Puede leer más sobre el modelo general en la <a href="https://www.dpcare.org" target="_blank" rel="noopener noreferrer">Direct Primary Care Coalition</a> (en inglés), o llamarnos para recibir los precios y términos actuales.</>,
   },
 ];
