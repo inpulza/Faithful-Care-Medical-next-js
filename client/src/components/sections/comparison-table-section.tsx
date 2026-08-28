@@ -92,7 +92,10 @@ export function ComparisonTableSection({
         </div>
 
         {(note || sources.length > 0) && (
-          <div className="mt-6 flex flex-col gap-3 text-sm leading-relaxed text-deep-navy/55 md:flex-row md:items-start md:justify-between">
+          <div
+            className="mt-6 flex flex-col gap-3 text-sm leading-relaxed text-deep-navy/75 md:flex-row md:items-start md:justify-between"
+            data-testid="comparison-footnote"
+          >
             {note && <p className="max-w-3xl">{note}</p>}
             {sources.length > 0 && (
               <p className="flex flex-wrap gap-x-3 gap-y-1 md:justify-end">

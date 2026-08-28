@@ -42,6 +42,21 @@ test("the palliative and hospice comparison preserves table semantics responsive
         assert.equal(await table.locator('th[scope="row"]').count(), 5);
         assert.equal(await table.locator("tbody tr").count(), 5);
 
+        const footnoteContrast = await section.getByTestId("comparison-footnote").evaluate((element) => {
+          const parse = (value) => value.match(/[\d.]+/g).slice(0, 3).map(Number);
+          const luminance = (rgb) => {
+            const linear = rgb.map((channel) => {
+              const value = channel / 255;
+              return value <= 0.04045 ? value / 12.92 : ((value + 0.055) / 1.055) ** 2.4;
+            });
+            return 0.2126 * linear[0] + 0.7152 * linear[1] + 0.0722 * linear[2];
+          };
+          const foreground = luminance(parse(getComputedStyle(element).color));
+          const background = luminance([255, 255, 255]);
+          return (Math.max(foreground, background) + 0.05) / (Math.min(foreground, background) + 0.05);
+        });
+        assert.ok(footnoteContrast >= 4.5, `comparison footnote contrast was ${footnoteContrast.toFixed(2)}:1`);
+
         const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
         assert.ok(overflow <= 1, `comparison overflows by ${overflow}px at ${viewport.name}`);
         assert.deepEqual(errors, [], `browser errors at ${viewport.name}`);

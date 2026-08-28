@@ -38,17 +38,18 @@ export function StackedFeatureStories({
       <div className="container-radical py-12 md:py-20 lg:py-28">
         <motion.div
           className="mx-auto mb-10 max-w-3xl text-center md:mb-16 lg:mb-20"
+          data-testid={`${testId}-header`}
           initial={reducedMotion ? { opacity: 1, y: 0 } : { opacity: 0, y: 24 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.6 }}
         >
           <div className="mb-6 flex items-center justify-center gap-2">
-            <span className="h-2 w-2 rounded-full bg-white/80" />
-            <p className="text-sm font-semibold uppercase tracking-widest text-white/85">{eyebrow}</p>
+            <span className="h-2 w-2 rounded-full bg-deep-navy" />
+            <p className="text-sm font-semibold uppercase tracking-widest text-deep-navy">{eyebrow}</p>
           </div>
-          <h2 className="h2 text-white">{title}</h2>
-          {description && <p className="body-md mx-auto mt-6 max-w-2xl leading-relaxed text-white/85">{description}</p>}
+          <h2 className="h2 text-deep-navy">{title}</h2>
+          {description && <p className="body-md mx-auto mt-6 max-w-2xl leading-relaxed text-deep-navy">{description}</p>}
         </motion.div>
 
         <div className="lg:relative">

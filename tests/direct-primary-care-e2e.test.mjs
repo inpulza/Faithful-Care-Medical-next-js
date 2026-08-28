@@ -25,6 +25,22 @@ function collectBrowserErrors(page) {
   return { pageErrors, consoleErrors };
 }
 
+async function contrastRatio(locator) {
+  return locator.evaluate((element) => {
+    const parse = (value) => value.match(/[\d.]+/g).slice(0, 3).map(Number);
+    const luminance = (rgb) => {
+      const linear = rgb.map((channel) => {
+        const value = channel / 255;
+        return value <= 0.04045 ? value / 12.92 : ((value + 0.055) / 1.055) ** 2.4;
+      });
+      return 0.2126 * linear[0] + 0.7152 * linear[1] + 0.0722 * linear[2];
+    };
+    const foreground = luminance(parse(getComputedStyle(element).color));
+    const background = luminance(parse(getComputedStyle(element.closest("section")).backgroundColor));
+    return (Math.max(foreground, background) + 0.05) / (Math.min(foreground, background) + 0.05);
+  });
+}
+
 async function assertDpcPage(page) {
   assert.equal(currentPath(page), path);
   await page.waitForFunction(
@@ -66,6 +82,12 @@ async function assertDpcPage(page) {
   const agreementImage = page.getByTestId("section-dpc-enrollment-story-1").locator("img");
   assert.match(await agreementImage.getAttribute("src"), /planning-transitions\.webp$/);
   assert.match(await agreementImage.getAttribute("alt"), /holding a document/i);
+
+  const storiesHeader = page.getByTestId("section-dpc-enrollment-header");
+  assert.ok(await contrastRatio(storiesHeader.locator("h2")) >= 3, "the large stories heading must meet 3:1 contrast");
+  for (const paragraph of await storiesHeader.locator("p").all()) {
+    assert.ok(await contrastRatio(paragraph) >= 4.5, "stories header body text must meet 4.5:1 contrast");
+  }
 
   if (page.viewportSize()?.width < 768) {
     assert.equal(await page.getByTestId("button-mobile-contact-fab").isVisible(), false);

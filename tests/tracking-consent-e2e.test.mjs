@@ -777,6 +777,9 @@ test("the mobile action-bar form emits one sanitized lead after full consent", a
     await page.getByTestId("select-ab-contact-service").selectOption({ index: 1 });
     await page.getByTestId("button-ab-contact-submit").click();
     await page.getByTestId("text-action-bar-form-success").waitFor();
+    await page.waitForFunction(() => document.activeElement?.getAttribute("data-testid") === "button-action-bar-contact-close");
+    await page.keyboard.press("Tab");
+    await page.waitForFunction(() => document.activeElement?.getAttribute("data-testid") === "button-action-bar-contact-close");
 
     const leads = (await commands(page, "google", "event")).filter(
       (entry) => entry[1] === "generate_lead",

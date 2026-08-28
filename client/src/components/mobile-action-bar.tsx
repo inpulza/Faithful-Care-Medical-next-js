@@ -250,7 +250,10 @@ function ActionBarContactModal({
 
       const first = focusable[0];
       const last = focusable[focusable.length - 1];
-      if (event.shiftKey && document.activeElement === first) {
+      if (!dialog.contains(document.activeElement)) {
+        event.preventDefault();
+        (event.shiftKey ? last : first).focus();
+      } else if (event.shiftKey && document.activeElement === first) {
         event.preventDefault();
         last.focus();
       } else if (!event.shiftKey && document.activeElement === last) {
@@ -267,6 +270,10 @@ function ActionBarContactModal({
       returnFocusRef.current?.focus();
     };
   }, [isOpen, onClose, returnFocusRef]);
+
+  React.useEffect(() => {
+    if (isOpen && submitted) closeButtonRef.current?.focus();
+  }, [isOpen, submitted]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
