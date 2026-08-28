@@ -105,6 +105,8 @@ export function MobileActionBar() {
   const [formOpen, setFormOpen] = React.useState(false);
   const [location] = useLocation();
   const isSpanish = location === "/es" || location.startsWith("/es/");
+  const appointmentTriggerRef = React.useRef<HTMLButtonElement>(null);
+  const closeForm = React.useCallback(() => setFormOpen(false), []);
 
   React.useEffect(() => {
     const handleScroll = () => {
@@ -142,6 +144,7 @@ export function MobileActionBar() {
                 return (
                   <button
                     key={action.id}
+                    ref={appointmentTriggerRef}
                     onClick={() => setFormOpen(true)}
                     className="flex flex-col items-center justify-center gap-1 flex-1 py-2 rounded-xl active:scale-95 transition-transform"
                     data-testid={`action-bar-${action.id}`}
@@ -182,12 +185,27 @@ export function MobileActionBar() {
         </div>
       </div>
 
-      <ActionBarContactModal isOpen={formOpen} onClose={() => setFormOpen(false)} isSpanish={isSpanish} />
+      <ActionBarContactModal
+        isOpen={formOpen}
+        onClose={closeForm}
+        isSpanish={isSpanish}
+        returnFocusRef={appointmentTriggerRef}
+      />
     </>
   );
 }
 
-function ActionBarContactModal({ isOpen, onClose, isSpanish }: { isOpen: boolean; onClose: () => void; isSpanish: boolean }) {
+function ActionBarContactModal({
+  isOpen,
+  onClose,
+  isSpanish,
+  returnFocusRef,
+}: {
+  isOpen: boolean;
+  onClose: () => void;
+  isSpanish: boolean;
+  returnFocusRef: React.RefObject<HTMLButtonElement | null>;
+}) {
   const [formData, setFormData] = React.useState({
     name: "",
     email: "",
@@ -199,15 +217,56 @@ function ActionBarContactModal({ isOpen, onClose, isSpanish }: { isOpen: boolean
   const [error, setError] = React.useState("");
   const [location] = useLocation();
   const t = actionBarFormText[isSpanish ? "es" : "en"];
+  const dialogRef = React.useRef<HTMLDivElement>(null);
+  const closeButtonRef = React.useRef<HTMLButtonElement>(null);
+  const titleId = React.useId();
+  const subtitleId = React.useId();
 
   React.useEffect(() => {
-    if (isOpen) {
-      document.body.style.overflow = 'hidden';
-    } else {
-      document.body.style.overflow = '';
-    }
-    return () => { document.body.style.overflow = ''; };
-  }, [isOpen]);
+    if (!isOpen) return;
+
+    document.body.style.overflow = "hidden";
+    const focusFrame = window.requestAnimationFrame(() => closeButtonRef.current?.focus());
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        event.preventDefault();
+        onClose();
+        return;
+      }
+
+      if (event.key !== "Tab") return;
+      const dialog = dialogRef.current;
+      if (!dialog) return;
+      const focusable = Array.from(
+        dialog.querySelectorAll<HTMLElement>(
+          'button:not([disabled]), a[href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])',
+        ),
+      ).filter((element) => !element.hasAttribute("hidden"));
+      if (focusable.length === 0) {
+        event.preventDefault();
+        dialog.focus();
+        return;
+      }
+
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
+    };
+
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      window.cancelAnimationFrame(focusFrame);
+      document.removeEventListener("keydown", handleKeyDown);
+      document.body.style.overflow = "";
+      returnFocusRef.current?.focus();
+    };
+  }, [isOpen, onClose, returnFocusRef]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -262,6 +321,7 @@ function ActionBarContactModal({ isOpen, onClose, isSpanish }: { isOpen: boolean
             data-testid="action-bar-contact-backdrop"
           />
           <motion.div
+            ref={dialogRef}
             className="relative w-full max-h-[90vh] overflow-y-auto bg-white rounded-t-3xl px-6 pt-6 pb-8 shadow-2xl"
             initial={{ y: "100%" }}
             animate={{ y: 0 }}
@@ -269,13 +329,19 @@ function ActionBarContactModal({ isOpen, onClose, isSpanish }: { isOpen: boolean
             transition={{ type: "spring", stiffness: 350, damping: 35 }}
             data-testid="action-bar-contact-sheet"
             lang={isSpanish ? "es" : "en"}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby={titleId}
+            aria-describedby={subtitleId}
+            tabIndex={-1}
           >
             <div className="flex items-center justify-between mb-6">
               <div>
-                <p className="text-lg font-bold text-[hsl(var(--foreground))]">{t.title}</p>
-                <p className="text-sm text-[hsl(var(--foreground)/0.5)]">{t.subtitle}</p>
+                <p id={titleId} className="text-lg font-bold text-[hsl(var(--foreground))]">{t.title}</p>
+                <p id={subtitleId} className="text-sm text-[hsl(var(--foreground)/0.5)]">{t.subtitle}</p>
               </div>
               <button
+                ref={closeButtonRef}
                 onClick={onClose}
                 className="w-10 h-10 rounded-full bg-[hsl(var(--primary)/0.06)] flex items-center justify-center"
                 data-testid="button-action-bar-contact-close"

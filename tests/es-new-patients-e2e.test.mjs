@@ -61,17 +61,30 @@ test("the Spanish new-patient journey works from the footer on desktop and mobil
         assert.match(mainText, /identificaci[oó]n con foto/i);
 
         if (viewport.name === "mobile") {
-          await page.getByTestId("action-bar-appointment").click();
-          const actionSheet = page.getByTestId("action-bar-contact-sheet");
+          const appointmentTrigger = page.getByTestId("action-bar-appointment");
+          await appointmentTrigger.click();
+          const actionSheet = page.getByRole("dialog", { name: "Pedir una cita" });
           await actionSheet.waitFor({ state: "visible" });
           assert.equal(await actionSheet.getAttribute("lang"), "es");
+          assert.equal(await actionSheet.getAttribute("aria-modal"), "true");
           assert.match(await actionSheet.innerText(), /pedir una cita/i);
           await actionSheet.getByLabel("Nombre completo").waitFor({ state: "visible" });
           await actionSheet.getByLabel("Correo electrónico").waitFor({ state: "visible" });
           await actionSheet.getByLabel("Motivo").waitFor({ state: "visible" });
           assert.match(await page.getByTestId("button-ab-contact-submit").innerText(), /pedir cita/i);
-          await page.getByTestId("button-action-bar-contact-close").click();
+          const closeButton = page.getByTestId("button-action-bar-contact-close");
+          await page.waitForFunction(() => document.activeElement?.getAttribute("data-testid") === "button-action-bar-contact-close");
+          await page.keyboard.press("Shift+Tab");
+          assert.equal(
+            await actionSheet.locator('a[href="tel:2394230205"]').evaluate((element) => element === document.activeElement),
+            true,
+            "Shift+Tab from the first control should wrap to the final control",
+          );
+          await page.keyboard.press("Tab");
+          await page.waitForFunction(() => document.activeElement?.getAttribute("data-testid") === "button-action-bar-contact-close");
+          await page.keyboard.press("Escape");
           await actionSheet.waitFor({ state: "hidden" });
+          await page.waitForFunction(() => document.activeElement?.getAttribute("data-testid") === "action-bar-appointment");
         }
 
         const emergencyQuestion = page.getByTestId("faq-trigger-6");
