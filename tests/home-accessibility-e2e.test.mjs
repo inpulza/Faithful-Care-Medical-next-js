@@ -92,12 +92,18 @@ test("homepage interactive controls expose valid names, contrast, and touch targ
     assert.equal(mobileResponse?.status(), 200);
 
     const contactFab = mobilePage.getByTestId("button-mobile-contact-fab");
-    await contactFab.waitFor({ state: "visible" });
-    assert.equal(
-      await contactFab.getAttribute("aria-label"),
-      normalizeLabel(await contactFab.innerText()),
-      "the FAB accessible name must contain its visible label verbatim",
-    );
+    assert.equal(await contactFab.isVisible(), false, "the tablet FAB must not duplicate the mobile action bar");
+    await mobilePage.getByTestId("mobile-action-bar").waitFor({ state: "visible" });
+    const appointmentTrigger = mobilePage.getByTestId("action-bar-appointment");
+    await appointmentTrigger.waitFor({ state: "visible" });
+    await appointmentTrigger.click();
+    const appointmentDialog = mobilePage.getByRole("dialog", { name: "Request a Visit" });
+    await appointmentDialog.waitFor({ state: "visible" });
+    assert.equal(await appointmentDialog.getAttribute("aria-modal"), "true");
+    await mobilePage.waitForFunction(() => document.activeElement?.getAttribute("data-testid") === "button-action-bar-contact-close");
+    await mobilePage.keyboard.press("Escape");
+    await appointmentDialog.waitFor({ state: "hidden" });
+    await mobilePage.waitForFunction(() => document.activeElement?.getAttribute("data-testid") === "action-bar-appointment");
 
     const dots = mobilePage.locator('[data-testid^="dpc-dot-"]');
     await dots.first().scrollIntoViewIfNeeded();

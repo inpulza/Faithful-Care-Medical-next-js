@@ -1,132 +1,139 @@
 import * as React from "react";
 import {
+  DetailGrid,
   FaqSection,
+  ImageMarquee,
   MeetYourDoctor,
   PageHero,
+  SplitFeaturePanel,
+  StackedFeatureStories,
   TealCta,
 } from "@/components/sections";
 import type { FaqItem } from "@/components/sections";
-import { InfoSection, type HubInfoSection } from "@/components/care-hub-page";
-import { InsuranceMembership } from "@/components/sections/insurance-membership";
 import { JsonLdArray } from "@/components/json-ld";
 import { pageContentMap } from "@/lib/page-content";
 import { faqPageSchema } from "@/lib/schemas";
+import {
+  CalendarCheck,
+  ChatCircleText,
+  ClipboardText,
+  CurrencyDollar,
+  FileText,
+  Hospital,
+  Prescription,
+  ShieldCheck,
+  Stethoscope,
+  UserFocus,
+  WarningCircle,
+} from "@phosphor-icons/react";
 
-const membershipBenefits = [
+const membershipDetails = [
   {
-    title: "Written Service Terms",
-    subtitle: "Know what the membership covers",
+    icon: FileText,
+    title: "Written terms first",
     description:
-      "Before enrollment, we provide the current written agreement so you can review the services, visit terms, communication options, and exclusions that apply.",
-    features: [
-      "Current inclusions in writing",
-      "Exclusions identified before enrollment",
-      "Terms you can review before deciding",
-    ],
+      "You receive the membership agreement before enrollment so you can review the fee, included services, exclusions, communication options, and cancellation terms.",
   },
   {
-    title: "Planned Primary Care",
-    subtitle: "A defined membership relationship",
+    icon: Stethoscope,
+    title: "Defined primary care",
     description:
-      "The membership supports the primary care services described in your agreement, with scheduling based on clinical need and current availability.",
-    features: [
-      "Primary care services defined by agreement",
-      "Scheduling options explained in advance",
-      "Clinical follow-up based on your needs",
-    ],
+      "The agreement identifies which primary care services belong to the membership. Care and follow-up remain based on your clinical needs.",
   },
   {
-    title: "Communication Options",
-    subtitle: "Clear ways to contact the practice",
+    icon: CalendarCheck,
+    title: "Scheduling explained",
     description:
-      "Your agreement explains which communication channels are available between visits, their appropriate use, and when an in-person evaluation is needed.",
-    features: [
-      "Practice-defined communication channels",
-      "Guidance between scheduled visits",
-      "In-person evaluation when clinically appropriate",
-    ],
+      "Available scheduling options and their limits are explained before you join. Appointment timing still depends on clinical need and availability.",
   },
   {
-    title: "Current Pricing",
-    subtitle: "Review the fee before enrollment",
+    icon: ChatCircleText,
+    title: "Communication boundaries",
     description:
-      "We explain the current membership fee and any services that may involve separate charges before you sign the written agreement.",
-    features: [
-      "Current fee disclosed before enrollment",
-      "Separate charges identified when applicable",
-      "No enrollment without your review",
-    ],
+      "The agreement explains which channels may be used between visits, what they are for, and when an office evaluation or urgent care is more appropriate.",
   },
   {
-    title: "Coverage Stays Separate",
-    subtitle: "The membership is not insurance",
+    icon: CurrencyDollar,
+    title: "Fee disclosed before enrollment",
     description:
-      "Direct Primary Care does not replace coverage for hospital care, specialists, emergency services, prescriptions, imaging, or other care outside the agreement.",
-    features: [
-      "Not a health insurance plan",
-      "Outside care may require separate coverage",
-      "Emergency care is not part of the membership",
-    ],
+      "Faithful Care provides the fee currently offered and identifies services that may involve a separate charge before you decide.",
+  },
+  {
+    icon: ShieldCheck,
+    title: "Outside coverage stays important",
+    description:
+      "The membership is not health insurance and does not replace coverage for hospital care, specialists, emergencies, imaging, prescriptions, or other outside services.",
   },
 ];
 
-const infoSections: HubInfoSection[] = [
+const enrollmentStories = [
   {
-    id: "not-health-insurance",
-    eyebrow: "An Important Distinction",
-    title: "Direct Primary Care is a membership, not health insurance.",
+    icon: ChatCircleText,
+    title: "Start with a conversation",
     description:
-      "The membership covers only the primary care services listed in the current written agreement. It does not replace health coverage for hospitals, specialists, emergency services, imaging, prescriptions, or other care outside that agreement.",
-    bullets: [
-      <>
-        <strong>Keep appropriate health coverage:</strong> the membership is not a substitute for medical insurance.
-      </>,
-      <>
-        <strong>Use emergency services when needed:</strong> call 911 or go to the nearest emergency department for a medical emergency.
-      </>,
-      <>
-        <strong>Do not delay urgent care:</strong> the membership does not guarantee immediate appointments or emergency response.
-      </>,
-      <>
-        <strong>Ask before enrolling:</strong> we will explain what is included, excluded, and billed separately under the current agreement.
-      </>,
-    ],
+      "Tell Faithful Care what you need from primary care and ask whether membership enrollment is currently available. This first step is informational and does not obligate you to join.",
+    tags: ["Your care needs", "Current availability", "Questions welcome"],
+    image: "/images/services/checkups-prevention.webp",
+    imageAlt: "Patient discussing primary care needs with a clinician",
+    note: "No enrollment decision is required during the first conversation.",
+    cta: { label: "Request information", href: "/contact" },
   },
   {
-    id: "how-membership-works",
-    eyebrow: "How It Works",
-    title: "Primary care terms you can review before you decide.",
+    icon: ClipboardText,
+    title: "Read the membership agreement",
     description:
-      "Direct Primary Care uses a recurring membership fee for the specific primary care services described in a written agreement with Faithful Care Medical Services. The agreement in effect when you enroll controls the price, services, scheduling and communication options, exclusions, and cancellation terms.",
-    bullets: [
-      <>
-        <strong>Current membership fee:</strong> disclosed before you sign.
-      </>,
-      <>
-        <strong>Included primary care services:</strong> listed in the written agreement.
-      </>,
-      <>
-        <strong>Scheduling and communication:</strong> subject to clinical need, practice availability, and the agreement.
-      </>,
-      <>
-        <strong>Outside services:</strong> labs, imaging, medications, specialists, hospital care, and other services may involve separate charges.
-      </>,
-    ],
+      "Review the fee, included services, exclusions, scheduling, communication, renewal, and cancellation terms in the version offered to you. Ask about anything that is unclear.",
+    tags: ["Fee", "Included care", "Exclusions", "Cancellation"],
+    image: "/images/services/planning-transitions.webp",
+    imageAlt: "Patient holding a document while discussing care options with a clinician",
+    note: "The signed agreement, not an older webpage or promotion, controls the membership.",
   },
   {
-    id: "before-enrollment",
-    eyebrow: "Before You Enroll",
-    title: "Review the current agreement, not an old offer or assumption.",
+    icon: ShieldCheck,
+    title: "Plan for care outside the membership",
     description:
-      "Membership details can change. Ask Faithful Care Medical Services for the agreement currently offered, read it in full, and make sure the model fits alongside the health coverage and outside care you may need.",
-    bullets: [
-      "Confirm the current fee, effective date, and payment terms.",
-      "Review every included and excluded service.",
-      "Understand scheduling, communication, renewal, and cancellation terms.",
-      "Ask which services or third-party costs are billed separately.",
-    ],
-    cta: { text: "Request Current Membership Terms", href: "/contact" },
+      "Decide how you will cover hospitals, specialists, emergency care, imaging, prescriptions, and other services outside the agreement. Direct Primary Care is not a substitute for health insurance.",
+    tags: ["Hospital care", "Specialists", "Prescriptions", "Emergencies"],
+    image: "/images/services/senior-care.webp",
+    imageAlt: "Adult patient planning coordinated medical care with a clinician",
+    note: "Keep health coverage appropriate to your needs.",
   },
+  {
+    icon: UserFocus,
+    title: "Enroll only when the fit is clear",
+    description:
+      "If the available membership fits your needs, complete the agreement and follow the enrollment instructions provided by Faithful Care. Your care begins according to those written terms.",
+    tags: ["Informed decision", "Written enrollment", "Clear next steps"],
+    image: "/images/services/chronic-disease.webp",
+    imageAlt: "Doctor and patient discussing a personalized primary care plan",
+    note: "Contact the practice whenever you need clarification before signing.",
+    cta: { label: "Contact Faithful Care", href: "/contact" },
+  },
+];
+
+const includedItems = [
+  { icon: Stethoscope, title: "Primary care services", description: "Only the primary care services specifically listed in the agreement offered at enrollment are included." },
+  { icon: CalendarCheck, title: "Scheduling options", description: "The agreement explains available appointment options, subject to clinical need and practice availability." },
+  { icon: ChatCircleText, title: "Communication options", description: "Permitted between-visit channels and their appropriate use are described in writing." },
+  { icon: ClipboardText, title: "Terms you can review", description: "The fee, exclusions, separate charges, renewal, and cancellation terms are available before you sign." },
+];
+
+const outsideItems = [
+  { icon: Hospital, title: "Hospital and emergency care", description: "Hospitalization, emergency departments, and emergency response are outside a primary care membership." },
+  { icon: UserFocus, title: "Specialist care", description: "Visits and treatment provided by outside specialists are not automatically part of the membership." },
+  { icon: Prescription, title: "Prescriptions, imaging, and outside labs", description: "Medication, imaging, and third-party testing may involve separate coverage or charges." },
+  { icon: WarningCircle, title: "Urgent and emergency situations", description: "The membership does not guarantee an immediate response. Call 911 for a medical emergency." },
+];
+
+const dpcMarquee = [
+  { type: "image" as const, src: "/images/services/checkups-prevention.webp", alt: "Primary care planning" },
+  { type: "text" as const, label: "Written Terms" },
+  { type: "image" as const, src: "/images/services/chronic-disease.webp", alt: "Ongoing primary care" },
+  { type: "text" as const, label: "Defined Services" },
+  { type: "image" as const, src: "/images/services/senior-care.webp", alt: "Personalized adult primary care" },
+  { type: "text" as const, label: "Naples, FL" },
+  { type: "image" as const, src: "/images/services/in-office-procedures.webp", alt: "Reviewing primary care options" },
+  { type: "text" as const, label: "Clear Exclusions" },
 ];
 
 const faqItems: FaqItem[] = [
@@ -139,6 +146,11 @@ const faqItems: FaqItem[] = [
     question: "Is Direct Primary Care health insurance?",
     answer:
       "No. Direct Primary Care is not health insurance and does not replace coverage for hospital care, specialists, emergency services, imaging, prescriptions, or other services outside the membership agreement. Patients should maintain health coverage appropriate to their needs.",
+  },
+  {
+    question: "Is Direct Primary Care the same as concierge medicine?",
+    answer:
+      "Not necessarily. The terms are sometimes used loosely, but Direct Primary Care and concierge arrangements can differ in fees, insurance billing, included services, and access. Review the written agreement offered by Faithful Care rather than assuming another practice's model applies here.",
   },
   {
     question: "How much does the membership cost?",
@@ -201,28 +213,52 @@ export default function DirectPrimaryCare() {
           primaryCtaHref="tel:2394230205"
           secondaryCtaText="Request Membership Terms"
           secondaryCtaHref="/contact"
+          trustLineText={
+            <>
+              Membership, not health insurance <span className="opacity-60">·</span> Se habla espa&ntilde;ol
+            </>
+          }
           showSearchCard={true}
         />
 
         <div id="page-content">
-          <InfoSection section={infoSections[0]} categoryId="direct-primary-care" />
-
-          <InfoSection section={infoSections[1]} categoryId="direct-primary-care" />
-
-          <InsuranceMembership
-            eyebrow="Direct Primary Care"
-            title="Know the terms before you enroll."
-            dpcHeading="A membership for defined primary care services"
-            dpcBold="One current written agreement. Clear inclusions and exclusions."
-            dpcParagraph1="Before enrollment, Faithful Care Medical Services explains the current fee, covered primary care services, scheduling and communication options, exclusions, and any separately charged services described in the agreement."
-            dpcParagraph2="Direct Primary Care is not health insurance and does not replace coverage for hospitals, specialists, emergency services, imaging, prescriptions, or other care outside the agreement."
-            ctaText="Request Current Membership Terms"
-            ctaHref="/contact"
-            benefits={membershipBenefits}
-            showInsuranceMarquee={false}
+          <DetailGrid
+            eyebrow="Direct Primary Care, clearly explained"
+            eyebrowColor="primary"
+            title="Know what you are joining before you sign."
+            description="Use these six details to compare the membership with the primary care, outside services, and health coverage you may need."
+            statNumber="6"
+            statLabel="membership details to review before enrollment"
+            cards={membershipDetails}
           />
 
-          <InfoSection section={infoSections[2]} categoryId="direct-primary-care" />
+          <StackedFeatureStories
+            eyebrow="How enrollment works"
+            title="Four steps from first question to informed decision."
+            description="The process is designed to give you the information you need before you commit. The written agreement controls the membership."
+            stories={enrollmentStories}
+            testId="section-dpc-enrollment"
+          />
+
+          <SplitFeaturePanel
+            eyebrow="Inside the agreement"
+            title="The membership is defined in writing."
+            description="Faithful Care explains the version currently offered before enrollment. These categories show what to look for without replacing the actual agreement."
+            items={includedItems}
+            testId="section-dpc-included"
+          />
+
+          <SplitFeaturePanel
+            eyebrow="Outside the membership"
+            title="Keep a plan for the care DPC does not replace."
+            description="Direct Primary Care is not health insurance. Appropriate outside coverage remains important for services beyond the membership agreement."
+            items={outsideItems}
+            tone="navy"
+            testId="section-dpc-outside"
+            className="pt-0"
+          />
+
+          <ImageMarquee items={dpcMarquee} speed={42} />
         </div>
 
         <MeetYourDoctor />

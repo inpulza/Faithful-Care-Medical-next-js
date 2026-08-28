@@ -9,10 +9,10 @@ test("Next route contract preserves the public surface and approved redirects", 
 
   const { publicRoutes, redirectRules, routeForPath } = await import(contractUrl.href);
 
-  assert.equal(publicRoutes.length, 38);
-  assert.equal(new Set(publicRoutes.map((route) => route.path)).size, 38);
+  assert.equal(publicRoutes.length, 39);
+  assert.equal(new Set(publicRoutes.map((route) => route.path)).size, 39);
   assert.equal(publicRoutes.filter((route) => route.lang === "en").length, 33);
-  assert.equal(publicRoutes.filter((route) => route.lang === "es").length, 5);
+  assert.equal(publicRoutes.filter((route) => route.lang === "es").length, 6);
 
   assert.equal(routeForPath("/")?.canonical, "https://faithfulcaremedical.com/");
   assert.equal(routeForPath("/es/")?.path, "/es");
@@ -22,6 +22,11 @@ test("Next route contract preserves the public surface and approved redirects", 
     "x-default": "https://faithfulcaremedical.com/insurance-accepted",
   });
   assert.equal(routeForPath("/medicare")?.languages, undefined);
+  assert.deepEqual(routeForPath("/es/pacientes-nuevos")?.languages, {
+    en: "https://faithfulcaremedical.com/new-patients",
+    es: "https://faithfulcaremedical.com/es/pacientes-nuevos",
+    "x-default": "https://faithfulcaremedical.com/new-patients",
+  });
   const directPrimaryCareRoute = routeForPath("/direct-primary-care");
   assert.ok(directPrimaryCareRoute);
   assert.equal(directPrimaryCareRoute.title, "Direct Primary Care in Naples, FL");
@@ -36,7 +41,7 @@ test("Next route contract preserves the public surface and approved redirects", 
   assert.equal(routeForPath("/does-not-exist"), undefined);
 
   const { HREFLANG_PAIRS } = await import(new URL("../shared/seo-data.ts", import.meta.url).href);
-  assert.equal(HREFLANG_PAIRS.length, 5);
+  assert.equal(HREFLANG_PAIRS.length, 6);
   for (const pair of HREFLANG_PAIRS) {
     assert.equal(routeForPath(pair.en)?.languages?.es, `https://faithfulcaremedical.com${pair.es}`);
     assert.equal(routeForPath(pair.es)?.languages?.en, `https://faithfulcaremedical.com${pair.en}`);
@@ -56,7 +61,7 @@ test("Next route contract preserves the public surface and approved redirects", 
   const trailingSlashRules = redirectRules.filter((rule) =>
     rule.source.endsWith("/") && rule.source !== "/",
   );
-  assert.equal(trailingSlashRules.length, 37);
+  assert.equal(trailingSlashRules.length, 38);
   for (const route of publicRoutes.filter(({ path }) => path !== "/")) {
     assert.deepEqual(
       trailingSlashRules.find((rule) => rule.source === `${route.path}/`),

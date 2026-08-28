@@ -21,12 +21,25 @@ function useResponsiveSize() {
   return isMobile;
 }
 
+function usePrefersReducedMotion() {
+  const [reduced, setReduced] = React.useState(false);
+  React.useEffect(() => {
+    const query = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const update = () => setReduced(query.matches);
+    update();
+    query.addEventListener("change", update);
+    return () => query.removeEventListener("change", update);
+  }, []);
+  return reduced;
+}
+
 export function ImageMarquee({ items, speed = 50, className }: ImageMarqueeProps) {
   const singleSetRef = React.useRef<HTMLDivElement>(null);
   const [singleSetWidth, setSingleSetWidth] = React.useState(0);
   const [isPaused, setIsPaused] = React.useState(false);
   const uniqueId = React.useId().replace(/:/g, "");
   const isMobile = useResponsiveSize();
+  const reducedMotion = usePrefersReducedMotion();
   const MARQUEE_HEIGHT = isMobile ? 80 : 110;
   const IMAGE_SIZE = isMobile ? 56 : 74;
   const IMG_MARGIN = isMobile ? 12 : 20;
@@ -53,7 +66,7 @@ export function ImageMarquee({ items, speed = 50, className }: ImageMarqueeProps
     });
     window.addEventListener("resize", measure);
     return () => window.removeEventListener("resize", measure);
-  }, [items, isMobile]);
+  }, [items, isMobile, reducedMotion]);
 
   const duration = singleSetWidth > 0 ? singleSetWidth / speed : 30;
 
@@ -85,7 +98,7 @@ export function ImageMarquee({ items, speed = 50, className }: ImageMarqueeProps
                 objectFit: "cover",
                 display: "block",
                 transition: "transform 0.35s cubic-bezier(0.22, 0.61, 0.36, 1), box-shadow 0.35s ease",
-                cursor: "pointer",
+                cursor: "default",
                 position: "relative",
                 zIndex: 1,
               }}
@@ -126,6 +139,25 @@ export function ImageMarquee({ items, speed = 50, className }: ImageMarqueeProps
       );
     });
 
+  if (reducedMotion) {
+    return (
+      <section
+        className={`relative ${className || ""}`}
+        style={{
+          minHeight: MARQUEE_HEIGHT,
+          backgroundColor: BG_COLOR,
+          marginTop: "clamp(32px, 4vw, 56px)",
+          marginBottom: "clamp(32px, 4vw, 56px)",
+        }}
+        data-testid="section-image-marquee"
+      >
+        <div className="container-radical flex flex-wrap items-center justify-center gap-y-3 py-3">
+          {renderItems(items, "static")}
+        </div>
+      </section>
+    );
+  }
+
   return (
     <section
       className={`relative ${className || ""}`}
@@ -161,6 +193,7 @@ export function ImageMarquee({ items, speed = 50, className }: ImageMarqueeProps
             className={`mq-track-${uniqueId} flex items-center h-full`}
             style={{
               animationPlayState: isPaused ? "paused" : "running",
+              animation: reducedMotion ? "none" : undefined,
               willChange: "transform",
               width: "max-content",
             }}
@@ -168,19 +201,19 @@ export function ImageMarquee({ items, speed = 50, className }: ImageMarqueeProps
             <div ref={singleSetRef} className="flex items-center" style={{ width: "max-content" }}>
               {renderItems(items, "a")}
             </div>
-            <div className="flex items-center" style={{ width: "max-content" }}>
+            <div className="flex items-center" style={{ width: "max-content" }} aria-hidden="true">
               {renderItems(items, "b")}
             </div>
-            <div className="flex items-center" style={{ width: "max-content" }}>
+            <div className="flex items-center" style={{ width: "max-content" }} aria-hidden="true">
               {renderItems(items, "c")}
             </div>
-            <div className="flex items-center" style={{ width: "max-content" }}>
+            <div className="flex items-center" style={{ width: "max-content" }} aria-hidden="true">
               {renderItems(items, "d")}
             </div>
-            <div className="flex items-center" style={{ width: "max-content" }}>
+            <div className="flex items-center" style={{ width: "max-content" }} aria-hidden="true">
               {renderItems(items, "e")}
             </div>
-            <div className="flex items-center" style={{ width: "max-content" }}>
+            <div className="flex items-center" style={{ width: "max-content" }} aria-hidden="true">
               {renderItems(items, "f")}
             </div>
           </div>

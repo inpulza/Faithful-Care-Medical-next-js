@@ -207,7 +207,7 @@ export const serviceSectionsMap: Record<string, ServiceSectionData> = {
         },
         {
           question: "What does a Medicare Annual Wellness Visit include?",
-          answer: "Medicare covers one free Annual Wellness Visit per year. It includes a health risk assessment, personalized prevention plan, depression screening, and a review of your current medications and vaccinations.",
+          answer: "Medicare Part B covers a yearly Wellness Visit when eligibility requirements are met. It is a preventive planning visit, not a routine physical exam. The visit generally includes a health risk assessment and a personalized prevention plan; additional tests or services performed during the appointment may involve separate cost sharing.",
         },
         {
           question: "At what age should I start getting cancer screenings?",
@@ -215,7 +215,7 @@ export const serviceSectionsMap: Record<string, ServiceSectionData> = {
         },
         {
           question: "Do you accept Medicare for preventive care in Naples?",
-          answer: "Yes. Faithful Care accepts Original Medicare, Florida Medicaid (through Sunshine Health), Humana, Aetna, and Cigna. Most preventive services, including annual physicals and cancer screenings, are covered at no cost through Medicare.",
+          answer: "Faithful Care accepts Original Medicare and other listed plans, subject to verification for your specific plan and service. Medicare coverage and patient costs vary by the service provided. A yearly Wellness Visit is not the same as a routine physical exam, and additional tests or services may involve cost sharing.",
         },
         {
           question: "What vaccinations do adults need in Florida?",
@@ -961,7 +961,7 @@ export const serviceSectionsMap: Record<string, ServiceSectionData> = {
     alternatingBlock: {
       subtitle: "Not hospice, not giving up",
       title: "Palliative care works alongside your regular treatment.",
-      description: "Many patients and families in Southwest Florida confuse palliative care with hospice. They are not the same thing. Hospice is for the final months of life when curative treatment has stopped. Palliative care can begin the day you receive a serious diagnosis, whether that is cancer, heart failure, COPD, kidney disease, or any other condition that impacts your quality of life. You can receive palliative care while still pursuing aggressive treatment. At Faithful Care in Naples, Dr. Reve provides palliative support that helps you feel better, stay stronger, and make informed decisions at every stage of your illness.",
+      description: "Many patients and families in Southwest Florida confuse palliative care with hospice. They are not the same thing. For the Medicare hospice benefit, physicians generally certify a life expectancy of six months or less if the terminal illness follows its usual course, and the patient elects comfort-focused hospice care for that illness; the election can be revoked. Palliative care can begin at any stage of a serious illness and may be provided alongside treatment directed at the illness. At Faithful Care in Naples, Dr. Reve provides palliative support focused on symptoms, quality of life, and informed decisions.",
       imageSrc: "/images/services/pain-comfort-management.webp",
       imageAlt: "Doctor providing compassionate palliative care consultation at Faithful Care Medical Services in Naples, Florida",
       ctaText: "Learn how we can help",
@@ -971,37 +971,37 @@ export const serviceSectionsMap: Record<string, ServiceSectionData> = {
     },
     visitSteps: {
       title: "How palliative care starts at Faithful Care in Naples.",
-      subtitle: "Getting started is simple. No special referral is required. Here is what to expect.",
+      subtitle: "Contact Faithful Care to ask whether a referral is needed for your situation and request the next available consultation. Here is what to expect.",
       steps: [
         {
           icon: Phone,
           title: "Call or request a consultation",
-          description: "You, a family member, or your current doctor can contact us. No referral is needed. We schedule your first palliative care visit within days.",
-          duration: "5 min",
+          description: "You, a family member, or your current doctor can contact us. We will explain any referral or coverage requirements and offer the next available appointment.",
+          duration: "First call",
         },
         {
           icon: Clipboard,
           title: "Comprehensive needs assessment",
           description: "Dr. Reve reviews your diagnosis, current treatments, symptoms, and personal goals. Family members are welcome and encouraged to attend.",
-          duration: "30-45 min",
+          duration: "At your visit",
         },
         {
           icon: ListChecks,
           title: "Personalized comfort plan",
           description: "Together we build a plan to address your pain, symptoms, medication side effects, and emotional concerns. Every plan is tailored to your specific situation.",
-          duration: "15-20 min",
+          duration: "After assessment",
         },
         {
           icon: TreeStructure,
           title: "Coordination with your care team",
           description: "We contact your oncologist, cardiologist, or other specialists to align your palliative support with your ongoing treatment plan.",
-          duration: "Same week",
+          duration: "As appropriate",
         },
         {
           icon: CalendarCheck,
           title: "Ongoing follow-up and adjustments",
           description: "Palliative care is not a one-time visit. We schedule regular follow-ups to adjust your plan as your condition or needs change.",
-          duration: "Every 2-4 weeks",
+          duration: "As needed",
         },
       ],
       ctaText: "Schedule your consultation",
@@ -1013,15 +1013,15 @@ export const serviceSectionsMap: Record<string, ServiceSectionData> = {
       items: [
         {
           question: "Is palliative care the same as hospice?",
-          answer: "No. Palliative care and hospice are different. Hospice is for patients in the final six months of life who have stopped curative treatment. Palliative care can start at any point after a serious diagnosis and works alongside your regular treatment. You do not have to stop fighting your illness to receive palliative care.",
+          answer: "No. Palliative care can begin at any stage of a serious illness and may be provided alongside treatment for that illness. Medicare hospice eligibility generally requires certification that a patient is expected to live six months or less if the illness follows its usual course, plus an election of comfort-focused hospice care for the terminal illness. A patient may revoke that hospice election.",
         },
         {
           question: "Who qualifies for palliative care in Naples?",
-          answer: "Any adult living with a serious illness qualifies for palliative care. This includes cancer, heart failure, COPD, kidney disease, Parkinson's, ALS, dementia, and other conditions that cause pain, symptoms, or stress. There is no age requirement and no minimum prognosis.",
+          answer: "Adults living with a serious illness may benefit from a palliative care evaluation when symptoms, treatment burden, or stress affect quality of life. This can include people living with cancer, heart failure, COPD, kidney disease, Parkinson's, ALS, dementia, and other serious conditions. A six-month prognosis is not required to request palliative care. Faithful Care evaluates whether its services fit the patient's clinical needs and verifies planned coverage.",
         },
         {
           question: "Does Medicare cover palliative care in Florida?",
-          answer: "Yes. Medicare Part B covers palliative care consultations and follow-up visits. Most commercial insurance plans and Medicaid also cover palliative care services. We verify your coverage before your first visit so there are no surprises.",
+          answer: "Coverage depends on the medically necessary services provided and the patient's specific Medicare or insurance benefits; outpatient palliative care is not presented as one uniform standalone Medicare benefit. Faithful Care verifies coverage for the planned services before the first visit, but patients should also confirm benefits and cost sharing with their plan.",
         },
         {
           question: "Can I continue seeing my specialists while receiving palliative care?",
@@ -1029,11 +1029,11 @@ export const serviceSectionsMap: Record<string, ServiceSectionData> = {
         },
         {
           question: "When is the right time to start palliative care?",
-          answer: "The earlier the better. Research shows that patients who start palliative care soon after a serious diagnosis experience better symptom control, less anxiety, and often better treatment outcomes. You do not have to wait until symptoms become severe.",
+          answer: "You can ask about palliative care after a serious diagnosis or when symptoms, treatment burden, or stress begin affecting daily life. You do not need to wait for a six-month prognosis. A clinician can help determine whether palliative support fits your current needs.",
         },
         {
           question: "Do you provide palliative care at home or only in your Naples office?",
-          answer: "We provide palliative care consultations at our Naples office on Tamiami Trail North. For patients who have difficulty traveling, we can arrange phone and video consultations between in-person visits to keep your care on track.",
+          answer: "Faithful Care provides palliative care consultations at its Naples office on Tamiami Trail North. Contact the practice to ask which visit formats are currently available for your situation; some concerns require an in-person evaluation.",
         },
       ],
     },

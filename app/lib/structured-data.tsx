@@ -73,6 +73,7 @@ const breadcrumbLabelOverrides: Record<string, string> = {
   "/es/cuidados-paliativos-naples": "Cuidados Paliativos",
   "/es/seguros-y-medicare": "Seguros y Medicare",
   "/es/contacto": "Contacto",
+  "/es/pacientes-nuevos": "Pacientes Nuevos",
 };
 
 function withoutContext(schema: Schema): Schema {

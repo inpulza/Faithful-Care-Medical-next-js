@@ -174,6 +174,15 @@ export function Footer({ className }: FooterProps) {
                   Español
                 </Link>
               </li>
+              <li>
+                <Link
+                  href="/es/pacientes-nuevos"
+                  className="text-white/60 hover:text-secondary transition-colors text-sm"
+                  data-testid="footer-link-es-new-patients"
+                >
+                  Pacientes nuevos en español
+                </Link>
+              </li>
             </ul>
           </div>
 

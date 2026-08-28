@@ -16,6 +16,7 @@ function buildRouteLabels(): Record<string, string> {
     "/es/cuidados-paliativos-naples": "Cuidados Paliativos",
     "/es/seguros-y-medicare": "Seguros y Medicare",
     "/es/contacto": "Contacto",
+    "/es/pacientes-nuevos": "Pacientes nuevos",
   };
 
   for (const category of navigationData) {

@@ -49,6 +49,7 @@ const expectedH1ByPath = new Map([
   ["/es/cuidados-paliativos-naples", "Cuidados Paliativos en Naples"],
   ["/es/seguros-y-medicare", "Seguros que Aceptamos y Medicare"],
   ["/es/contacto", "Contacto y Cómo Llegar"],
+  ["/es/pacientes-nuevos", "Aceptamos pacientes nuevos en Naples, Florida"],
 ]);
 
 function attribute(tag, name) {
@@ -240,7 +241,7 @@ test("Googlebot receives cautious Direct Primary Care membership content", async
 
   const faqPages = jsonLdSchemas(html).filter((schema) => schema["@type"] === "FAQPage");
   assert.equal(faqPages.length, 1, "DPC page must publish one FAQPage");
-  assert.equal(faqPages[0].mainEntity.length, 7, "DPC FAQPage must match all visible questions");
+  assert.equal(faqPages[0].mainEntity.length, 8, "DPC FAQPage must match all visible questions");
   for (const entity of faqPages[0].mainEntity) {
     assert.equal(entity["@type"], "Question");
     assert.equal(entity.acceptedAnswer?.["@type"], "Answer");
@@ -264,4 +265,23 @@ test("Googlebot receives cautious Direct Primary Care membership content", async
   for (const claim of unsupportedAbsoluteClaims) {
     assert.doesNotMatch(content, claim, `DPC page retained unsupported absolute claim ${claim}`);
   }
+});
+
+test("Googlebot receives consistent, non-absolute palliative and hospice guidance", async () => {
+  const path = "/palliative-care/about-palliative-care";
+  const response = await previewFetch(path, {
+    headers: {
+      Accept: "text/html,application/xhtml+xml",
+      "User-Agent": googlebotUserAgent,
+    },
+  });
+  const content = mainText(await response.text());
+
+  assert.equal(response.status, 200);
+  assert.match(content, /six months or less/i);
+  assert.match(content, /hospice election.*revoked|election can be revoked/i);
+  assert.match(content, /may benefit from a palliative care evaluation/i);
+  assert.doesNotMatch(content, /hospice is for the final months of life when curative treatment has stopped/i);
+  assert.doesNotMatch(content, /any adult living with a serious illness qualifies/i);
+  assert.doesNotMatch(content, /no special referral is required|schedule your first palliative care visit within days/i);
 });

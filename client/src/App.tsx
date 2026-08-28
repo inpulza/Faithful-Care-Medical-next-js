@@ -61,6 +61,7 @@ const EsMedicoDeFamilia = React.lazy(() => import("@/pages/es/medico-de-familia"
 const EsCuidadosPaliativos = React.lazy(() => import("@/pages/es/cuidados-paliativos"));
 const EsSegurosYMedicare = React.lazy(() => import("@/pages/es/seguros-y-medicare"));
 const EsContacto = React.lazy(() => import("@/pages/es/contacto"));
+const EsPacientesNuevos = React.lazy(() => import("@/pages/es/pacientes-nuevos"));
 
 const routeComponents = {
   "/": Home,
@@ -96,6 +97,7 @@ const routeComponents = {
   "/es/cuidados-paliativos-naples": EsCuidadosPaliativos,
   "/es/seguros-y-medicare": EsSegurosYMedicare,
   "/es/contacto": EsContacto,
+  "/es/pacientes-nuevos": EsPacientesNuevos,
   "/privacy-policy": PrivacyPolicy,
   "/notice-of-privacy-practices": NoticeOfPrivacyPractices,
   "/terms-of-use": TermsOfUse,

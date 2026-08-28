@@ -25,6 +25,46 @@ function collectBrowserErrors(page) {
   return { pageErrors, consoleErrors };
 }
 
+async function contrastRatio(locator) {
+  return locator.evaluate((element) => {
+    const canvas = document.createElement("canvas");
+    canvas.width = 1;
+    canvas.height = 1;
+    const context = canvas.getContext("2d", { willReadFrequently: true });
+    const parse = (value) => {
+      context.clearRect(0, 0, 1, 1);
+      context.fillStyle = value;
+      context.fillRect(0, 0, 1, 1);
+      return Array.from(context.getImageData(0, 0, 1, 1).data);
+    };
+    const luminance = (rgb) => {
+      const linear = rgb.map((channel) => {
+        const value = channel / 255;
+        return value <= 0.04045 ? value / 12.92 : ((value + 0.055) / 1.055) ** 2.4;
+      });
+      return 0.2126 * linear[0] + 0.7152 * linear[1] + 0.0722 * linear[2];
+    };
+    let backgroundElement = element;
+    let background = [255, 255, 255, 255];
+    while (backgroundElement) {
+      const candidate = parse(getComputedStyle(backgroundElement).backgroundColor);
+      if (candidate[3] === 255) {
+        background = candidate;
+        break;
+      }
+      backgroundElement = backgroundElement.parentElement;
+    }
+    const foregroundColor = parse(getComputedStyle(element).color);
+    const alpha = foregroundColor[3] / 255;
+    const composited = foregroundColor.slice(0, 3).map((channel, index) =>
+      channel * alpha + background[index] * (1 - alpha),
+    );
+    const foreground = luminance(composited);
+    const backgroundLuminance = luminance(background.slice(0, 3));
+    return (Math.max(foreground, backgroundLuminance) + 0.05) / (Math.min(foreground, backgroundLuminance) + 0.05);
+  });
+}
+
 async function assertDpcPage(page) {
   assert.equal(currentPath(page), path);
   await page.waitForFunction(
@@ -46,14 +86,45 @@ async function assertDpcPage(page) {
     "DPC page must reuse the membership UI without unrelated insurance logos",
   );
 
-  for (const testId of ["button-insurance-cta", "button-before-enrollment-cta"]) {
-    const button = page.getByTestId(testId);
-    await button.scrollIntoViewIfNeeded();
-    const box = await button.boundingBox();
+  for (const testId of ["section-dpc-enrollment", "section-dpc-included", "section-dpc-outside"]) {
+    const section = page.getByTestId(testId);
+    await section.scrollIntoViewIfNeeded();
+    await section.waitFor({ state: "visible" });
+    const box = await section.boundingBox();
     const viewport = page.viewportSize();
     assert.ok(box && viewport, `${testId} must have a measurable viewport box`);
-    assert.ok(box.x >= 0, `${testId} overflows the left viewport edge`);
+    assert.ok(box.x >= -0.5, `${testId} overflows the left viewport edge`);
     assert.ok(box.x + box.width <= viewport.width + 0.5, `${testId} overflows the right viewport edge`);
+  }
+
+  const accessibleMarqueeImages = await page
+    .getByTestId("section-image-marquee")
+    .locator("img")
+    .evaluateAll((images) => images.filter((image) => !image.closest('[aria-hidden="true"]')).length);
+  assert.equal(accessibleMarqueeImages, 4, "screen readers must receive only one marquee image set");
+
+  const agreementImage = page.getByTestId("section-dpc-enrollment-story-1").locator("img");
+  assert.match(await agreementImage.getAttribute("src"), /planning-transitions\.webp$/);
+  assert.match(await agreementImage.getAttribute("alt"), /holding a document/i);
+
+  const storiesHeader = page.getByTestId("section-dpc-enrollment-header");
+  assert.ok(await contrastRatio(storiesHeader.locator("h2")) >= 3, "the large stories heading must meet 3:1 contrast");
+  for (const paragraph of await storiesHeader.locator("p").all()) {
+    assert.ok(await contrastRatio(paragraph) >= 4.5, "stories header body text must meet 4.5:1 contrast");
+  }
+  for (const note of await page.locator('[data-testid^="section-dpc-enrollment-story-"][data-testid$="-note"]').all()) {
+    assert.ok(await contrastRatio(note) >= 4.5, "enrollment notes must meet 4.5:1 contrast");
+  }
+
+  const detailCard = page.getByTestId("detail-card-0");
+  await detailCard.scrollIntoViewIfNeeded();
+  await detailCard.hover();
+  assert.ok(await contrastRatio(page.getByTestId("detail-card-title-0")) >= 4.5, "hovered detail-card title must meet 4.5:1 contrast");
+  assert.ok(await contrastRatio(page.getByTestId("detail-card-desc-0")) >= 4.5, "hovered detail-card copy must meet 4.5:1 contrast");
+
+  if (page.viewportSize()?.width < 768) {
+    assert.equal(await page.getByTestId("button-mobile-contact-fab").isVisible(), false);
+    await page.getByTestId("mobile-action-bar").waitFor({ state: "visible" });
   }
 }
 
@@ -119,6 +190,11 @@ test("Direct Primary Care membership CTA reaches contact on desktop and mobile",
         const response = await page.goto(`${baseUrl}${path}`, { waitUntil: "networkidle" });
         assert.equal(response?.status(), 200, `DPC status at ${viewport.name}`);
         await assertDpcPage(page);
+        assert.equal(
+          await page.evaluate(() => performance.getEntriesByType("resource").some((entry) => entry.name.includes("gradient-gray"))),
+          false,
+          `DPC must not download the legacy 1.17 MB gradient at ${viewport.name}`,
+        );
 
         const cta = page
           .locator('main a[href="/contact"]')
@@ -137,6 +213,48 @@ test("Direct Primary Care membership CTA reaches contact on desktop and mobile",
       }
     }
   } finally {
+    await browser.close();
+  }
+});
+
+test("Direct Primary Care exposes every marquee item when motion is reduced", async () => {
+  const browser = await chromium.launch();
+  const context = await browser.newContext({
+    viewport: { width: 390, height: 844 },
+    reducedMotion: "reduce",
+  });
+  await unlockPreview(context);
+  const page = await context.newPage();
+  const errors = collectBrowserErrors(page);
+
+  try {
+    const response = await page.goto(`${baseUrl}${path}`, { waitUntil: "networkidle" });
+    assert.equal(response?.status(), 200);
+    const marquee = page.getByTestId("section-image-marquee");
+    await marquee.scrollIntoViewIfNeeded();
+    await page.waitForFunction(() => !document.querySelector('[class*="mq-track-"]'));
+
+    const accessibleImages = marquee.locator("img");
+    assert.equal(await accessibleImages.count(), 4);
+    const sectionBox = await marquee.boundingBox();
+    assert.ok(sectionBox);
+    for (let index = 0; index < 4; index += 1) {
+      const imageBox = await accessibleImages.nth(index).boundingBox();
+      assert.ok(imageBox, `reduced-motion marquee image ${index + 1} must be visible`);
+      assert.ok(imageBox.y >= sectionBox.y - 1);
+      assert.ok(imageBox.y + imageBox.height <= sectionBox.y + sectionBox.height + 1);
+    }
+
+    await page.emulateMedia({ reducedMotion: "no-preference" });
+    await page.waitForFunction(() => {
+      const track = document.querySelector('[class*="mq-track-"]');
+      return track && getComputedStyle(track).animationName !== "none";
+    });
+
+    assert.deepEqual(errors.pageErrors, []);
+    assert.deepEqual(errors.consoleErrors, []);
+  } finally {
+    await context.close();
     await browser.close();
   }
 });

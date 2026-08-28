@@ -378,7 +378,7 @@ function MobileContactFab({ onClick, lang = "en" }: { onClick: () => void; lang?
   return (
     <motion.button
       onClick={onClick}
-      className="lg:hidden fixed right-0 top-1/2 -translate-y-1/2 z-50 flex items-center gap-2 bg-primary text-white pl-4 pr-3 py-4 rounded-l-full shadow-lg"
+      className="fixed right-0 top-1/2 z-50 hidden -translate-y-1/2 items-center gap-2 rounded-l-full bg-primary py-4 pl-4 pr-3 text-white shadow-lg md:flex lg:hidden"
       style={{
         boxShadow: '0 4px 20px rgba(37, 99, 235, 0.35)',
       }}

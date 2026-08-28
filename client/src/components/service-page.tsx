@@ -1,6 +1,6 @@
 import * as React from "react";
 import { Link, useLocation } from "@/lib/router";
-import { PageHero, InsuranceLogos, TealCta, MeetYourDoctor, TestimonialsSection, DetailGrid, FaqSection, VisitSteps, marqueeDataMap } from "@/components/sections";
+import { PageHero, InsuranceLogos, TealCta, MeetYourDoctor, TestimonialsSection, DetailGrid, FaqSection, VisitSteps, ComparisonTableSection, marqueeDataMap } from "@/components/sections";
 const ImageMarquee = React.lazy(() =>
   import("@/components/sections/image-marquee").then(m => ({ default: m.ImageMarquee }))
 );
@@ -105,6 +105,7 @@ export function ServicePage() {
   const sections = serviceSectionsMap[location];
   const meta = serviceMetadata[location];
   const isPalliativeService = location.startsWith("/palliative-care/");
+  const isPalliativeExplainer = location === "/palliative-care/about-palliative-care";
 
   if (!content) {
     return (
@@ -190,6 +191,48 @@ export function ServicePage() {
               statLabel={sections.detailGrid.statLabel}
               cards={sections.detailGrid.cards}
             />
+
+            {isPalliativeExplainer && (
+              <ComparisonTableSection
+                eyebrow="Palliative care and hospice"
+                title="Related forms of comfort-focused care, with important differences."
+                description="Palliative care does not mean giving up treatment. Hospice has separate eligibility and election requirements. Understanding the distinction helps families ask for the right support at the right time."
+                leftHeading="Palliative care"
+                rightHeading="Hospice care"
+                rows={[
+                  {
+                    label: "Main goal",
+                    left: "Relieve symptoms, stress, and the practical burden of a serious illness while supporting quality of life.",
+                    right: "Provide comfort and support near the end of life rather than treatment intended to cure the terminal illness.",
+                  },
+                  {
+                    label: "When it can begin",
+                    left: "At any stage of a serious illness, based on symptoms and support needs. No six-month prognosis is required.",
+                    right: "For Medicare hospice, physicians generally certify a life expectancy of six months or less if the illness follows its usual course.",
+                  },
+                  {
+                    label: "Other treatment",
+                    left: "Can be provided alongside treatment directed at the illness and alongside the patient's regular specialists.",
+                    right: "The patient elects comfort-focused hospice care for the terminal illness under the hospice benefit; that election can be revoked.",
+                  },
+                  {
+                    label: "Coverage",
+                    left: "Coverage depends on the specific medically necessary services provided and the patient's health plan benefits.",
+                    right: "Medicare has a defined hospice benefit for eligible patients who elect it; other plans may have their own requirements.",
+                  },
+                  {
+                    label: "Faithful Care's role",
+                    left: "Faithful Care provides palliative medical support and coordinates with the patient's existing care team.",
+                    right: "Faithful Care can discuss goals and help coordinate a hospice transition when it becomes appropriate; it is not presented as a hospice agency.",
+                  },
+                ]}
+                note="Coverage, eligibility, and costs vary. Faithful Care verifies planned services, and patients should also confirm benefits directly with their health plan."
+                sources={[
+                  { label: "National Institute on Aging", href: "https://www.nia.nih.gov/health/hospice-and-palliative-care/what-are-palliative-care-and-hospice-care" },
+                  { label: "Centers for Medicare & Medicaid Services", href: "https://www.cms.gov/medicare/payment/fee-for-service-providers/hospice" },
+                ]}
+              />
+            )}
 
             {marqueeDataMap[location] && (
               <React.Suspense fallback={<div style={{ minHeight: "clamp(220px, 30vh, 360px)" }} aria-hidden="true" />}>

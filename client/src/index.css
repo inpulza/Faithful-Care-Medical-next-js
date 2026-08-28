@@ -357,23 +357,23 @@ html.lenis body {
 
   /* Promise cards hover inversion */
   .hover\:bg-secondary:hover .promise-icon-box {
-    background-color: rgba(255, 255, 255, 0.25);
+    background-color: rgba(255, 255, 255, 0.8);
   }
 
   .hover\:bg-secondary:hover .promise-icon {
-    color: white;
+    color: hsl(var(--deep-navy));
   }
 
   .hover\:bg-secondary:hover .promise-number {
-    color: rgba(255, 255, 255, 0.4);
+    color: hsl(var(--deep-navy));
   }
 
   .hover\:bg-secondary:hover .promise-title {
-    color: white;
+    color: hsl(var(--deep-navy));
   }
 
   .hover\:bg-secondary:hover .promise-desc {
-    color: rgba(255, 255, 255, 0.7);
+    color: hsl(var(--deep-navy));
   }
 
   /* Location service frosted glass cards */

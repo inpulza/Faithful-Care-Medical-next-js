@@ -166,7 +166,7 @@ test("legacy consent is not reinterpreted after the advertising taxonomy change"
   try {
     const page = await context.newPage();
     await page.goto(`${baseUrl}/`, { waitUntil: "networkidle" });
-    assert.equal(await page.getByTestId("cookie-banner").isVisible(), true);
+    await page.getByTestId("cookie-banner").waitFor({ state: "visible" });
     assert.equal(await page.locator("#fcms-google-tag").count(), 0);
     assert.equal(await page.locator("#fcms-clarity-tag").count(), 0);
   } finally {
@@ -777,6 +777,9 @@ test("the mobile action-bar form emits one sanitized lead after full consent", a
     await page.getByTestId("select-ab-contact-service").selectOption({ index: 1 });
     await page.getByTestId("button-ab-contact-submit").click();
     await page.getByTestId("text-action-bar-form-success").waitFor();
+    await page.waitForFunction(() => document.activeElement?.getAttribute("data-testid") === "button-action-bar-contact-close");
+    await page.keyboard.press("Tab");
+    await page.waitForFunction(() => document.activeElement?.getAttribute("data-testid") === "button-action-bar-contact-close");
 
     const leads = (await commands(page, "google", "event")).filter(
       (entry) => entry[1] === "generate_lead",

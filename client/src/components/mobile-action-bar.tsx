@@ -11,11 +11,50 @@ const PHONE_NUMBER = "2394230205";
 const WHATSAPP_NUMBER = "17868171932";
 
 const serviceOptions = [
-  "Schedule a visit",
-  "Ask a question",
-  "Membership info",
-  "Other",
+  { value: "Schedule a visit", en: "Schedule a visit", es: "Pedir una cita" },
+  { value: "Ask a question", en: "Ask a question", es: "Hacer una pregunta" },
+  { value: "Membership info", en: "Membership info", es: "Información de membresía" },
+  { value: "Other", en: "Other", es: "Otro" },
 ];
+
+const actionBarFormText = {
+  en: {
+    title: "Request a Visit",
+    subtitle: "We'll reach out to confirm your appointment.",
+    close: "Close form",
+    success: "Thank you! A care coordinator will reach out soon.",
+    name: "Full name",
+    namePlaceholder: "Your full name",
+    email: "Email",
+    emailPlaceholder: "you@email.com",
+    phone: "Phone",
+    service: "Service",
+    selectService: "Select a service...",
+    sending: "Sending...",
+    submit: "Request visit",
+    genericError: "Something went wrong. Please try again or call us at (239) 423-0205.",
+    networkError: "Could not send your request. Please try again or call us at (239) 423-0205.",
+    privacy: "This form is not for protected health information. For urgent questions call",
+  },
+  es: {
+    title: "Pedir una cita",
+    subtitle: "Nos comunicaremos con usted para confirmar la cita.",
+    close: "Cerrar formulario",
+    success: "¡Gracias! Nuestro equipo se comunicará con usted pronto.",
+    name: "Nombre completo",
+    namePlaceholder: "Su nombre completo",
+    email: "Correo electrónico",
+    emailPlaceholder: "usted@correo.com",
+    phone: "Teléfono",
+    service: "Motivo",
+    selectService: "Seleccione un motivo...",
+    sending: "Enviando...",
+    submit: "Pedir cita",
+    genericError: "Algo salió mal. Intente de nuevo o llámenos al (239) 423-0205.",
+    networkError: "No pudimos enviar su solicitud. Intente de nuevo o llámenos al (239) 423-0205.",
+    privacy: "Este formulario no es para información médica protegida. Para preguntas urgentes, llame al",
+  },
+} as const;
 
 const actions = [
   {
@@ -66,6 +105,8 @@ export function MobileActionBar() {
   const [formOpen, setFormOpen] = React.useState(false);
   const [location] = useLocation();
   const isSpanish = location === "/es" || location.startsWith("/es/");
+  const appointmentTriggerRef = React.useRef<HTMLButtonElement>(null);
+  const closeForm = React.useCallback(() => setFormOpen(false), []);
 
   React.useEffect(() => {
     const handleScroll = () => {
@@ -103,6 +144,7 @@ export function MobileActionBar() {
                 return (
                   <button
                     key={action.id}
+                    ref={appointmentTriggerRef}
                     onClick={() => setFormOpen(true)}
                     className="flex flex-col items-center justify-center gap-1 flex-1 py-2 rounded-xl active:scale-95 transition-transform"
                     data-testid={`action-bar-${action.id}`}
@@ -143,12 +185,27 @@ export function MobileActionBar() {
         </div>
       </div>
 
-      <ActionBarContactModal isOpen={formOpen} onClose={() => setFormOpen(false)} />
+      <ActionBarContactModal
+        isOpen={formOpen}
+        onClose={closeForm}
+        isSpanish={isSpanish}
+        returnFocusRef={appointmentTriggerRef}
+      />
     </>
   );
 }
 
-function ActionBarContactModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
+function ActionBarContactModal({
+  isOpen,
+  onClose,
+  isSpanish,
+  returnFocusRef,
+}: {
+  isOpen: boolean;
+  onClose: () => void;
+  isSpanish: boolean;
+  returnFocusRef: React.RefObject<HTMLButtonElement | null>;
+}) {
   const [formData, setFormData] = React.useState({
     name: "",
     email: "",
@@ -159,15 +216,64 @@ function ActionBarContactModal({ isOpen, onClose }: { isOpen: boolean; onClose: 
   const [submitting, setSubmitting] = React.useState(false);
   const [error, setError] = React.useState("");
   const [location] = useLocation();
+  const t = actionBarFormText[isSpanish ? "es" : "en"];
+  const dialogRef = React.useRef<HTMLDivElement>(null);
+  const closeButtonRef = React.useRef<HTMLButtonElement>(null);
+  const titleId = React.useId();
+  const subtitleId = React.useId();
 
   React.useEffect(() => {
-    if (isOpen) {
-      document.body.style.overflow = 'hidden';
-    } else {
-      document.body.style.overflow = '';
-    }
-    return () => { document.body.style.overflow = ''; };
-  }, [isOpen]);
+    if (!isOpen) return;
+
+    document.body.style.overflow = "hidden";
+    const focusFrame = window.requestAnimationFrame(() => closeButtonRef.current?.focus());
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        event.preventDefault();
+        onClose();
+        return;
+      }
+
+      if (event.key !== "Tab") return;
+      const dialog = dialogRef.current;
+      if (!dialog) return;
+      const focusable = Array.from(
+        dialog.querySelectorAll<HTMLElement>(
+          'button:not([disabled]), a[href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])',
+        ),
+      ).filter((element) => !element.hasAttribute("hidden"));
+      if (focusable.length === 0) {
+        event.preventDefault();
+        dialog.focus();
+        return;
+      }
+
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (!dialog.contains(document.activeElement)) {
+        event.preventDefault();
+        (event.shiftKey ? last : first).focus();
+      } else if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
+    };
+
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      window.cancelAnimationFrame(focusFrame);
+      document.removeEventListener("keydown", handleKeyDown);
+      document.body.style.overflow = "";
+      returnFocusRef.current?.focus();
+    };
+  }, [isOpen, onClose, returnFocusRef]);
+
+  React.useEffect(() => {
+    if (isOpen && submitted) closeButtonRef.current?.focus();
+  }, [isOpen, submitted]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -188,7 +294,7 @@ function ActionBarContactModal({ isOpen, onClose }: { isOpen: boolean; onClose: 
       });
       const result = await response.json();
       if (!response.ok || !result.success) {
-        setError(result.error || "Something went wrong. Please try again or call us at (239) 423-0205.");
+        setError(isSpanish ? t.genericError : result.error || t.genericError);
         return;
       }
       trackLead("mobile_action_bar_form", location);
@@ -196,7 +302,7 @@ function ActionBarContactModal({ isOpen, onClose }: { isOpen: boolean; onClose: 
       setFormData({ name: "", email: "", phone: "", service: "" });
       setTimeout(() => { setSubmitted(false); onClose(); }, 4000);
     } catch {
-      setError("Could not send your request. Please try again or call us at (239) 423-0205.");
+      setError(t.networkError);
     } finally {
       setSubmitting(false);
     }
@@ -214,6 +320,7 @@ function ActionBarContactModal({ isOpen, onClose }: { isOpen: boolean; onClose: 
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           transition={{ duration: 0.2 }}
+          lang={isSpanish ? "es" : "en"}
         >
           <div
             className="absolute inset-0 bg-black/40 backdrop-blur-sm"
@@ -221,23 +328,31 @@ function ActionBarContactModal({ isOpen, onClose }: { isOpen: boolean; onClose: 
             data-testid="action-bar-contact-backdrop"
           />
           <motion.div
+            ref={dialogRef}
             className="relative w-full max-h-[90vh] overflow-y-auto bg-white rounded-t-3xl px-6 pt-6 pb-8 shadow-2xl"
             initial={{ y: "100%" }}
             animate={{ y: 0 }}
             exit={{ y: "100%" }}
             transition={{ type: "spring", stiffness: 350, damping: 35 }}
             data-testid="action-bar-contact-sheet"
+            lang={isSpanish ? "es" : "en"}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby={titleId}
+            aria-describedby={subtitleId}
+            tabIndex={-1}
           >
             <div className="flex items-center justify-between mb-6">
               <div>
-                <p className="text-lg font-bold text-[hsl(var(--foreground))]">Request a Visit</p>
-                <p className="text-sm text-[hsl(var(--foreground)/0.5)]">We'll reach out to confirm your appointment.</p>
+                <p id={titleId} className="text-lg font-bold text-[hsl(var(--foreground))]">{t.title}</p>
+                <p id={subtitleId} className="text-sm text-[hsl(var(--foreground)/0.5)]">{t.subtitle}</p>
               </div>
               <button
+                ref={closeButtonRef}
                 onClick={onClose}
                 className="w-10 h-10 rounded-full bg-[hsl(var(--primary)/0.06)] flex items-center justify-center"
                 data-testid="button-action-bar-contact-close"
-                aria-label="Close form"
+                aria-label={t.close}
               >
                 <X weight="bold" size={18} className="text-[hsl(var(--foreground))]" />
               </button>
@@ -249,20 +364,20 @@ function ActionBarContactModal({ isOpen, onClose }: { isOpen: boolean; onClose: 
                   <PaperPlaneTilt weight="fill" className="w-5 h-5 text-[hsl(var(--success))]" />
                 </div>
                 <p className="text-lg font-semibold text-[hsl(var(--foreground))]" data-testid="text-action-bar-form-success">
-                  Thank you! A care coordinator will reach out soon.
+                  {t.success}
                 </p>
               </div>
             ) : (
               <form onSubmit={handleSubmit} className="flex flex-col gap-4" data-testid="action-bar-contact-form" data-clarity-mask="true">
                 <div>
                   <label className="block text-sm font-semibold text-[hsl(var(--foreground))] mb-1.5" htmlFor="ab-contact-name">
-                    Full name
+                    {t.name}
                   </label>
                   <input
                     id="ab-contact-name"
                     type="text"
                     required
-                    placeholder="Your full name"
+                    placeholder={t.namePlaceholder}
                     value={formData.name}
                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                     className={inputClass}
@@ -271,13 +386,13 @@ function ActionBarContactModal({ isOpen, onClose }: { isOpen: boolean; onClose: 
                 </div>
                 <div>
                   <label className="block text-sm font-semibold text-[hsl(var(--foreground))] mb-1.5" htmlFor="ab-contact-email">
-                    Email
+                    {t.email}
                   </label>
                   <input
                     id="ab-contact-email"
                     type="email"
                     required
-                    placeholder="you@email.com"
+                    placeholder={t.emailPlaceholder}
                     value={formData.email}
                     onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                     className={inputClass}
@@ -286,7 +401,7 @@ function ActionBarContactModal({ isOpen, onClose }: { isOpen: boolean; onClose: 
                 </div>
                 <div>
                   <label className="block text-sm font-semibold text-[hsl(var(--foreground))] mb-1.5" htmlFor="ab-contact-phone">
-                    Phone
+                    {t.phone}
                   </label>
                   <input
                     id="ab-contact-phone"
@@ -300,7 +415,7 @@ function ActionBarContactModal({ isOpen, onClose }: { isOpen: boolean; onClose: 
                 </div>
                 <div>
                   <label className="block text-sm font-semibold text-[hsl(var(--foreground))] mb-1.5" htmlFor="ab-contact-service">
-                    Service
+                    {t.service}
                   </label>
                   <select
                     id="ab-contact-service"
@@ -309,9 +424,9 @@ function ActionBarContactModal({ isOpen, onClose }: { isOpen: boolean; onClose: 
                     className={inputClass + " appearance-none bg-[url('data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2212%22%20height%3D%2212%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%236b7280%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpolyline%20points%3D%226%209%2012%2015%2018%209%22%3E%3C%2Fpolyline%3E%3C%2Fsvg%3E')] bg-[length:12px] bg-[right_12px_center] bg-no-repeat pr-10"}
                     data-testid="select-ab-contact-service"
                   >
-                    <option value="">Select a service...</option>
-                    {serviceOptions.map((s) => (
-                      <option key={s} value={s}>{s}</option>
+                    <option value="">{t.selectService}</option>
+                    {serviceOptions.map((option) => (
+                      <option key={option.value} value={option.value}>{isSpanish ? option.es : option.en}</option>
                     ))}
                   </select>
                 </div>
@@ -330,17 +445,17 @@ function ActionBarContactModal({ isOpen, onClose }: { isOpen: boolean; onClose: 
                   {submitting ? (
                     <>
                       <CircleNotch weight="bold" size={20} className="mr-2 animate-spin" />
-                      Sending...
+                      {t.sending}
                     </>
                   ) : (
                     <>
-                      Request visit
+                      {t.submit}
                       <ArrowRight weight="regular" size={20} className="ml-1" />
                     </>
                   )}
                 </Button>
                 <p className="text-xs text-[hsl(var(--foreground)/0.5)] text-center mt-1">
-                  This form is not for protected health information. For urgent questions call <a href="tel:2394230205" className="underline">(239) 423-0205</a>.
+                  {t.privacy} <a href="tel:2394230205" className="underline">(239) 423-0205</a>.
                 </p>
               </form>
             )}
