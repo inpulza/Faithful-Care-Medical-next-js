@@ -11,7 +11,7 @@
     "build": "next build",
     "start": "next start",
     "check": "tsc --noEmit",
-    "test": "node --import tsx --test tests/*.test.mjs"
+    "test": "node --import tsx --test --test-concurrency=4 tests/*.test.mjs"
   },
   "dependencies": {
     "@phosphor-icons/react": "^2.1.10",
