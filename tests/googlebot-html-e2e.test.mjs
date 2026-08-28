@@ -238,6 +238,16 @@ test("Googlebot receives cautious Direct Primary Care membership content", async
   assert.match(content, /does not replace coverage for (?:hospital care|hospitalization)/i);
   assert.match(content, /written (?:membership )?agreement/i);
 
+  const faqPages = jsonLdSchemas(html).filter((schema) => schema["@type"] === "FAQPage");
+  assert.equal(faqPages.length, 1, "DPC page must publish one FAQPage");
+  assert.equal(faqPages[0].mainEntity.length, 7, "DPC FAQPage must match all visible questions");
+  for (const entity of faqPages[0].mainEntity) {
+    assert.equal(entity["@type"], "Question");
+    assert.equal(entity.acceptedAnswer?.["@type"], "Answer");
+    assert.match(content, new RegExp(entity.name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i"));
+    assert.match(content, new RegExp(entity.acceptedAnswer.text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i"));
+  }
+
   const unsupportedAbsoluteClaims = [
     /unlimited visits/i,
     /no copays,? no limits/i,

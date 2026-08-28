@@ -75,7 +75,7 @@ test("all canonical routes return indexable localized HTML", async () => {
       for (const type of ["MedicalClinic", "IndividualPhysician", "PostalAddress", "GeoCoordinates", "OpeningHoursSpecification"])
         assert.ok(types.has(type), `${route.path} missing ${type}`);
     }
-    if (["/primary-care", "/palliative-care"].includes(route.path)) {
+    if (["/primary-care", "/palliative-care", "/direct-primary-care"].includes(route.path)) {
       const faqPages = schemas.filter((schema) => schema["@type"] === "FAQPage");
       assert.equal(faqPages.length, 1, `${route.path} must publish its visible FAQ`);
       assert.ok(faqPages[0].mainEntity.length >= 3, `${route.path} FAQ is incomplete`);

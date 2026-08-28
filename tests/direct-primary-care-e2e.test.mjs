@@ -40,6 +40,21 @@ async function assertDpcPage(page) {
   const mainText = (await page.locator("main").innerText()).replace(/\s+/g, " ");
   assert.match(mainText, /(?:DPC|Direct Primary Care) is not (?:a )?health insurance/i);
   assert.match(mainText, /does not replace coverage for (?:hospital care|hospitalization)/i);
+  assert.equal(
+    await page.getByTestId("insurance-marquee").count(),
+    0,
+    "DPC page must reuse the membership UI without unrelated insurance logos",
+  );
+
+  for (const testId of ["button-insurance-cta", "button-before-enrollment-cta"]) {
+    const button = page.getByTestId(testId);
+    await button.scrollIntoViewIfNeeded();
+    const box = await button.boundingBox();
+    const viewport = page.viewportSize();
+    assert.ok(box && viewport, `${testId} must have a measurable viewport box`);
+    assert.ok(box.x >= 0, `${testId} overflows the left viewport edge`);
+    assert.ok(box.x + box.width <= viewport.width + 0.5, `${testId} overflows the right viewport edge`);
+  }
 }
 
 test("Direct Primary Care is discoverable from navigation and home on desktop and mobile", async () => {

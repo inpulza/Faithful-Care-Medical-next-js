@@ -8,7 +8,9 @@ import {
 import type { FaqItem } from "@/components/sections";
 import { InfoSection, type HubInfoSection } from "@/components/care-hub-page";
 import { InsuranceMembership } from "@/components/sections/insurance-membership";
+import { JsonLdArray } from "@/components/json-ld";
 import { pageContentMap } from "@/lib/page-content";
+import { faqPageSchema } from "@/lib/schemas";
 
 const membershipBenefits = [
   {
@@ -167,9 +169,14 @@ const faqItems: FaqItem[] = [
 
 export default function DirectPrimaryCare() {
   const primaryCareContent = pageContentMap["/primary-care"];
+  const faqSchema = faqPageSchema(faqItems.map((item) => ({
+    question: item.question,
+    answer: typeof item.answer === "string" ? item.answer : "",
+  })));
 
   return (
     <div className="bg-white text-[hsl(var(--foreground))]">
+      <JsonLdArray schemas={[faqSchema]} />
       <main id="main">
         <PageHero
           title={
@@ -212,6 +219,7 @@ export default function DirectPrimaryCare() {
             ctaText="Request Current Membership Terms"
             ctaHref="/contact"
             benefits={membershipBenefits}
+            showInsuranceMarquee={false}
           />
 
           <InfoSection section={infoSections[2]} categoryId="direct-primary-care" />
