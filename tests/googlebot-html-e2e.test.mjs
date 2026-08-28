@@ -18,6 +18,7 @@ const expectedH1ByPath = new Map([
   ["/reviews", "Patient Reviews"],
   ["/new-patients", "Accepting New Patients in Naples, FL"],
   ["/medicare", "Medicare & Medicare Advantage Primary Care in Naples"],
+  ["/direct-primary-care", "Direct Primary Care Membership in Naples, FL"],
   ["/primary-care", "Primary Care Doctor in Naples, FL"],
   ["/palliative-care", "Palliative Care in Naples, FL"],
   ["/primary-care/checkups-prevention", "Annual Checkups & Preventive Care"],
@@ -211,5 +212,56 @@ test("Googlebot HTML keeps the core acquisition pages route-specific", async () 
     assert.equal(response.status, 200, `${path} returned ${response.status} to Googlebot`);
     assert.match(h1Texts(html)[0] || "", expectedText, `${path} served the wrong H1`);
     assert.match(mainText(html), expectedText, `${path} omitted its core topic from server HTML`);
+  }
+});
+
+test("Googlebot receives cautious Direct Primary Care membership content", async () => {
+  const path = "/direct-primary-care";
+  const response = await previewFetch(path, {
+    headers: {
+      Accept: "text/html,application/xhtml+xml",
+      "User-Agent": googlebotUserAgent,
+    },
+    redirect: "manual",
+  });
+  const html = await response.text();
+  const content = mainText(html);
+
+  assert.equal(response.status, 200);
+  assert.match(response.headers.get("content-type") || "", /text\/html/i);
+  assert.deepEqual(
+    canonicalLinks(html).map(normalizedCanonical),
+    ["https://faithfulcaremedical.com/direct-primary-care"],
+  );
+  assert.deepEqual(h1Texts(html), ["Direct Primary Care Membership in Naples, FL"]);
+  assert.match(content, /(?:DPC|Direct Primary Care) is not (?:a )?health insurance/i);
+  assert.match(content, /does not replace coverage for (?:hospital care|hospitalization)/i);
+  assert.match(content, /written (?:membership )?agreement/i);
+
+  const faqPages = jsonLdSchemas(html).filter((schema) => schema["@type"] === "FAQPage");
+  assert.equal(faqPages.length, 1, "DPC page must publish one FAQPage");
+  assert.equal(faqPages[0].mainEntity.length, 7, "DPC FAQPage must match all visible questions");
+  for (const entity of faqPages[0].mainEntity) {
+    assert.equal(entity["@type"], "Question");
+    assert.equal(entity.acceptedAnswer?.["@type"], "Answer");
+    assert.match(content, new RegExp(entity.name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i"));
+    assert.match(content, new RegExp(entity.acceptedAnswer.text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i"));
+  }
+
+  const unsupportedAbsoluteClaims = [
+    /unlimited visits/i,
+    /no copays,? no limits/i,
+    /sick today,? seen today/i,
+    /same-day access is built into every/i,
+    /same-day appointments? (?:are|is) guaranteed/i,
+    /30 to 60 minutes,? every time/i,
+    /one fee,? everything included/i,
+    /covers all your primary care needs/i,
+    /wholesale medications/i,
+    /prescriptions at cost/i,
+    /HSA-eligible starting 2026/i,
+  ];
+  for (const claim of unsupportedAbsoluteClaims) {
+    assert.doesNotMatch(content, claim, `DPC page retained unsupported absolute claim ${claim}`);
   }
 });

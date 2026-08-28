@@ -187,6 +187,7 @@ interface InsuranceMembershipProps {
   ctaText?: string;
   ctaHref?: string;
   benefits?: DpcBenefit[];
+  showInsuranceMarquee?: boolean;
   carouselPrevLabel?: string;
   carouselNextLabel?: string;
   carouselDotLabel?: (n: number) => string;
@@ -204,8 +205,9 @@ export function InsuranceMembership({
   dpcParagraph1 = "This membership is a model where you pay one monthly fee directly to the practice for the covered primary care services listed in your agreement. Members can request priority appointments and contact the care team between visits.",
   dpcParagraph2 = "DPC is not health insurance and does not replace coverage for hospital care, specialists, or emergencies. Ask us for current pricing and inclusions, and consult a qualified tax adviser about HSA eligibility.",
   ctaText = "Ask About Membership",
-  ctaHref = "/contact",
+  ctaHref = "/direct-primary-care",
   benefits,
+  showInsuranceMarquee = true,
   carouselPrevLabel,
   carouselNextLabel,
   carouselDotLabel,
@@ -232,37 +234,39 @@ export function InsuranceMembership({
         </motion.div>
       </div>
 
-      <div className="relative w-full overflow-hidden mb-10 md:mb-20">
-        <div
-          className="absolute left-0 top-0 bottom-0 w-24 md:w-40 z-10"
-          style={{ background: "linear-gradient(to right, white, transparent)" }}
-        />
-        <div
-          className="absolute right-0 top-0 bottom-0 w-24 md:w-40 z-10"
-          style={{ background: "linear-gradient(to left, white, transparent)" }}
-        />
-        <div className="inline-flex w-max" data-testid="insurance-marquee">
-          <motion.div
-            className="flex items-center gap-12 md:gap-16"
-            animate={{ x: ["0%", "-50%"] }}
-            transition={{ duration: 40, repeat: Infinity, ease: "linear" }}
-          >
-            {doubledLogos.map((logo, i) => (
-              <div key={`${logo.name}-${i}`} className="flex-shrink-0 h-20 md:h-28">
-                <img
-                  src={logo.src}
-                  alt={logo.name}
-                  width={1920}
-                  height={1080}
-                  className="h-full w-auto object-contain"
-                  loading="lazy"
-                  decoding="async"
-                />
-              </div>
-            ))}
-          </motion.div>
+      {showInsuranceMarquee && (
+        <div className="relative w-full overflow-hidden mb-10 md:mb-20">
+          <div
+            className="absolute left-0 top-0 bottom-0 w-24 md:w-40 z-10"
+            style={{ background: "linear-gradient(to right, white, transparent)" }}
+          />
+          <div
+            className="absolute right-0 top-0 bottom-0 w-24 md:w-40 z-10"
+            style={{ background: "linear-gradient(to left, white, transparent)" }}
+          />
+          <div className="inline-flex w-max" data-testid="insurance-marquee">
+            <motion.div
+              className="flex items-center gap-12 md:gap-16"
+              animate={{ x: ["0%", "-50%"] }}
+              transition={{ duration: 40, repeat: Infinity, ease: "linear" }}
+            >
+              {doubledLogos.map((logo, i) => (
+                <div key={`${logo.name}-${i}`} className="flex-shrink-0 h-20 md:h-28">
+                  <img
+                    src={logo.src}
+                    alt={logo.name}
+                    width={1920}
+                    height={1080}
+                    className="h-full w-auto object-contain"
+                    loading="lazy"
+                    decoding="async"
+                  />
+                </div>
+              ))}
+            </motion.div>
+          </div>
         </div>
-      </div>
+      )}
 
       <div className="container-radical mb-8 md:mb-16">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-16 items-center">
@@ -292,10 +296,10 @@ export function InsuranceMembership({
             viewport={{ once: true }}
             transition={{ duration: 0.6, delay: 0.15 }}
           >
-            <Link href={ctaHref}>
+            <Link href={ctaHref} className="block w-full max-w-sm sm:w-auto">
               <Button
                 size="lg"
-                className="group"
+                className="group h-auto w-full max-w-full whitespace-normal px-5 text-center sm:w-auto sm:px-8"
                 data-testid="button-insurance-cta"
               >
                 {ctaText}

@@ -35,6 +35,11 @@ const routeServiceOverrides: Record<string, {
     serviceType: "Palliative care",
     category: "Palliative Care",
   },
+  "/direct-primary-care": {
+    name: "Direct Primary Care Membership",
+    serviceType: "Direct primary care membership",
+    category: "Primary Care",
+  },
   "/es/medico-de-familia-naples": {
     name: "Servicios de medicina familiar y atenci\u00f3n primaria",
     serviceType: "Atenci\u00f3n primaria",
@@ -58,6 +63,7 @@ const breadcrumbLabelOverrides: Record<string, string> = {
   "/primary-care": "Primary Care",
   "/palliative-care": "Palliative Care",
   "/insurance-accepted": "Insurance Accepted",
+  "/direct-primary-care": "Direct Primary Care",
   "/new-patients": "New Patients",
   "/medicare": "Medicare",
   "/about": "Dr. Addys Reve, MD",

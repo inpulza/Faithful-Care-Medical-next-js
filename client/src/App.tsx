@@ -21,6 +21,7 @@ const NotFound = React.lazy(() => import("@/pages/not-found"));
 
 const Contact = React.lazy(() => import("@/pages/contact"));
 const InsuranceAccepted = React.lazy(() => import("@/pages/insurance-accepted"));
+const DirectPrimaryCare = React.lazy(() => import("@/pages/direct-primary-care"));
 const About = React.lazy(() => import("@/pages/about"));
 const Reviews = React.lazy(() => import("@/pages/reviews"));
 const NewPatients = React.lazy(() => import("@/pages/new-patients"));
@@ -65,6 +66,7 @@ const routeComponents = {
   "/": Home,
   "/contact": Contact,
   "/insurance-accepted": InsuranceAccepted,
+  "/direct-primary-care": DirectPrimaryCare,
   "/about": About,
   "/reviews": Reviews,
   "/new-patients": NewPatients,

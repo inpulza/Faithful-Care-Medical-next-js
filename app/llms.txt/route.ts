@@ -10,6 +10,7 @@ Faithful Care Medical Services is a physician-led medical practice founded by Dr
 
 ## Services - Primary Care
 
+- [Direct Primary Care Membership](${DOMAIN}/direct-primary-care) — a primary care membership governed by current written terms; it is not health insurance and does not replace coverage for care outside the agreement.
 - [Annual Checkups & Preventive Care](${DOMAIN}/primary-care/checkups-prevention)
 - [Chronic Disease Management](${DOMAIN}/primary-care/chronic-disease)
 - [Same-Day & Urgent Visits](${DOMAIN}/primary-care/same-day-visits)

@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { chromium } from "playwright";
-import { baseUrl, unlockPreview } from "./preview-access.mjs";
+import { baseUrl, previewFetch, unlockPreview } from "./preview-access.mjs";
 
 async function scrollSweep(page) {
   await page.evaluate(async () => {
@@ -79,7 +79,18 @@ test("Spanish root emits Spanish HTML and unknown routes are real 404s", async (
 
     const missing = await page.goto(`${baseUrl}/route-that-does-not-exist`, { waitUntil: "domcontentloaded" });
     assert.equal(missing?.status(), 404);
-    assert.match((await page.locator('meta[name="robots"]').getAttribute("content")) || "", /noindex/);
+    const browserRobots = await page.locator('meta[name="robots"]').evaluateAll((metas) =>
+      metas.map((meta) => meta.getAttribute("content") || ""),
+    );
+    assert.ok(browserRobots.length >= 1, "hydrated 404 must retain a robots directive");
+    assert.ok(browserRobots.every((content) => /noindex/i.test(content)), "every hydrated 404 robots directive must remain noindex");
+
+    const rawMissing = await previewFetch("/route-that-does-not-exist", { redirect: "manual" });
+    const rawHtml = await rawMissing.text();
+    assert.equal(rawMissing.status, 404);
+    const rawRobots = [...rawHtml.matchAll(/<meta\b[^>]*name=["']robots["'][^>]*content=["']([^"']+)["'][^>]*>/gi)]
+      .map((match) => match[1]);
+    assert.deepEqual(rawRobots, ["noindex"], "server HTML must expose exactly one noindex directive to crawlers");
   } finally {
     await browser.close();
   }

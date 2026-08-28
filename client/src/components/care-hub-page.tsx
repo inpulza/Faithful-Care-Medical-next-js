@@ -128,8 +128,12 @@ export function InfoSection({ section, categoryId }: { section: HubInfoSection; 
             viewport={{ once: true }}
             transition={{ duration: 0.5 }}
           >
-            <Link href={section.cta.href} aria-label={section.cta.text}>
-              <Button size="lg" data-testid={`button-${section.id}-cta`}>
+            <Link href={section.cta.href} aria-label={section.cta.text} className="block w-full max-w-sm sm:w-auto">
+              <Button
+                size="lg"
+                className="h-auto w-full max-w-full whitespace-normal px-5 text-center sm:w-auto sm:px-8"
+                data-testid={`button-${section.id}-cta`}
+              >
                 {section.cta.text}
                 <ArrowRight weight="regular" size={20} className="ml-2" aria-hidden="true" />
               </Button>

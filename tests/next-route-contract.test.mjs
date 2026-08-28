@@ -9,9 +9,9 @@ test("Next route contract preserves the public surface and approved redirects", 
 
   const { publicRoutes, redirectRules, routeForPath } = await import(contractUrl.href);
 
-  assert.equal(publicRoutes.length, 37);
-  assert.equal(new Set(publicRoutes.map((route) => route.path)).size, 37);
-  assert.equal(publicRoutes.filter((route) => route.lang === "en").length, 32);
+  assert.equal(publicRoutes.length, 38);
+  assert.equal(new Set(publicRoutes.map((route) => route.path)).size, 38);
+  assert.equal(publicRoutes.filter((route) => route.lang === "en").length, 33);
   assert.equal(publicRoutes.filter((route) => route.lang === "es").length, 5);
 
   assert.equal(routeForPath("/")?.canonical, "https://faithfulcaremedical.com/");
@@ -22,6 +22,17 @@ test("Next route contract preserves the public surface and approved redirects", 
     "x-default": "https://faithfulcaremedical.com/insurance-accepted",
   });
   assert.equal(routeForPath("/medicare")?.languages, undefined);
+  const directPrimaryCareRoute = routeForPath("/direct-primary-care");
+  assert.ok(directPrimaryCareRoute);
+  assert.equal(directPrimaryCareRoute.title, "Direct Primary Care in Naples, FL");
+  assert.match(directPrimaryCareRoute.description, /membership/i);
+  assert.equal(
+    directPrimaryCareRoute.canonical,
+    "https://faithfulcaremedical.com/direct-primary-care",
+  );
+  assert.equal(directPrimaryCareRoute.lang, "en");
+  assert.equal(directPrimaryCareRoute.languages, undefined);
+  assert.equal(routeForPath("/dpc"), undefined);
   assert.equal(routeForPath("/does-not-exist"), undefined);
 
   const { HREFLANG_PAIRS } = await import(new URL("../shared/seo-data.ts", import.meta.url).href);
@@ -45,7 +56,7 @@ test("Next route contract preserves the public surface and approved redirects", 
   const trailingSlashRules = redirectRules.filter((rule) =>
     rule.source.endsWith("/") && rule.source !== "/",
   );
-  assert.equal(trailingSlashRules.length, 36);
+  assert.equal(trailingSlashRules.length, 37);
   for (const route of publicRoutes.filter(({ path }) => path !== "/")) {
     assert.deepEqual(
       trailingSlashRules.find((rule) => rule.source === `${route.path}/`),
