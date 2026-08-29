@@ -394,6 +394,19 @@ test("all condition heroes hold their geometry and conversion path across the fu
         }
         assert.ok(geometry.hasViewportAction || path === "/palliative-care/shortness-of-breath", `${path} has no visible safe action at ${viewport.width}px`);
 
+        const suppressesHeroActions = path === "/palliative-care/shortness-of-breath";
+        const inlineFormVisible = await page.getByTestId("search-bar-wrapper").isVisible();
+        const visibleFormCount = await page.locator('[data-testid="contact-form-card"]:visible').count();
+        if (suppressesHeroActions) {
+          assert.equal(visibleFormCount, 0, `${path} exposes a conversion form beside its emergency action at ${viewport.width}px`);
+        } else if (viewport.width >= 1280) {
+          assert.equal(inlineFormVisible, true, `${path} hides the desktop contact form at ${viewport.width}px`);
+          assert.equal(visibleFormCount, 1, `${path} must expose exactly one desktop contact form at ${viewport.width}px`);
+        } else {
+          assert.equal(inlineFormVisible, false, `${path} exposes the inline form beside the tablet sheet at ${viewport.width}px`);
+          assert.equal(visibleFormCount, 0, `${path} exposes a hidden-range contact form before the sheet opens at ${viewport.width}px`);
+        }
+
         if (viewport.width >= 1280) {
           assert.ok(geometry.copy.bottom <= geometry.media.bottom - 12, `${path} clips copy at ${viewport.width}px`);
           assert.equal(await page.getByTestId("button-mobile-contact-fab").isVisible(), false, `${path} leaves the tablet FAB visible at ${viewport.width}px`);
@@ -487,6 +500,20 @@ test("tablet booking sheet announces outcomes, traps focus, and remains keyboard
     const status = dialog.getByRole("status");
     await status.waitFor({ state: "visible" });
     assert.equal(await status.getAttribute("aria-live"), "polite");
+    await page.waitForFunction(() => document.activeElement?.getAttribute("data-testid") === "contact-form-success");
+    assert.equal(await dialog.evaluate((element) => element.contains(document.activeElement)), true, "success moved focus outside the dialog");
+
+    await page.keyboard.press("Tab");
+    assert.equal(await dialog.evaluate((element) => element.contains(document.activeElement)), true, "Tab escaped the dialog after success");
+    await page.keyboard.press("Shift+Tab");
+    assert.equal(await dialog.evaluate((element) => element.contains(document.activeElement)), true, "Shift+Tab escaped the dialog after success");
+
+    await page.waitForFunction(
+      () => document.activeElement?.getAttribute("data-testid") === "input-contact-name",
+      undefined,
+      { timeout: 6500 },
+    );
+    assert.equal(await dialog.evaluate((element) => element.contains(document.activeElement)), true, "form reset moved focus outside the dialog");
 
     await page.keyboard.press("Escape");
     await dialog.waitFor({ state: "hidden" });

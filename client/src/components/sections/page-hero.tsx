@@ -303,10 +303,15 @@ function MobileContactModal({ isOpen, onClose, lang = "en" }: { isOpen: boolean;
 
       const first = focusable[0];
       const last = focusable[focusable.length - 1];
-      if (event.shiftKey && document.activeElement === first) {
+      const activeElement = document.activeElement;
+
+      if (!(activeElement instanceof HTMLElement) || !focusable.includes(activeElement)) {
+        event.preventDefault();
+        (event.shiftKey ? last : first).focus();
+      } else if (event.shiftKey && activeElement === first) {
         event.preventDefault();
         last.focus();
-      } else if (!event.shiftKey && document.activeElement === last) {
+      } else if (!event.shiftKey && activeElement === last) {
         event.preventDefault();
         first.focus();
       }
@@ -392,7 +397,24 @@ function ContactFormCard({ expanded = false, lang = "en" }: { expanded?: boolean
   const [submitted, setSubmitted] = React.useState(false);
   const [submitting, setSubmitting] = React.useState(false);
   const [error, setError] = React.useState("");
+  const successRef = React.useRef<HTMLDivElement | null>(null);
+  const nameInputRef = React.useRef<HTMLInputElement | null>(null);
+  const resetTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
+  const hasSubmittedRef = React.useRef(false);
   const [location] = useLocation();
+
+  React.useEffect(() => {
+    if (submitted) {
+      hasSubmittedRef.current = true;
+      successRef.current?.focus();
+    } else if (hasSubmittedRef.current) {
+      nameInputRef.current?.focus();
+    }
+  }, [submitted]);
+
+  React.useEffect(() => () => {
+    if (resetTimerRef.current) clearTimeout(resetTimerRef.current);
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -415,7 +437,11 @@ function ContactFormCard({ expanded = false, lang = "en" }: { expanded?: boolean
 
       trackLead(expanded ? "contact_page_form" : "hero_contact_form", location);
       setSubmitted(true);
-      setTimeout(() => setSubmitted(false), 5000);
+      if (resetTimerRef.current) clearTimeout(resetTimerRef.current);
+      resetTimerRef.current = setTimeout(() => {
+        setSubmitted(false);
+        resetTimerRef.current = null;
+      }, 5000);
       setFormData({ name: "", email: "", phone: "", service: "", message: "" });
     } catch {
       setError(t.networkError);
@@ -439,9 +465,16 @@ function ContactFormCard({ expanded = false, lang = "en" }: { expanded?: boolean
     >
       {submitted ? (
         <div
-          className={cn("flex items-center justify-center gap-3", expanded ? "py-12" : "py-4")}
+          ref={successRef}
+          className={cn(
+            "flex items-center justify-center gap-3 focus-visible:rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2",
+            expanded ? "py-12" : "py-4",
+          )}
           role="status"
           aria-live="polite"
+          aria-atomic="true"
+          tabIndex={-1}
+          data-testid="contact-form-success"
         >
           <div className="w-10 h-10 rounded-full bg-[hsl(var(--success)/0.1)] flex items-center justify-center">
             <PaperPlaneTilt weight="fill" className="w-5 h-5 text-[hsl(var(--success))]" />
@@ -466,6 +499,7 @@ function ContactFormCard({ expanded = false, lang = "en" }: { expanded?: boolean
                 {t.nameLabel}
               </label>
               <input
+                ref={nameInputRef}
                 id={nameId}
                 type="text"
                 required
@@ -574,6 +608,7 @@ function ContactFormCard({ expanded = false, lang = "en" }: { expanded?: boolean
               {t.nameLabel}
             </label>
             <input
+              ref={nameInputRef}
               id={nameId}
               type="text"
               required
@@ -1238,7 +1273,7 @@ export function PageHero({
         <>
           <div
             className={cn(
-              "relative hidden lg:block",
+              "relative hidden xl:block",
               isSplitHero && "z-20 bg-white py-8 xl:py-10",
             )}
             data-testid="search-bar-wrapper"
@@ -1260,18 +1295,11 @@ export function PageHero({
       )}
 
       {expandedContactForm && (
-        <>
-          <section className="relative z-10 bg-white" data-testid="expanded-contact-section">
-            <div className="container-radical py-10 lg:py-14">
-              <ContactFormCard expanded lang={formLang} />
-            </div>
-          </section>
-
-          <div className="xl:hidden">
-            <MobileContactFab onClick={openMobileForm} lang={formLang} />
-            <MobileContactModal isOpen={mobileFormOpen} onClose={closeMobileForm} lang={formLang} />
+        <section className="relative z-10 bg-white" data-testid="expanded-contact-section">
+          <div className="container-radical py-10 lg:py-14">
+            <ContactFormCard expanded lang={formLang} />
           </div>
-        </>
+        </section>
       )}
     </>
   );

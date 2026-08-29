@@ -141,10 +141,13 @@ test("homepage tablet booking sheet keeps focus while the hero carousel advances
 
     const fab = page.getByTestId("button-mobile-contact-fab");
     await fab.waitFor({ state: "visible" });
+    assert.equal(await page.getByTestId("search-bar-wrapper").evaluate((element) => getComputedStyle(element).display), "none", "tablet exposes the inline form beside the booking sheet trigger");
+    assert.equal(await page.locator('[data-testid="contact-form-card"]:visible').count(), 0, "tablet exposes a contact form before opening the sheet");
     await fab.click();
 
     const dialog = page.getByRole("dialog", { name: "Request a Visit" });
     await dialog.waitFor({ state: "visible" });
+    assert.equal(await page.locator('[data-testid="contact-form-card"]:visible').count(), 1, "tablet exposes more than one contact form while the sheet is open");
     const nameInput = dialog.getByTestId("input-contact-name");
     await nameInput.fill("Focus stays here");
     await nameInput.focus();
@@ -163,12 +166,53 @@ test("homepage tablet booking sheet keeps focus while the hero carousel advances
     assert.equal(await dialog.isVisible(), true, "carousel advance closed or reset the booking sheet");
     assert.equal(await page.evaluate(() => document.body.style.overflow), "hidden", "carousel advance unlocked background scrolling");
 
-    await page.setViewportSize({ width: 1366, height: 900 });
+    await page.setViewportSize({ width: 1279, height: 900 });
+    assert.equal(await dialog.isVisible(), true, "booking sheet closed before the xl breakpoint");
+    assert.equal(await page.getByTestId("search-bar-wrapper").evaluate((element) => getComputedStyle(element).display), "none", "inline form appeared before the xl breakpoint");
+    assert.equal(await page.locator('[data-testid="contact-form-card"]:visible').count(), 1, "1279px exposes duplicate contact forms");
+
+    await page.setViewportSize({ width: 1280, height: 900 });
+    await page.waitForFunction(() => window.matchMedia("(min-width: 1280px)").matches);
     await dialog.waitFor({ state: "hidden" });
     assert.equal(await page.evaluate(() => document.body.style.overflow), "", "crossing the desktop breakpoint left background scrolling locked");
     assert.equal(await fab.isVisible(), false, "tablet booking trigger remained visible at the desktop breakpoint");
+    assert.equal(await page.getByTestId("search-bar-wrapper").evaluate((element) => getComputedStyle(element).display), "block", "desktop contact form did not activate at the xl breakpoint");
+    assert.equal(await page.locator('[data-testid="contact-form-card"]:visible').count(), 1, "desktop exposes more than one visible contact form");
     assert.deepEqual(pageErrors, [], "tablet homepage emitted unexpected page errors");
     assert.deepEqual(consoleErrors, [], "tablet homepage emitted unexpected console errors");
+  } finally {
+    await context.close();
+    await browser.close();
+  }
+});
+
+test("expanded contact pages expose one form without a competing tablet sheet", async () => {
+  const browser = await chromium.launch();
+  const context = await browser.newContext({ viewport: { width: 1024, height: 900 } });
+  await unlockPreview(context);
+  const page = await context.newPage();
+  const pageErrors = [];
+  const consoleErrors = [];
+  page.on("pageerror", (error) => pageErrors.push(error.message));
+  page.on("console", (message) => {
+    if (message.type() === "error" && !message.text().includes("/_next/webpack-hmr")) {
+      consoleErrors.push(message.text());
+    }
+  });
+
+  try {
+    for (const path of ["/contact", "/es/contacto"]) {
+      pageErrors.length = 0;
+      consoleErrors.length = 0;
+      const response = await page.goto(`${baseUrl}${path}`, { waitUntil: "networkidle" });
+      assert.equal(response?.status(), 200, `${path} did not load`);
+      await page.getByTestId("expanded-contact-section").waitFor({ state: "visible" });
+      assert.equal(await page.locator('[data-testid="contact-form-card"]:visible').count(), 1, `${path} exposes duplicate contact forms at 1024px`);
+      assert.equal(await page.getByTestId("button-mobile-contact-fab").count(), 0, `${path} renders a competing tablet booking trigger`);
+      assert.equal(await page.getByTestId("mobile-contact-sheet").count(), 0, `${path} mounts a competing tablet booking sheet`);
+      assert.deepEqual(pageErrors, [], `${path} emitted unexpected page errors`);
+      assert.deepEqual(consoleErrors, [], `${path} emitted unexpected console errors`);
+    }
   } finally {
     await context.close();
     await browser.close();
