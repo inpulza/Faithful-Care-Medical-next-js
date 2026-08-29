@@ -173,7 +173,8 @@ test("homepage tablet booking sheet keeps focus while the hero carousel advances
 
     await page.setViewportSize({ width: 1280, height: 900 });
     await page.waitForFunction(() => window.matchMedia("(min-width: 1280px)").matches);
-    await dialog.waitFor({ state: "hidden" });
+    await dialog.waitFor({ state: "detached" });
+    await page.waitForFunction(() => document.body.style.overflow === "");
     assert.equal(await page.evaluate(() => document.body.style.overflow), "", "crossing the desktop breakpoint left background scrolling locked");
     assert.equal(await fab.isVisible(), false, "tablet booking trigger remained visible at the desktop breakpoint");
     assert.equal(await page.getByTestId("search-bar-wrapper").evaluate((element) => getComputedStyle(element).display), "block", "desktop contact form did not activate at the xl breakpoint");
