@@ -134,6 +134,8 @@ function EvidenceSources({ sources }: { sources: ConditionPageData["sources"] })
 }
 
 export function ConditionPage({ content }: { content: ConditionPageData }) {
+  const suppressHeroActions = content.urgentNotice?.suppressHeroActions === true;
+
   return (
     <div className="bg-white text-[hsl(var(--foreground))]">
       <JsonLdArray schemas={[faqPageSchema(content.faqs)]} />
@@ -151,11 +153,11 @@ export function ConditionPage({ content }: { content: ConditionPageData }) {
           heroImageFit={content.hero.imageFit}
           heroImagePosition={content.hero.imagePosition}
           heroImagePositionMobile={content.hero.imagePositionMobile}
-          showCtas={!content.urgentNotice}
+          showCtas={!suppressHeroActions}
           primaryCtaText="Call Faithful Care"
           primaryCtaHref="tel:2394230205"
           secondaryCtaText="Request a Visit"
-          showSearchCard={!content.urgentNotice}
+          showSearchCard={!suppressHeroActions}
         />
 
         {content.urgentNotice && (

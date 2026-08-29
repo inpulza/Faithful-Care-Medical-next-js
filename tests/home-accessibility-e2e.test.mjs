@@ -162,6 +162,11 @@ test("homepage tablet booking sheet keeps focus while the hero carousel advances
     assert.equal(await nameInput.evaluate((element) => document.activeElement === element), true, "carousel advance moved focus out of the field");
     assert.equal(await dialog.isVisible(), true, "carousel advance closed or reset the booking sheet");
     assert.equal(await page.evaluate(() => document.body.style.overflow), "hidden", "carousel advance unlocked background scrolling");
+
+    await page.setViewportSize({ width: 1366, height: 900 });
+    await dialog.waitFor({ state: "hidden" });
+    assert.equal(await page.evaluate(() => document.body.style.overflow), "", "crossing the desktop breakpoint left background scrolling locked");
+    assert.equal(await fab.isVisible(), false, "tablet booking trigger remained visible at the desktop breakpoint");
     assert.deepEqual(pageErrors, [], "tablet homepage emitted unexpected page errors");
     assert.deepEqual(consoleErrors, [], "tablet homepage emitted unexpected console errors");
   } finally {

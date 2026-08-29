@@ -267,9 +267,19 @@ function MobileContactModal({ isOpen, onClose, lang = "en" }: { isOpen: boolean;
   React.useEffect(() => {
     if (!isOpen) return;
 
+    const desktopQuery = window.matchMedia('(min-width: 1280px)');
+    if (desktopQuery.matches) {
+      onClose();
+      return;
+    }
+
     previousFocusRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
     document.body.style.overflow = 'hidden';
     const focusTimer = window.setTimeout(() => closeButtonRef.current?.focus(), 0);
+
+    const handleDesktopBreakpoint = (event: MediaQueryListEvent) => {
+      if (event.matches) onClose();
+    };
 
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
@@ -302,9 +312,11 @@ function MobileContactModal({ isOpen, onClose, lang = "en" }: { isOpen: boolean;
       }
     };
 
+    desktopQuery.addEventListener('change', handleDesktopBreakpoint);
     document.addEventListener('keydown', handleKeyDown);
     return () => {
       window.clearTimeout(focusTimer);
+      desktopQuery.removeEventListener('change', handleDesktopBreakpoint);
       document.removeEventListener('keydown', handleKeyDown);
       document.body.style.overflow = '';
       previousFocusRef.current?.focus();

@@ -91,6 +91,7 @@ export interface ConditionPageData {
   urgentNotice?: {
     title: string;
     description: string;
+    suppressHeroActions?: boolean;
   };
   quickFacts: {
     icon: PhosphorIcon;

@@ -278,6 +278,14 @@ test("representative condition layouts work without overflow or browser errors o
           assert.match(await page.getByTestId("condition-urgent-notice").innerText(), /call 911/i);
         }
 
+        if (path === "/palliative-care/for-cancer") {
+          assert.equal(await page.getByTestId("condition-urgent-notice").count(), 1);
+          assert.equal(await page.getByTestId("hero-ctas").count(), 1, "cancer safety guidance must not remove routine hero actions");
+          if (viewport.name === "desktop") {
+            assert.equal(await page.getByTestId("search-bar-wrapper").count(), 1, "cancer safety guidance must preserve the routine contact form");
+          }
+        }
+
         assert.deepEqual(pageErrors, [], `${path} page errors at ${viewport.name}`);
         assert.deepEqual(consoleErrors, [], `${path} console errors at ${viewport.name}`);
         await page.close();

@@ -1016,6 +1016,7 @@ export const palliativeConditionPagesB = {
       title: "Severe or sudden trouble breathing can be an emergency",
       description:
         "Severe or sudden trouble breathing can be an emergency; call 911 for severe shortness of breath, blue lips or skin, chest pain or pressure, confusion, fainting, or inability to speak normally.",
+      suppressHeroActions: true,
     },
     quickFacts: [
       { icon: Warning, label: "Emergency", value: "Severe or sudden trouble breathing can require 911" },
