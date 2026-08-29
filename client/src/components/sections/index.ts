@@ -33,3 +33,7 @@ export { LocalAreaInfo } from "./local-area-info";
 export type { LocalAreaInfoProps } from "./local-area-info";
 export { NapBlock } from "./nap-block";
 export type { NapBlockProps } from "./nap-block";
+export { CareLevelGuide } from "./care-level-guide";
+export type { CareLevelItem, CareLevelTone } from "./care-level-guide";
+export { RelatedCareMosaic } from "./related-care-mosaic";
+export type { RelatedCareLink } from "./related-care-mosaic";

@@ -1,4 +1,4 @@
-import { motion, useReducedMotion } from "framer-motion";
+import { motion } from "framer-motion";
 import { ArrowRight, type Icon as PhosphorIcon } from "@phosphor-icons/react";
 import { Link } from "@/lib/router";
 import { Button } from "@/components/ui/button";
@@ -31,15 +31,13 @@ export function StackedFeatureStories({
   className = "bg-[#00c2cc]",
   testId = "section-stacked-feature-stories",
 }: StackedFeatureStoriesProps) {
-  const reducedMotion = useReducedMotion();
-
   return (
     <section className={className} data-testid={testId}>
       <div className="container-radical py-12 md:py-20 lg:py-28">
         <motion.div
           className="mx-auto mb-10 max-w-3xl text-center md:mb-16 lg:mb-20"
           data-testid={`${testId}-header`}
-          initial={reducedMotion ? { opacity: 1, y: 0 } : { opacity: 0, y: 24 }}
+          initial={false}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.6 }}
@@ -65,7 +63,7 @@ export function StackedFeatureStories({
                 <motion.article
                   className={`w-full rounded-3xl border border-primary/30 bg-white ${isLast ? "" : "mb-6 lg:mb-8"}`}
                   style={{ padding: "clamp(1.5rem, 3vw, 2.5rem)" }}
-                  initial={reducedMotion ? { opacity: 1, y: 0 } : { opacity: 0, y: 40 }}
+                  initial={false}
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true, margin: "-50px" }}
                   transition={{ duration: 0.6, delay: index * 0.08 }}

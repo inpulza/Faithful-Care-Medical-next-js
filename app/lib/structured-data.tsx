@@ -1,4 +1,5 @@
 import type { PublicRoute } from "./route-contract";
+import { CONDITION_ROUTE_DATA, isConditionRoute } from "../../shared/condition-routes";
 import {
   breadcrumbSchema,
   medicalClinicSchema,
@@ -127,7 +128,15 @@ function serviceEntityId(route: PublicRoute): string | null {
 }
 
 function routeServiceSchema(route: PublicRoute): Schema | null {
-  const service = routeServiceOverrides[route.path];
+  const service = routeServiceOverrides[route.path] ?? (
+    isConditionRoute(route.path)
+      ? {
+          name: CONDITION_ROUTE_DATA[route.path].serviceName,
+          serviceType: CONDITION_ROUTE_DATA[route.path].serviceType,
+          category: CONDITION_ROUTE_DATA[route.path].category,
+        }
+      : undefined
+  );
   if (!service) return null;
   return medicalServiceSchema({
     ...service,

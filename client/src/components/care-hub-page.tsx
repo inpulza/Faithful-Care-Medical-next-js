@@ -2,7 +2,7 @@ import * as React from "react";
 import { motion } from "framer-motion";
 import { ArrowRight, CheckCircle } from "@phosphor-icons/react";
 import { Link } from "@/lib/router";
-import { PageHero, InsuranceLogos, TealCta, MeetYourDoctor, TestimonialsSection, FaqSection } from "@/components/sections";
+import { PageHero, InsuranceLogos, TealCta, MeetYourDoctor, TestimonialsSection, FaqSection, RelatedCareMosaic } from "@/components/sections";
 import type { FaqItem } from "@/components/sections";
 import { Button } from "@/components/ui/button";
 import { navigationData } from "@/lib/navigation-data";
@@ -11,6 +11,44 @@ import { CLINIC_GMAPS_DIRECTIONS_URL } from "@/lib/clinic-location";
 import { SocialVideoCarousel } from "@/components/social-video-carousel";
 import { JsonLdArray } from "@/components/json-ld";
 import { faqPageSchema } from "@/lib/schemas";
+import { CONDITION_ROUTE_DATA } from "@shared/condition-routes";
+import { assetUrl } from "@/lib/asset-url";
+import primaryGuideImage from "@/assets/images/hero-chronic-disease.optimized.webp";
+import palliativeGuideImage from "@/assets/images/hero-doctor-senior-man.optimized.webp";
+
+const conditionGuideMosaics = {
+  "/primary-care": {
+    eyebrow: "Condition-specific guides",
+    title: "Start with the health concern that brought you here.",
+    description: "Each guide explains what to track, what to bring, which changes need prompt attention, and how primary care fits with specialist care.",
+    featured: {
+      title: CONDITION_ROUTE_DATA["/primary-care/diabetes-care"].label,
+      description: "Prepare a useful diabetes visit around trends, medications, daily life, and complication screening.",
+      href: "/primary-care/diabetes-care",
+      image: assetUrl(primaryGuideImage),
+      imageAlt: "Primary care visit focused on long-term condition management in Naples, Florida",
+      imagePosition: "72% center",
+    },
+    links: Object.entries(CONDITION_ROUTE_DATA)
+      .filter(([path, route]) => route.group === "primary" && path !== "/primary-care/diabetes-care")
+      .map(([href, route]) => ({ title: route.label, description: route.description, href })),
+  },
+  "/palliative-care": {
+    eyebrow: "Support by serious illness",
+    title: "Palliative care changes with the illness and the person.",
+    description: "Explore practical guidance for symptoms, caregiver decisions, safety, and coordination alongside the specialists already treating the illness.",
+    featured: {
+      title: CONDITION_ROUTE_DATA["/palliative-care/for-cancer"].label,
+      description: "See how symptom and family support can work alongside oncology treatment rather than replacing it.",
+      href: "/palliative-care/for-cancer",
+      image: assetUrl(palliativeGuideImage),
+      imageAlt: "Faithful Care physician supporting an older adult during a serious illness visit",
+    },
+    links: Object.entries(CONDITION_ROUTE_DATA)
+      .filter(([path, route]) => route.group === "palliative" && path !== "/palliative-care/for-cancer")
+      .map(([href, route]) => ({ title: route.label, description: route.description, href })),
+  },
+} as const;
 
 const InsuranceMembership = React.lazy(() =>
   import("@/components/sections/insurance-membership").then(m => ({ default: m.InsuranceMembership }))
@@ -128,16 +166,17 @@ export function InfoSection({ section, categoryId }: { section: HubInfoSection; 
             viewport={{ once: true }}
             transition={{ duration: 0.5 }}
           >
-            <Link href={section.cta.href} aria-label={section.cta.text} className="block w-full max-w-sm sm:w-auto">
-              <Button
-                size="lg"
-                className="h-auto w-full max-w-full whitespace-normal px-5 text-center sm:w-auto sm:px-8"
-                data-testid={`button-${section.id}-cta`}
-              >
+            <Button
+              asChild
+              size="lg"
+              className="h-auto w-full max-w-sm whitespace-normal px-5 text-center sm:w-auto sm:px-8"
+              data-testid={`button-${section.id}-cta`}
+            >
+              <Link href={section.cta.href} aria-label={section.cta.text}>
                 {section.cta.text}
                 <ArrowRight weight="regular" size={20} className="ml-2" aria-hidden="true" />
-              </Button>
-            </Link>
+              </Link>
+            </Button>
           </motion.div>
         )}
       </div>
@@ -246,6 +285,10 @@ export function CareHubPage({
         {infoSections?.map((section) => (
           <InfoSection key={section.id} section={section} categoryId={categoryId} />
         ))}
+
+        {conditionGuideMosaics[path as keyof typeof conditionGuideMosaics] && (
+          <RelatedCareMosaic dense {...conditionGuideMosaics[path as keyof typeof conditionGuideMosaics]} />
+        )}
 
         <MeetYourDoctor />
 

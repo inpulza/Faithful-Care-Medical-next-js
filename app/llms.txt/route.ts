@@ -1,6 +1,14 @@
 import { DOMAIN } from "../../shared/seo-data";
+import { CONDITION_ROUTE_DATA } from "../../shared/condition-routes";
 
 export const dynamic = "force-static";
+
+function conditionLinks(group: "primary" | "palliative"): string {
+  return Object.entries(CONDITION_ROUTE_DATA)
+    .filter(([, route]) => route.group === group)
+    .map(([path, route]) => `- [${route.label}](${DOMAIN}${path})`)
+    .join("\n");
+}
 
 const content = `# Faithful Care Medical Services
 
@@ -18,12 +26,20 @@ Faithful Care Medical Services is a physician-led medical practice founded by Dr
 - [Senior & Geriatric Care](${DOMAIN}/primary-care/senior-care)
 - [In-Office Procedures & Diagnostics](${DOMAIN}/primary-care/procedures-diagnostics)
 
+### Primary Care Condition Guides
+
+${conditionLinks("primary")}
+
 ## Services - Palliative Care
 
 - [What Is Palliative Care?](${DOMAIN}/palliative-care/about-palliative-care)
 - [Pain & Symptom Relief](${DOMAIN}/palliative-care/symptom-relief)
 - [Patient & Family Support](${DOMAIN}/palliative-care/patient-family-support)
 - [Advance Planning & Transitions](${DOMAIN}/palliative-care/planning-transitions)
+
+### Palliative Support by Illness or Symptom
+
+${conditionLinks("palliative")}
 
 ## Locations Served
 

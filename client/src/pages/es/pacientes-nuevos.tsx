@@ -77,7 +77,7 @@ const infoSections: HubInfoSection[] = [
     title: "Puede atenderse en español en cada paso",
     description:
       "Le atendemos en español o en inglés, desde la primera llamada hasta el seguimiento de su cuidado.",
-    cta: { text: "Conocer nuestra atención primaria", href: "/es/medico-de-familia-naples" },
+    cta: { text: "Ver atención primaria", href: "/es/medico-de-familia-naples" },
   },
 ];
 

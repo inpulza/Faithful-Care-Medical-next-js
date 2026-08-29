@@ -8,10 +8,22 @@ test("Next route contract preserves the public surface and approved redirects", 
   assert.equal(existsSync(contractUrl), true, "Next route contract is missing");
 
   const { publicRoutes, redirectRules, routeForPath } = await import(contractUrl.href);
+  const { CONDITION_ROUTE_PATHS } = await import(
+    new URL("../shared/condition-routes.ts", import.meta.url).href
+  );
+  const migratedPublicRouteCount = 39;
+  const migratedEnglishRouteCount = 33;
+  const migratedTrailingSlashCount = 38;
 
-  assert.equal(publicRoutes.length, 39);
-  assert.equal(new Set(publicRoutes.map((route) => route.path)).size, 39);
-  assert.equal(publicRoutes.filter((route) => route.lang === "en").length, 33);
+  assert.equal(publicRoutes.length, migratedPublicRouteCount + CONDITION_ROUTE_PATHS.length);
+  assert.equal(
+    new Set(publicRoutes.map((route) => route.path)).size,
+    migratedPublicRouteCount + CONDITION_ROUTE_PATHS.length,
+  );
+  assert.equal(
+    publicRoutes.filter((route) => route.lang === "en").length,
+    migratedEnglishRouteCount + CONDITION_ROUTE_PATHS.length,
+  );
   assert.equal(publicRoutes.filter((route) => route.lang === "es").length, 6);
 
   assert.equal(routeForPath("/")?.canonical, "https://faithfulcaremedical.com/");
@@ -61,7 +73,10 @@ test("Next route contract preserves the public surface and approved redirects", 
   const trailingSlashRules = redirectRules.filter((rule) =>
     rule.source.endsWith("/") && rule.source !== "/",
   );
-  assert.equal(trailingSlashRules.length, 38);
+  assert.equal(
+    trailingSlashRules.length,
+    migratedTrailingSlashCount + CONDITION_ROUTE_PATHS.length,
+  );
   for (const route of publicRoutes.filter(({ path }) => path !== "/")) {
     assert.deepEqual(
       trailingSlashRules.find((rule) => rule.source === `${route.path}/`),

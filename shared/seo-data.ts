@@ -1,3 +1,5 @@
+import { CONDITION_ROUTE_DATA } from "./condition-routes";
+
 export const DOMAIN = "https://faithfulcaremedical.com";
 export const BRAND = "Faithful Care Medical Services";
 export const DEFAULT_OG_IMAGE = `${DOMAIN}/og-image.png`;
@@ -7,6 +9,13 @@ export interface PageSeo {
   description: string;
   dateModified?: string;
 }
+
+const conditionSeoMap = Object.fromEntries(
+  Object.entries(CONDITION_ROUTE_DATA).map(([path, route]) => [
+    path,
+    { title: route.title, description: route.description },
+  ]),
+) as Record<keyof typeof CONDITION_ROUTE_DATA, PageSeo>;
 
 export const seoMap = {
   "/": {
@@ -89,6 +98,7 @@ export const seoMap = {
     title: "Advance Care Planning & Hospice Transitions | Naples, FL",
     description: "Advance directives, living wills, goals of care discussions, and hospice coordination. Plan with confidence at Faithful Care, Naples, FL.",
   },
+  ...conditionSeoMap,
   "/locations/naples": {
     title: "Naples, FL Primary Care & Palliative Care | Faithful Care",
     description: "Your medical home on Tamiami Trail N. in Naples, FL. Complete primary care and palliative care for adults and seniors. Same-day visits available.",

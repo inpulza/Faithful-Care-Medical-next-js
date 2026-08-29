@@ -4,12 +4,11 @@ import {
   CONSENT_VERSION,
   GA4_MEASUREMENT_ID,
 } from "@shared/tracking";
-import Script from "next/script";
 import { publicRoutes } from "./lib/route-contract";
 
 const TRACKABLE_PATHS = publicRoutes.map(({ path }) => path);
 
-const bootstrap = `
+export const TRACKING_BOOTSTRAP = `
 (function () {
   var state = {
     necessary: true,
@@ -167,13 +166,3 @@ const bootstrap = `
   }
 })();
 `;
-
-export function TrackingScripts() {
-  return (
-    <Script
-      id="fcms-consent-bootstrap"
-      strategy="beforeInteractive"
-      dangerouslySetInnerHTML={{ __html: bootstrap }}
-    />
-  );
-}
