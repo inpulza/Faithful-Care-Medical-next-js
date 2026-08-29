@@ -1,4 +1,5 @@
 import { Resend } from "resend";
+import { privacySafeTrackingPath } from "@shared/tracking-route-privacy";
 
 const FROM_EMAIL = "Faithful Care Medical <noreply@faithfulcaremedical.com>";
 const CLINIC_EMAIL = "info@faithfulcaremedical.com";
@@ -33,10 +34,7 @@ interface ContactFormData {
 }
 
 export function normalizeExternalContactSourcePage(sourcePage: string): string {
-  if (sourcePage.startsWith("/primary-care/")) return "/primary-care";
-  if (sourcePage.startsWith("/palliative-care/")) return "/palliative-care";
-  if (sourcePage === "/es/medico-de-familia-naples" || sourcePage === "/es/cuidados-paliativos-naples") return "/es";
-  return sourcePage;
+  return privacySafeTrackingPath(sourcePage);
 }
 
 const PHI_KEYWORDS = [

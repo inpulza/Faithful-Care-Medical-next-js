@@ -276,6 +276,13 @@ test("representative condition layouts work without overflow or browser errors o
           assert.equal(await page.getByTestId("hero-ctas").count(), 0, "breathing safety page must not lead with commercial CTAs");
           assert.equal(await page.getByTestId("search-bar-wrapper").count(), 0, "breathing safety page must not lead with the contact form");
           assert.match(await page.getByTestId("condition-urgent-notice").innerText(), /call 911/i);
+          if (viewport.name === "mobile") {
+            assert.equal(await page.getByTestId("button-mobile-contact-fab").count(), 0, "breathing safety page must not expose the tablet booking trigger");
+            assert.equal(await page.getByTestId("mobile-action-bar").count(), 0, "breathing safety page must not expose routine mobile actions");
+            assert.equal(await page.getByTestId("action-bar-whatsapp").count(), 0, "breathing safety page must not compete with 911 guidance through WhatsApp");
+            assert.equal(await page.getByTestId("action-bar-appointment").count(), 0, "breathing safety page must not compete with 911 guidance through booking");
+            assert.equal(await page.getByRole("dialog").count(), 0, "breathing safety page must not mount a commercial contact dialog");
+          }
         }
 
         if (path === "/palliative-care/for-cancer") {
@@ -283,6 +290,9 @@ test("representative condition layouts work without overflow or browser errors o
           assert.equal(await page.getByTestId("hero-ctas").count(), 1, "cancer safety guidance must not remove routine hero actions");
           if (viewport.name === "desktop") {
             assert.equal(await page.getByTestId("search-bar-wrapper").count(), 1, "cancer safety guidance must preserve the routine contact form");
+          } else {
+            assert.equal(await page.getByTestId("mobile-action-bar").count(), 1, "non-emergency condition pages must keep routine mobile actions");
+            assert.equal(await page.getByTestId("action-bar-appointment").isVisible(), true, "non-emergency condition pages must keep mobile booking available");
           }
         }
 
@@ -508,18 +518,67 @@ test("tablet booking sheet announces outcomes, traps focus, and remains keyboard
     await page.keyboard.press("Shift+Tab");
     assert.equal(await dialog.evaluate((element) => element.contains(document.activeElement)), true, "Shift+Tab escaped the dialog after success");
 
+    await form.waitFor({ state: "visible", timeout: 6500 });
+    assert.equal(await page.evaluate(() => document.activeElement?.getAttribute("data-testid")), "button-mobile-contact-close", "form reset stole focus after the visitor moved it");
+    assert.equal(await dialog.evaluate((element) => element.contains(document.activeElement)), true, "form reset moved focus outside the dialog");
+
+    await name.fill("Restore Focus Test");
+    await form.getByTestId("input-contact-email").fill("restore@example.com");
+    await form.getByTestId("button-contact-submit").click();
+    await status.waitFor({ state: "visible" });
+    await page.waitForFunction(() => document.activeElement?.getAttribute("data-testid") === "contact-form-success");
     await page.waitForFunction(
       () => document.activeElement?.getAttribute("data-testid") === "input-contact-name",
       undefined,
       { timeout: 6500 },
     );
-    assert.equal(await dialog.evaluate((element) => element.contains(document.activeElement)), true, "form reset moved focus outside the dialog");
+    assert.equal(await dialog.evaluate((element) => element.contains(document.activeElement)), true, "form reset did not restore focus after its status disappeared");
 
     await page.keyboard.press("Escape");
     await dialog.waitFor({ state: "hidden" });
     assert.equal(await page.evaluate(() => document.activeElement?.getAttribute("data-testid")), "button-mobile-contact-fab");
     assert.deepEqual(pageErrors, [], "tablet sheet page errors");
     assert.deepEqual(consoleErrors, [], "tablet sheet console errors");
+  } finally {
+    await context.close();
+    await browser.close();
+  }
+});
+
+test("expanded contact form does not steal focus when its success message resets", async () => {
+  const browser = await chromium.launch();
+  const context = await browser.newContext({ viewport: { width: 1440, height: 900 } });
+  await unlockPreview(context);
+  const page = await context.newPage();
+  const pageErrors = [];
+  const consoleErrors = [];
+  page.on("pageerror", (error) => pageErrors.push(error.message));
+  page.on("console", (message) => {
+    if (message.type() === "error" && !message.text().includes("/_next/webpack-hmr")) consoleErrors.push(message.text());
+  });
+
+  try {
+    await page.route("**/api/contact", (route) => route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({ success: true }),
+    }));
+    const response = await page.goto(`${baseUrl}/contact`, { waitUntil: "networkidle" });
+    assert.equal(response?.status(), 200);
+
+    const form = page.getByTestId("expanded-contact-section").getByTestId("hero-contact-form");
+    await form.getByTestId("input-contact-name").fill("Expanded Focus Test");
+    await form.getByTestId("input-contact-email").fill("expanded@example.com");
+    await form.getByTestId("button-contact-submit").click();
+    await page.getByTestId("expanded-contact-section").getByTestId("contact-form-success").waitFor({ state: "visible" });
+
+    const privacyLink = page.getByTestId("footer-link-privacy-policy");
+    await privacyLink.focus();
+    assert.equal(await page.evaluate(() => document.activeElement?.getAttribute("data-testid")), "footer-link-privacy-policy");
+    await form.waitFor({ state: "visible", timeout: 6500 });
+    assert.equal(await page.evaluate(() => document.activeElement?.getAttribute("data-testid")), "footer-link-privacy-policy", "expanded form reset stole focus from the footer");
+    assert.deepEqual(pageErrors, [], "expanded contact form page errors");
+    assert.deepEqual(consoleErrors, [], "expanded contact form console errors");
   } finally {
     await context.close();
     await browser.close();

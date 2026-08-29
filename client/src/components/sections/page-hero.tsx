@@ -400,14 +400,14 @@ function ContactFormCard({ expanded = false, lang = "en" }: { expanded?: boolean
   const successRef = React.useRef<HTMLDivElement | null>(null);
   const nameInputRef = React.useRef<HTMLInputElement | null>(null);
   const resetTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
-  const hasSubmittedRef = React.useRef(false);
+  const restoreNameFocusRef = React.useRef(false);
   const [location] = useLocation();
 
   React.useEffect(() => {
     if (submitted) {
-      hasSubmittedRef.current = true;
       successRef.current?.focus();
-    } else if (hasSubmittedRef.current) {
+    } else if (restoreNameFocusRef.current) {
+      restoreNameFocusRef.current = false;
       nameInputRef.current?.focus();
     }
   }, [submitted]);
@@ -439,6 +439,7 @@ function ContactFormCard({ expanded = false, lang = "en" }: { expanded?: boolean
       setSubmitted(true);
       if (resetTimerRef.current) clearTimeout(resetTimerRef.current);
       resetTimerRef.current = setTimeout(() => {
+        restoreNameFocusRef.current = document.activeElement === successRef.current;
         setSubmitted(false);
         resetTimerRef.current = null;
       }, 5000);

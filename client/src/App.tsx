@@ -150,6 +150,7 @@ function Router() {
 
 function Layout({ children }: { children: React.ReactNode }) {
   const [location] = useLocation();
+  const suppressMobileCommercialActions = location === "/palliative-care/shortness-of-breath";
 
   React.useEffect(() => {
     if (typeof window === "undefined") return;
@@ -214,8 +215,12 @@ function Layout({ children }: { children: React.ReactNode }) {
         {children}
       </div>
       <Footer />
-      <div className="h-20 md:hidden" />
-      <MobileActionBar />
+      {!suppressMobileCommercialActions && (
+        <>
+          <div className="h-20 md:hidden" />
+          <MobileActionBar />
+        </>
+      )}
       <CookieBanner />
     </div>
   );
