@@ -1,3 +1,15 @@
+import {
+  CONDITION_ROUTE_PATHS,
+  isConditionRoute,
+  type ConditionRoutePath,
+} from "./condition-route-paths.ts";
+
+export {
+  CONDITION_ROUTE_PATHS,
+  isConditionRoute,
+  type ConditionRoutePath,
+};
+
 export type ConditionRouteGroup = "primary" | "palliative";
 
 export interface ConditionRouteDefinition {
@@ -172,12 +184,4 @@ export const CONDITION_ROUTE_DATA = {
     serviceType: "Breathlessness palliative support",
     category: "Palliative Care",
   },
-} as const satisfies Record<string, ConditionRouteDefinition>;
-
-export type ConditionRoutePath = keyof typeof CONDITION_ROUTE_DATA;
-
-export const CONDITION_ROUTE_PATHS = Object.keys(CONDITION_ROUTE_DATA) as ConditionRoutePath[];
-
-export function isConditionRoute(path: string): path is ConditionRoutePath {
-  return path in CONDITION_ROUTE_DATA;
-}
+} as const satisfies Record<ConditionRoutePath, ConditionRouteDefinition>;

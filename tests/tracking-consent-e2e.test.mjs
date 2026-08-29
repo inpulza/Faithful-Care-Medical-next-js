@@ -3,6 +3,15 @@ import { readFile } from "node:fs/promises";
 import { test } from "node:test";
 import { chromium } from "playwright";
 import { baseUrl, previewFetch, unlockPreview } from "./preview-access.mjs";
+const { CONDITION_ROUTE_DATA, CONDITION_ROUTE_PATHS } = await import(
+  new URL("../shared/condition-routes.ts", import.meta.url).href
+);
+const {
+  CONDITION_TRACKING_PATH_ALIASES,
+  CONDITION_TRACKING_TITLE_ALIASES,
+} = await import(
+  new URL("../shared/tracking-route-privacy.ts", import.meta.url).href
+);
 const humanDesktopUa =
   "Mozilla/5.0 (Windows NT 10.0; Win64; x64) " +
   "AppleWebKit/537.36 (KHTML, like Gecko) " +
@@ -12,7 +21,7 @@ const humanMobileUa =
   "AppleWebKit/537.36 (KHTML, like Gecko) " +
   "Chrome/150.0.0.0 Mobile Safari/537.36";
 
-async function createHumanContext(browser, { mobile = false } = {}) {
+async function createHumanContext(browser, { mobile = false, clarityBody = "" } = {}) {
   const context = await browser.newContext({
     viewport: mobile ? { width: 390, height: 844 } : { width: 1440, height: 900 },
     userAgent: mobile ? humanMobileUa : humanDesktopUa,
@@ -26,7 +35,7 @@ async function createHumanContext(browser, { mobile = false } = {}) {
     route.fulfill({ status: 200, contentType: "application/javascript", body: "" }),
   );
   await context.route(/clarity\.ms\/tag\//, (route) =>
-    route.fulfill({ status: 200, contentType: "application/javascript", body: "" }),
+    route.fulfill({ status: 200, contentType: "application/javascript", body: clarityBody }),
   );
   await unlockPreview(context);
   return context;
@@ -516,8 +525,9 @@ test("Global Privacy Control keeps advertising and personalization denied", asyn
     assert.equal(googleConsent.at(-1)[2].ad_personalization, "denied");
 
     const clarityConsent = await commands(page, "clarity", "consentv2");
-    assert.equal(clarityConsent.at(-1)[1].analytics_Storage, "granted");
+    assert.equal(clarityConsent.at(-1)[1].analytics_Storage, "denied");
     assert.equal(clarityConsent.at(-1)[1].ad_Storage, "denied");
+    assert.equal(await page.locator("#fcms-clarity-tag").count(), 0);
 
     await page.getByRole("button", { name: "Cookie Preferences" }).click();
     assert.equal(await page.getByTestId("cookie-toggle-analytics").getAttribute("aria-checked"), "true");
@@ -735,6 +745,7 @@ test("a successful contact request emits one sanitized lead and no form values",
       "page_location",
       "page_path",
       "page_referrer",
+      "page_title",
       "source_page",
     ]);
     assert.equal(leads[0][2].source_page, "/contact");
@@ -744,6 +755,224 @@ test("a successful contact request emits one sanitized lead and no form values",
       JSON.stringify(leads[0]),
       /Consent Test|test@example|2395550100|patient_condition|diabetes|private@example|gclid|Test_Click|gad_source|gad_campaignid/,
     );
+  } finally {
+    await context.close();
+    await browser.close();
+  }
+});
+
+test("the condition privacy registry exactly covers every condition route", () => {
+  assert.deepEqual(
+    Object.keys(CONDITION_ROUTE_DATA).sort(),
+    [...CONDITION_ROUTE_PATHS].sort(),
+  );
+  assert.deepEqual(
+    Object.keys(CONDITION_TRACKING_PATH_ALIASES).sort(),
+    [...CONDITION_ROUTE_PATHS].sort(),
+  );
+  assert.deepEqual(
+    Object.keys(CONDITION_TRACKING_TITLE_ALIASES).sort(),
+    [...CONDITION_ROUTE_PATHS].sort(),
+  );
+});
+
+test("all sixteen condition routes collapse to a generic care-hub analytics identity", () => {
+  assert.equal(CONDITION_ROUTE_PATHS.length, 16);
+  for (const path of CONDITION_ROUTE_PATHS) {
+    const expectedPath = path.startsWith("/primary-care/")
+      ? "/primary-care"
+      : "/palliative-care";
+    const expectedTitle = expectedPath === "/primary-care"
+      ? "Primary Care | Faithful Care Medical Services"
+      : "Palliative Care | Faithful Care Medical Services";
+    assert.equal(CONDITION_TRACKING_PATH_ALIASES[path], expectedPath, `${path} exposes its exact path`);
+    assert.equal(CONDITION_TRACKING_TITLE_ALIASES[path], expectedTitle, `${path} exposes its exact title`);
+  }
+});
+
+test("condition guides report only their care hub to analytics and lead tracking", async () => {
+  const browser = await chromium.launch();
+  const context = await createHumanContext(browser);
+  await context.route("**/api/contact", (route) =>
+    route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({ success: true }),
+    }),
+  );
+
+  try {
+    const page = await context.newPage();
+    const errors = collectUnexpectedErrors(page);
+    await page.goto(`${baseUrl}/primary-care/diabetes-care`, { waitUntil: "networkidle" });
+    await page.getByTestId("button-cookie-accept-all").click();
+
+    const configs = await commands(page, "google", "config");
+    const pageviews = (await commands(page, "google", "event")).filter(
+      (entry) => entry[1] === "page_view",
+    );
+    assert.equal(configs.at(-1)[2].page_path, "/primary-care");
+    assert.equal(configs.at(-1)[2].page_location, `${baseUrl}/primary-care`);
+    assert.equal(pageviews.at(-1)[2].page_path, "/primary-care");
+    assert.equal(pageviews.at(-1)[2].page_location, `${baseUrl}/primary-care`);
+    assert.equal(pageviews.at(-1)[2].page_title, "Primary Care | Faithful Care Medical Services");
+
+    const form = page.getByTestId("hero-contact-form");
+    await form.getByTestId("input-contact-name").fill("Privacy Test");
+    await form.getByTestId("input-contact-email").fill("privacy@example.com");
+    await form.getByTestId("input-contact-phone").fill("2395550199");
+    await form.getByTestId("select-contact-service").selectOption({ index: 1 });
+    await form.getByTestId("button-contact-submit").click();
+    await page.getByTestId("text-form-success").waitFor();
+
+    const leads = (await commands(page, "google", "event")).filter(
+      (entry) => entry[1] === "generate_lead",
+    );
+    assert.equal(leads.length, 1);
+    assert.equal(leads[0][2].source_page, "/primary-care");
+    assert.equal(leads[0][2].page_path, "/primary-care");
+    assert.equal(leads[0][2].page_location, `${baseUrl}/primary-care`);
+    assert.equal(leads[0][2].page_title, "Primary Care | Faithful Care Medical Services");
+
+    assert.doesNotMatch(
+      JSON.stringify([configs, pageviews, leads]),
+      /diabetes|blood.pressure|privacy@example|2395550199/i,
+    );
+    assert.deepEqual(errors, []);
+  } finally {
+    await context.close();
+    await browser.close();
+  }
+});
+
+test("condition guides form a document boundary that keeps Clarity out after consent", async () => {
+  const browser = await chromium.launch();
+  const clarityObservedClicks = [];
+  const context = await createHumanContext(browser, {
+    clarityBody: `
+      (function () {
+        function captureLink(event) {
+          var target = event.target;
+          var element = target && target.nodeType === 1 ? target : target && target.parentElement;
+          var anchor = element && element.closest ? element.closest("a[href]") : null;
+          if (anchor && window.__fcmsCaptureClarityLikeClick) {
+            window.__fcmsCaptureClarityLikeClick(anchor.href);
+          }
+        }
+        window.addEventListener("click", captureLink, true);
+        window.addEventListener("auxclick", captureLink, true);
+        window.__fcmsMockClarityCaptureReady = true;
+      })();
+    `,
+  });
+
+  try {
+    const page = await context.newPage();
+    await page.exposeFunction("__fcmsCaptureClarityLikeClick", (href) => {
+      clarityObservedClicks.push(href);
+    });
+    const errors = collectUnexpectedErrors(page);
+    await page.goto(`${baseUrl}/primary-care`, { waitUntil: "networkidle" });
+    await page.getByTestId("button-cookie-accept-all").click();
+    assert.equal(await page.locator("#fcms-clarity-tag").count(), 1);
+    await page.waitForFunction(() => window.__fcmsMockClarityCaptureReady === true);
+
+    await page.locator('a[href="/contact"]').first().dispatchEvent("click", {
+      bubbles: true,
+      cancelable: true,
+      button: 0,
+      ctrlKey: true,
+    });
+    await page.waitForTimeout(25);
+    assert.ok(
+      clarityObservedClicks.some((href) => new URL(href).pathname === "/contact"),
+      "the Clarity-like capture listener did not observe an ordinary link",
+    );
+    clarityObservedClicks.length = 0;
+
+    const conditionLink = page
+      .getByTestId("section-related-care")
+      .locator('a[href="/primary-care/diabetes-care"]');
+    await conditionLink.scrollIntoViewIfNeeded();
+
+    const ctrlPopupPromise = context.waitForEvent("page");
+    await conditionLink.click({ modifiers: ["Control"] });
+    const ctrlPopup = await ctrlPopupPromise;
+    await ctrlPopup.waitForLoadState("networkidle");
+    assert.equal(new URL(ctrlPopup.url()).pathname, "/primary-care/diabetes-care");
+    assert.equal(await ctrlPopup.locator("#fcms-clarity-tag").count(), 0);
+    await ctrlPopup.close();
+
+    const middlePopupPromise = context.waitForEvent("page");
+    await conditionLink.click({ button: "middle" });
+    const middlePopup = await middlePopupPromise;
+    await middlePopup.waitForLoadState("networkidle");
+    assert.equal(new URL(middlePopup.url()).pathname, "/primary-care/diabetes-care");
+    assert.equal(await middlePopup.locator("#fcms-clarity-tag").count(), 0);
+    await middlePopup.close();
+    assert.deepEqual(
+      clarityObservedClicks,
+      [],
+      "Clarity-like capture received a modified condition-guide click",
+    );
+
+    await page.evaluate(() => {
+      window.__fcmsClarityBoundaryMarker = "must-not-survive";
+    });
+    await conditionLink.click();
+    await page.waitForURL(`${baseUrl}/primary-care/diabetes-care`);
+    await page.waitForLoadState("networkidle");
+
+    assert.equal(await page.evaluate(() => window.__fcmsClarityBoundaryMarker), undefined);
+    assert.equal(await page.locator("#fcms-clarity-tag").count(), 0);
+    assert.equal(await page.locator("#fcms-google-tag").count(), 1);
+    let configs = await commands(page, "google", "config");
+    let pageviews = (await commands(page, "google", "event")).filter(
+      (entry) => entry[1] === "page_view",
+    );
+    assert.equal(configs.at(-1)[2].page_path, "/primary-care");
+    assert.equal(configs.at(-1)[2].page_title, "Primary Care | Faithful Care Medical Services");
+    assert.equal(pageviews.at(-1)[2].page_path, "/primary-care");
+    assert.equal(pageviews.at(-1)[2].page_title, "Primary Care | Faithful Care Medical Services");
+    assert.doesNotMatch(JSON.stringify([configs, pageviews]), /diabetes/i);
+    assert.deepEqual(
+      clarityObservedClicks,
+      [],
+      "Clarity-like capture received the exact condition-guide click",
+    );
+
+    await page.evaluate(() => {
+      window.__fcmsSkipLinkDocumentMarker = "must-survive-same-page-navigation";
+    });
+    await page.getByTestId("link-skip-to-main").focus();
+    await page.keyboard.press("Enter");
+    await page.waitForURL(`${baseUrl}/primary-care/diabetes-care#main`);
+    assert.equal(
+      await page.evaluate(() => window.__fcmsSkipLinkDocumentMarker),
+      "must-survive-same-page-navigation",
+      "the condition-guide skip link reloaded the document",
+    );
+    assert.equal(
+      await page.evaluate(() => document.querySelector(":target")?.id),
+      "main",
+      "the condition-guide skip link did not reach the main landmark",
+    );
+    assert.equal(await page.locator("#fcms-clarity-tag").count(), 0);
+
+    const palliativePage = await context.newPage();
+    await palliativePage.goto(`${baseUrl}/palliative-care/for-cancer`, { waitUntil: "networkidle" });
+    assert.equal(await palliativePage.locator("#fcms-clarity-tag").count(), 0);
+    assert.equal(await palliativePage.locator("#fcms-google-tag").count(), 1);
+    configs = await commands(palliativePage, "google", "config");
+    pageviews = (await commands(palliativePage, "google", "event")).filter(
+      (entry) => entry[1] === "page_view",
+    );
+    assert.equal(configs.at(-1)[2].page_path, "/palliative-care");
+    assert.equal(configs.at(-1)[2].page_title, "Palliative Care | Faithful Care Medical Services");
+    assert.equal(pageviews.at(-1)[2].page_path, "/palliative-care");
+    assert.equal(pageviews.at(-1)[2].page_title, "Palliative Care | Faithful Care Medical Services");
+    assert.doesNotMatch(JSON.stringify([configs, pageviews]), /cancer/i);
+    assert.deepEqual(errors, []);
   } finally {
     await context.close();
     await browser.close();
@@ -790,6 +1019,7 @@ test("the mobile action-bar form emits one sanitized lead after full consent", a
       "page_location",
       "page_path",
       "page_referrer",
+      "page_title",
       "source_page",
     ]);
     assert.equal(leads[0][2].form_id, "mobile_action_bar_form");
@@ -841,13 +1071,14 @@ test("the insurance callback emits one sanitized lead without plan or language v
       "page_location",
       "page_path",
       "page_referrer",
+      "page_title",
       "source_page",
     ]);
     assert.equal(leads[0][2].form_id, "insurance_lp_callback");
     assert.equal(leads[0][2].source_page, "/insurance-accepted");
     assert.doesNotMatch(
       JSON.stringify(leads[0]),
-      /Insurance Consent Test|insurance@example|2395550103|Aetna|Spanish/,
+      /Insurance Consent Test|insurance@example|2395550103|Aetna Commercial|Spanish/,
     );
     assert.deepEqual(errors, []);
   } finally {

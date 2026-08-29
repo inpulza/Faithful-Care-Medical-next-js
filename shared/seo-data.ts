@@ -134,7 +134,7 @@ export const seoMap = {
   "/privacy-policy": {
     title: "Privacy Policy | Faithful Care Medical Services",
     description: "How Faithful Care collects, uses, and protects your personal information online. Your rights under HIPAA, FDBR, CCPA and other US privacy laws.",
-    dateModified: "2026-08-03",
+    dateModified: "2026-08-29",
   },
   "/notice-of-privacy-practices": {
     title: "HIPAA Notice of Privacy Practices | Faithful Care",

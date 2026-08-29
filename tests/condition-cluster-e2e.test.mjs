@@ -526,6 +526,120 @@ test("tablet booking sheet announces outcomes, traps focus, and remains keyboard
   }
 });
 
+test("condition-guide navigation creates a privacy-isolated document with fresh form state", async () => {
+  const browser = await chromium.launch();
+  const context = await browser.newContext({ viewport: { width: 1440, height: 900 } });
+  await unlockPreview(context);
+  const page = await context.newPage();
+  const pageErrors = [];
+  const consoleErrors = [];
+  page.on("pageerror", (error) => pageErrors.push(error.message));
+  page.on("console", (message) => {
+    if (message.type() === "error" && !message.text().includes("/_next/webpack-hmr")) {
+      consoleErrors.push(message.text());
+    }
+  });
+
+  try {
+    await page.route("**/api/contact", (route) =>
+      route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({ success: true }),
+      }),
+    );
+    const response = await page.goto(`${baseUrl}/primary-care/diabetes-care`, { waitUntil: "networkidle" });
+    assert.equal(response?.status(), 200);
+    await page.evaluate(() => {
+      window.__fcmsSameGroupSpaMarker = "survives-client-navigation";
+    });
+
+    const firstForm = page.getByTestId("hero-contact-form");
+    await firstForm.getByTestId("input-contact-name").fill("State that belongs only to diabetes care");
+    await firstForm.getByTestId("input-contact-email").fill("state-reset@example.com");
+    await firstForm.getByTestId("button-contact-submit").click();
+    await page.getByTestId("text-form-success").waitFor();
+
+    await page
+      .getByTestId("section-related-care")
+      .locator('a[href="/primary-care/high-blood-pressure-care"]')
+      .click();
+    await page.waitForURL(`${baseUrl}/primary-care/high-blood-pressure-care`);
+    await page.getByRole("heading", {
+      level: 1,
+      name: CONDITION_ROUTE_DATA["/primary-care/high-blood-pressure-care"].h1,
+    }).waitFor();
+    assert.equal(
+      await page.evaluate(() => window.__fcmsSameGroupSpaMarker),
+      undefined,
+      "condition-guide navigation must replace the document so third-party trackers cannot cross the boundary",
+    );
+
+    const nextForm = page.getByTestId("hero-contact-form");
+    assert.equal(await nextForm.getByTestId("input-contact-name").inputValue(), "");
+    assert.equal(await nextForm.getByTestId("input-contact-email").inputValue(), "");
+    assert.equal(await nextForm.locator("[role='alert']").count(), 0, "error state from the previous guide leaked into the next route");
+    assert.equal(await nextForm.getByTestId("text-form-success").count(), 0, "success state from the previous guide leaked into the next route");
+    await page.waitForTimeout(5_250);
+    assert.equal(await nextForm.getByTestId("input-contact-name").inputValue(), "", "the previous guide's reset timer changed the new form");
+    assert.deepEqual(pageErrors, []);
+    assert.deepEqual(consoleErrors, []);
+  } finally {
+    await context.close();
+    await browser.close();
+  }
+});
+
+test("rapid competing clicks cannot bypass an active document-boundary transition", async () => {
+  const browser = await chromium.launch();
+  const context = await browser.newContext({ viewport: { width: 1440, height: 900 } });
+  await unlockPreview(context);
+  const page = await context.newPage();
+  const historyCalls = [];
+  await page.exposeFunction("__fcmsRecordHistoryCall", (value) => historyCalls.push(value));
+
+  try {
+    const response = await page.goto(`${baseUrl}/primary-care/diabetes-care`, { waitUntil: "networkidle" });
+    assert.equal(response?.status(), 200);
+    await page.evaluate(() => {
+      window.__fcmsRapidClickMarker = "must-not-survive";
+      for (const method of ["pushState", "replaceState"]) {
+        const original = history[method].bind(history);
+        history[method] = (...args) => {
+          window.__fcmsRecordHistoryCall({ method, url: String(args[2] ?? "") });
+          return original(...args);
+        };
+      }
+    });
+
+    await page.evaluate(() => {
+      const firstDestination = document.querySelector('a[href="/contact"]');
+      const competingDestination = document.querySelector('a[href="/reviews"]');
+      if (!firstDestination || !competingDestination) {
+        throw new Error("required internal links are missing");
+      }
+      firstDestination.click();
+      competingDestination.click();
+    });
+    await page.waitForURL(`${baseUrl}/contact`);
+    await page.getByRole("heading", { level: 1 }).waitFor();
+
+    assert.deepEqual(
+      historyCalls.filter(({ url }) => url.includes("/contact") || url.includes("/reviews")),
+      [],
+      "a competing click reached the SPA router before the document-boundary navigation",
+    );
+    assert.equal(
+      await page.evaluate(() => window.__fcmsRapidClickMarker),
+      undefined,
+      "rapid clicks must still replace the document",
+    );
+  } finally {
+    await context.close();
+    await browser.close();
+  }
+});
+
 test("condition pages stop entrance and marquee motion when the visitor requests reduced motion", async () => {
   const browser = await chromium.launch();
   const context = await browser.newContext({

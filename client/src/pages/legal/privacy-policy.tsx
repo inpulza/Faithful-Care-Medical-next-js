@@ -5,7 +5,7 @@ export default function PrivacyPolicy() {
     <LegalPage
       eyebrow="Privacy"
       title="Privacy Policy"
-      effectiveDate="August 3, 2026"
+      effectiveDate="August 29, 2026"
       intro={
         <p>
           Faithful Care Medical Services ("we," "our," "us") respects your privacy. This
@@ -69,8 +69,11 @@ export default function PrivacyPolicy() {
       <p>
         If you allow Advertising, the Website may retain only Google's ad-click and aggregate
         campaign identifiers from the landing URL for campaign attribution. Other landing-page
-        parameters are removed before analytics events are sent. Microsoft Clarity is not loaded
-        for visits that arrive with URL parameters, fragments, or referrer data.
+        parameters are removed before analytics events are sent. Condition-specific care guides
+        are reported to Google Analytics only as their general Primary Care or Palliative Care
+        hub. Microsoft Clarity does not receive the condition-guide click and is not loaded on
+        those guides. Clarity is also not loaded for visits that arrive with URL parameters,
+        fragments, or referrer data.
       </p>
 
       <h2>Third-party services</h2>
