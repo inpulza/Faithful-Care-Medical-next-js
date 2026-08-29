@@ -4,7 +4,7 @@ import { chromium } from "playwright";
 import { baseUrl, unlockPreview } from "./preview-access.mjs";
 const reviewUrl = "https://search.google.com/local/writereview?placeid=ChIJp-qiqPIf24gRXbYjPaNmLIQ";
 const datedLegalRoutes = new Map([
-  ["/privacy-policy", "2026-08-03"],
+  ["/privacy-policy", "2026-08-29"],
   ["/notice-of-privacy-practices", "2026-01-01"],
   ["/terms-of-use", "2026-01-01"],
   ["/accessibility-statement", "2026-01-01"],

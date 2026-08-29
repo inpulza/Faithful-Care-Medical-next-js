@@ -5,6 +5,9 @@ import { baseUrl, previewFetch } from "./preview-access.mjs";
 const { publicRoutes } = await import(
   new URL("../app/lib/route-contract.ts", import.meta.url).href
 );
+const { CONDITION_ROUTE_DATA } = await import(
+  new URL("../shared/condition-routes.ts", import.meta.url).href
+);
 
 const googlebotUserAgent =
   "Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)";
@@ -50,6 +53,7 @@ const expectedH1ByPath = new Map([
   ["/es/seguros-y-medicare", "Seguros que Aceptamos y Medicare"],
   ["/es/contacto", "Contacto y Cómo Llegar"],
   ["/es/pacientes-nuevos", "Aceptamos pacientes nuevos en Naples, Florida"],
+  ...Object.entries(CONDITION_ROUTE_DATA).map(([path, route]) => [path, route.h1]),
 ]);
 
 function attribute(tag, name) {

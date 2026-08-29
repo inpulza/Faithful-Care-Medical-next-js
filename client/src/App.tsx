@@ -14,6 +14,7 @@ import { CookieBanner } from "@/components/cookie-banner";
 import { TrackingPageviews } from "@/components/tracking-pageviews";
 import { toast } from "@/hooks/use-toast";
 import { seoMap } from "@shared/seo-data";
+import type { ConditionRoutePath } from "@shared/condition-routes";
 
 
 const Home = React.lazy(() => import("@/pages/home"));
@@ -40,6 +41,29 @@ const AboutPalliativeCare = React.lazy(() => import("@/pages/palliative-care/abo
 const SymptomRelief = React.lazy(() => import("@/pages/palliative-care/symptom-relief"));
 const PatientFamilySupport = React.lazy(() => import("@/pages/palliative-care/patient-family-support"));
 const PlanningTransitions = React.lazy(() => import("@/pages/palliative-care/planning-transitions"));
+const PrimaryConditionPagesA = React.lazy(() => import("@/pages/conditions/primary-a"));
+const PrimaryConditionPagesB = React.lazy(() => import("@/pages/conditions/primary-b"));
+const PalliativeConditionPagesA = React.lazy(() => import("@/pages/conditions/palliative-a"));
+const PalliativeConditionPagesB = React.lazy(() => import("@/pages/conditions/palliative-b"));
+
+const conditionRouteComponents = {
+  "/primary-care/diabetes-care": PrimaryConditionPagesA,
+  "/primary-care/high-blood-pressure-care": PrimaryConditionPagesA,
+  "/primary-care/copd-care": PrimaryConditionPagesA,
+  "/primary-care/thyroid-care": PrimaryConditionPagesA,
+  "/primary-care/menopause-care": PrimaryConditionPagesB,
+  "/primary-care/fall-prevention": PrimaryConditionPagesB,
+  "/primary-care/memory-screening": PrimaryConditionPagesB,
+  "/primary-care/medication-review-for-seniors": PrimaryConditionPagesB,
+  "/palliative-care/for-cancer": PalliativeConditionPagesA,
+  "/palliative-care/for-heart-failure": PalliativeConditionPagesA,
+  "/palliative-care/for-copd-and-lung-disease": PalliativeConditionPagesA,
+  "/palliative-care/for-advanced-kidney-disease": PalliativeConditionPagesA,
+  "/palliative-care/for-dementia": PalliativeConditionPagesB,
+  "/palliative-care/for-parkinsons": PalliativeConditionPagesB,
+  "/palliative-care/pain-management": PalliativeConditionPagesB,
+  "/palliative-care/shortness-of-breath": PalliativeConditionPagesB,
+} satisfies Record<ConditionRoutePath, typeof PrimaryConditionPagesA>;
 
 const PrivacyPolicy = React.lazy(() => import("@/pages/legal/privacy-policy"));
 const NoticeOfPrivacyPractices = React.lazy(() => import("@/pages/legal/notice-of-privacy-practices"));
@@ -84,6 +108,7 @@ const routeComponents = {
   "/palliative-care/symptom-relief": SymptomRelief,
   "/palliative-care/patient-family-support": PatientFamilySupport,
   "/palliative-care/planning-transitions": PlanningTransitions,
+  ...conditionRouteComponents,
   "/locations/naples": NaplesLocation,
   "/locations/marco-island": MarcoIslandLocation,
   "/locations/golden-gate": GoldenGateLocation,
@@ -125,6 +150,7 @@ function Router() {
 
 function Layout({ children }: { children: React.ReactNode }) {
   const [location] = useLocation();
+  const suppressMobileCommercialActions = location === "/palliative-care/shortness-of-breath";
 
   React.useEffect(() => {
     if (typeof window === "undefined") return;
@@ -189,8 +215,12 @@ function Layout({ children }: { children: React.ReactNode }) {
         {children}
       </div>
       <Footer />
-      <div className="h-20 md:hidden" />
-      <MobileActionBar />
+      {!suppressMobileCommercialActions && (
+        <>
+          <div className="h-20 md:hidden" />
+          <MobileActionBar />
+        </>
+      )}
       <CookieBanner />
     </div>
   );

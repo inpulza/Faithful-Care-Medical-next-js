@@ -112,7 +112,7 @@ export function FaqSection({
       <div className="container-radical">
         <motion.div
           className="text-center mb-12 md:mb-16"
-          initial={{ opacity: 0, y: 24 }}
+          initial={false}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.5 }}
@@ -133,7 +133,7 @@ export function FaqSection({
 
         <motion.div
           className="max-w-4xl mx-auto"
-          initial={{ opacity: 0, y: 20 }}
+          initial={false}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.5, delay: 0.1 }}

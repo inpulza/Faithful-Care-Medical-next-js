@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { sendContactFormEmails } from "../../lib/contact-email";
+import { normalizeExternalContactSourcePage, sendContactFormEmails } from "../../lib/contact-email";
 import { publicRoutes } from "../../lib/route-contract";
 
 export const runtime = "nodejs";
@@ -89,7 +89,13 @@ export async function POST(request: Request) {
     );
   }
 
-  const emailResult = await sendContactFormEmails(result.data, requestId);
+  const emailResult = await sendContactFormEmails(
+    {
+      ...result.data,
+      sourcePage: normalizeExternalContactSourcePage(result.data.sourcePage),
+    },
+    requestId,
+  );
   if (!emailResult.success) {
     console.error(`[contact] request ${requestId} failed to send`);
     return NextResponse.json(

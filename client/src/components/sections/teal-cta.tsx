@@ -49,7 +49,7 @@ export function TealCta({
       <div className="container-radical relative z-10">
         <motion.div 
           className="max-w-3xl mx-auto text-center"
-          initial={{ opacity: 0, y: 32 }}
+          initial={false}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.6 }}
@@ -69,49 +69,53 @@ export function TealCta({
 
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
             {isExternalHref(primaryCtaHref) ? (
-              <a href={primaryCtaHref}>
-                <Button 
-                  variant="outline"
-                  className="bg-white text-secondary hover:bg-white/90 border-white min-h-[56px] md:min-h-[64px] px-6 md:px-8 text-base md:text-lg group"
-                  data-testid="button-teal-cta-primary"
-                >
+              <Button
+                asChild
+                variant="outline"
+                className="bg-white text-secondary hover:bg-white/90 border-white min-h-[56px] md:min-h-[64px] px-6 md:px-8 text-base md:text-lg group"
+                data-testid="button-teal-cta-primary"
+              >
+                <a href={primaryCtaHref}>
                   {primaryCtaText}
                   <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
-                </Button>
-              </a>
+                </a>
+              </Button>
             ) : (
-              <Link href={primaryCtaHref}>
-                <Button 
-                  variant="outline"
-                  className="bg-white text-secondary hover:bg-white/90 border-white min-h-[56px] md:min-h-[64px] px-6 md:px-8 text-base md:text-lg group"
-                  data-testid="button-teal-cta-primary"
-                >
+              <Button
+                asChild
+                variant="outline"
+                className="bg-white text-secondary hover:bg-white/90 border-white min-h-[56px] md:min-h-[64px] px-6 md:px-8 text-base md:text-lg group"
+                data-testid="button-teal-cta-primary"
+              >
+                <Link href={primaryCtaHref}>
                   {primaryCtaText}
                   <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
-                </Button>
-              </Link>
+                </Link>
+              </Button>
             )}
             {secondaryCtaText && (
               isExternalHref(secondaryCtaHref) ? (
-                <a href={secondaryCtaHref}>
-                  <Button 
-                    variant="ghost"
-                    className="text-white hover:text-white hover:bg-white/10 min-h-[56px] md:min-h-[64px] px-6 md:px-8 text-base md:text-lg"
-                    data-testid="button-teal-cta-secondary"
-                  >
+                <Button
+                  asChild
+                  variant="ghost"
+                  className="text-white hover:text-white hover:bg-white/10 min-h-[56px] md:min-h-[64px] px-6 md:px-8 text-base md:text-lg"
+                  data-testid="button-teal-cta-secondary"
+                >
+                  <a href={secondaryCtaHref}>
                     {secondaryCtaText}
-                  </Button>
-                </a>
+                  </a>
+                </Button>
               ) : (
-                <Link href={secondaryCtaHref}>
-                  <Button 
-                    variant="ghost"
-                    className="text-white hover:text-white hover:bg-white/10 min-h-[56px] md:min-h-[64px] px-6 md:px-8 text-base md:text-lg"
-                    data-testid="button-teal-cta-secondary"
-                  >
+                <Button
+                  asChild
+                  variant="ghost"
+                  className="text-white hover:text-white hover:bg-white/10 min-h-[56px] md:min-h-[64px] px-6 md:px-8 text-base md:text-lg"
+                  data-testid="button-teal-cta-secondary"
+                >
+                  <Link href={secondaryCtaHref}>
                     {secondaryCtaText}
-                  </Button>
-                </Link>
+                  </Link>
+                </Button>
               )
             )}
           </div>

@@ -1,4 +1,4 @@
-import { motion, useReducedMotion } from "framer-motion";
+import { motion } from "framer-motion";
 import { CheckCircle, Info } from "@phosphor-icons/react";
 
 export interface ComparisonRow {
@@ -28,14 +28,12 @@ export function ComparisonTableSection({
   note,
   sources = [],
 }: ComparisonTableSectionProps) {
-  const reducedMotion = useReducedMotion();
-
   return (
     <section className="section-gap bg-white" data-testid="section-comparison-table">
       <div className="container-radical">
         <motion.div
           className="mx-auto mb-10 max-w-3xl text-center md:mb-14"
-          initial={reducedMotion ? { opacity: 1, y: 0 } : { opacity: 0, y: 24 }}
+          initial={false}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.6 }}
@@ -63,7 +61,7 @@ export function ComparisonTableSection({
                 <motion.tr
                   key={row.label}
                   className="grid grid-cols-1 gap-4 border-b border-deep-navy/8 p-5 last:border-b-0 md:table-row md:p-0"
-                  initial={reducedMotion ? { opacity: 1, y: 0 } : { opacity: 0, y: 14 }}
+                  initial={false}
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true }}
                   transition={{ duration: 0.45, delay: index * 0.04 }}

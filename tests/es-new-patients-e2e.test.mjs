@@ -60,6 +60,27 @@ test("the Spanish new-patient journey works from the footer on desktop and mobil
         const mainText = (await page.locator("main").innerText()).replace(/\s+/g, " ");
         assert.match(mainText, /identificaci[oó]n con foto/i);
 
+        const primaryCareCta = page.getByTestId("button-atencion-bilingue-cta");
+        await primaryCareCta.scrollIntoViewIfNeeded();
+        assert.equal((await primaryCareCta.innerText()).trim(), "Ver atención primaria");
+        assert.equal(await primaryCareCta.evaluate((element) => element.tagName), "A");
+        assert.equal(await primaryCareCta.getAttribute("href"), "/es/medico-de-familia-naples");
+        assert.equal(await primaryCareCta.locator("button").count(), 0, "CTA must not nest a button inside its link");
+        const textLineCount = await primaryCareCta.evaluate((element) => {
+          const textNode = [...element.childNodes].find((node) => node.nodeType === Node.TEXT_NODE && node.textContent?.trim());
+          if (!textNode) return 0;
+          const range = document.createRange();
+          range.selectNodeContents(textNode);
+          return new Set([...range.getClientRects()].map((rect) => Math.round(rect.top))).size;
+        });
+        assert.equal(textLineCount, 1, `primary-care CTA wrapped at ${viewport.name}`);
+
+        const conditionFooter = page.getByTestId("footer-condition-links");
+        await conditionFooter.scrollIntoViewIfNeeded();
+        assert.match(await conditionFooter.locator("h2").innerText(), /gu[ií]as sobre afecciones/i);
+        assert.match(await conditionFooter.locator("p").innerText(), /disponibles en ingl[eé]s/i);
+        assert.equal(await conditionFooter.locator('[lang="en"]').count(), 1);
+
         if (viewport.name === "mobile") {
           const appointmentTrigger = page.getByTestId("action-bar-appointment");
           await appointmentTrigger.click();

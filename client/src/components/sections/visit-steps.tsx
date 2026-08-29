@@ -42,7 +42,7 @@ export function VisitSteps({
       <div className="container-radical">
         <motion.div
           className="text-center mb-10 md:mb-20"
-          initial={{ opacity: 0, y: 24 }}
+          initial={false}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.5 }}
@@ -76,7 +76,7 @@ export function VisitSteps({
                 <motion.div
                   key={index}
                   className={cn("relative flex gap-4 md:gap-8", !isLast && "pb-6 md:pb-14")}
-                  initial={{ opacity: 0, x: -20 }}
+                  initial={false}
                   whileInView={{ opacity: 1, x: 0 }}
                   viewport={{ once: true, margin: "-50px" }}
                   transition={{ duration: 0.5, delay: index * 0.1 }}
@@ -116,33 +116,35 @@ export function VisitSteps({
 
           <motion.div
             className="mt-12 md:mt-14 text-center"
-            initial={{ opacity: 0, y: 16 }}
+            initial={false}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.5, delay: 0.3 }}
           >
             {isExternalCta ? (
-              <a href={ctaHref}>
-                <Button
-                  size="lg"
-                  className="group"
-                  data-testid="button-visit-steps-cta"
-                >
+              <Button
+                asChild
+                size="lg"
+                className="group"
+                data-testid="button-visit-steps-cta"
+              >
+                <a href={ctaHref}>
                   {ctaText}
                   <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" weight="regular" />
-                </Button>
-              </a>
+                </a>
+              </Button>
             ) : (
-              <Link href={ctaHref}>
-                <Button
-                  size="lg"
-                  className="group"
-                  data-testid="button-visit-steps-cta"
-                >
+              <Button
+                asChild
+                size="lg"
+                className="group"
+                data-testid="button-visit-steps-cta"
+              >
+                <Link href={ctaHref}>
                   {ctaText}
                   <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" weight="regular" />
-                </Button>
-              </Link>
+                </Link>
+              </Button>
             )}
           </motion.div>
         </div>

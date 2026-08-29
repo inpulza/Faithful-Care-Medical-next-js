@@ -12,6 +12,20 @@ import {
 } from "@phosphor-icons/react";
 import { PROVIDER_NAME, PROVIDER_CREDENTIALS } from "@/lib/provider-info";
 import { SOCIAL_PROFILES } from "@shared/social-videos";
+import { CONDITION_ROUTE_DATA } from "@shared/condition-routes";
+
+const conditionFooterGroups = [
+  {
+    id: "primary",
+    title: "Primary care conditions",
+    links: Object.entries(CONDITION_ROUTE_DATA).filter(([, route]) => route.group === "primary"),
+  },
+  {
+    id: "palliative",
+    title: "Palliative support",
+    links: Object.entries(CONDITION_ROUTE_DATA).filter(([, route]) => route.group === "palliative"),
+  },
+] as const;
 
 interface FooterProps {
   className?: string;
@@ -19,7 +33,8 @@ interface FooterProps {
 
 export function Footer({ className }: FooterProps) {
   const [location] = useLocation();
-  const cookiePreferencesLabel = location.startsWith("/es")
+  const isSpanish = location.startsWith("/es");
+  const cookiePreferencesLabel = isSpanish
     ? "Preferencias de cookies"
     : "Cookie Preferences";
   const serviceCategories = navigationData.filter(c => c.id !== "locations" && c.id !== "insurance");
@@ -247,6 +262,48 @@ export function Footer({ className }: FooterProps) {
                 </button>
               </li>
             </ul>
+          </div>
+        </div>
+
+        <div className="mt-10 border-t border-white/10 pt-8 md:mt-14 md:pt-10" data-testid="footer-condition-links">
+          <div className="mb-6 max-w-2xl">
+            <h2 className="font-serif text-2xl text-white md:text-3xl">
+              {isSpanish ? "Guías sobre afecciones y enfermedades graves" : "Conditions and serious-illness support"}
+            </h2>
+            <p className="mt-2 text-sm leading-relaxed text-white/55 md:text-base">
+              {isSpanish
+                ? "Guías prácticas para conversar sobre la atención, tomar decisiones seguras y planificar el próximo paso. Estas páginas están disponibles en inglés."
+                : "Practical guides for care conversations, safety decisions, and the next step with Faithful Care."}
+            </p>
+          </div>
+
+          <div className="grid gap-3 md:grid-cols-2 md:gap-8" lang="en">
+            {conditionFooterGroups.map((group) => (
+              <details
+                key={group.id}
+                className="group rounded-2xl border border-white/10 bg-white/[0.04] px-5 py-4"
+                open
+                data-testid={`footer-condition-group-${group.id}`}
+              >
+                <summary className="cursor-pointer list-none text-sm font-semibold uppercase tracking-wider text-white marker:hidden md:cursor-default">
+                  {group.title}
+                </summary>
+                <ul className="mt-4 grid gap-x-5 gap-y-3 sm:grid-cols-2">
+                  {group.links.map(([path, route], index) => (
+                    <li key={path}>
+                      <Link
+                        href={path}
+                        prefetch={false}
+                        className="text-sm leading-snug text-white/60 transition-colors hover:text-secondary"
+                        data-testid={`footer-condition-${group.id}-${index}`}
+                      >
+                        {route.label}
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              </details>
+            ))}
           </div>
         </div>
 

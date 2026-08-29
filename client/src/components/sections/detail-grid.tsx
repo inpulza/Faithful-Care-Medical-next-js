@@ -39,8 +39,8 @@ export function DetailGrid({
       <div className="container-radical">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 md:gap-12 lg:gap-16">
           <motion.div
-            className="lg:col-span-5 lg:sticky lg:top-32 lg:self-start"
-            initial={{ opacity: 0, x: -24 }}
+            className="motion-reduce:!translate-x-0 motion-reduce:!opacity-100 lg:col-span-5 lg:sticky lg:top-32 lg:self-start"
+            initial={false}
             whileInView={{ opacity: 1, x: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.6 }}
@@ -68,9 +68,9 @@ export function DetailGrid({
                 return (
                   <motion.div
                     key={index}
-                    className="p-5 md:p-8 lg:p-10 bg-white cursor-default transition-colors duration-400 hover:bg-secondary"
+                    className="motion-reduce:!translate-y-0 motion-reduce:!opacity-100 p-5 md:p-8 lg:p-10 bg-white cursor-default transition-colors duration-400 hover:bg-secondary"
                     style={{ transitionProperty: "background-color" }}
-                    initial={{ opacity: 0, y: 20 }}
+                    initial={false}
                     whileInView={{ opacity: 1, y: 0 }}
                     viewport={{ once: true }}
                     transition={{ duration: 0.5, delay: index * 0.06 }}

@@ -2,6 +2,7 @@ import * as React from "react";
 import { useLocation } from "@/lib/router";
 import { motion, AnimatePresence } from "framer-motion";
 import { navigationData, standaloneLinks } from "@/lib/navigation-data";
+import { isConditionRoute } from "@shared/condition-route-paths";
 
 function buildRouteLabels(): Record<string, string> {
   const labels: Record<string, string> = {
@@ -44,6 +45,14 @@ function getLabelForRoute(href: string): string {
   if (href.startsWith("/locations/")) return "Locations";
 
   return "Faithful Care";
+}
+
+function pathForHref(href: string): string {
+  try {
+    return new URL(href, window.location.origin).pathname;
+  } catch {
+    return href.split(/[?#]/, 1)[0] || "/";
+  }
 }
 
 interface TransitionContextValue {
@@ -104,8 +113,15 @@ export function PageTransitionProvider({
     (href: string) => {
       if (phaseRef.current !== "idle") return;
       if (href === locationRef.current) return;
+      const targetPath = pathForHref(href);
+      const requiresPrivacyBoundary = isConditionRoute(locationRef.current)
+        || isConditionRoute(targetPath);
 
       if (prefersReducedMotion.current) {
+        if (requiresPrivacyBoundary) {
+          window.location.assign(href);
+          return;
+        }
         setLocation(href);
         window.scrollTo(0, 0);
         return;
@@ -120,6 +136,11 @@ export function PageTransitionProvider({
 
       const t1 = setTimeout(() => {
         if (transitionIdRef.current !== currentId) return;
+
+        if (requiresPrivacyBoundary) {
+          window.location.assign(href);
+          return;
+        }
 
         setLocation(href);
         window.scrollTo(0, 0);
@@ -149,8 +170,6 @@ export function PageTransitionProvider({
 
   React.useEffect(() => {
     const handler = (e: MouseEvent) => {
-      if (phaseRef.current !== "idle") return;
-
       if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0)
         return;
 
@@ -176,6 +195,15 @@ export function PageTransitionProvider({
         return;
 
       if (href === locationRef.current) return;
+
+      // Once an internal transition has started, keep later clicks from
+      // reaching NextLink. In particular, a rapid second click must not turn
+      // a privacy-boundary document navigation into an interim SPA route.
+      if (phaseRef.current !== "idle") {
+        e.preventDefault();
+        e.stopPropagation();
+        return;
+      }
 
       e.preventDefault();
       e.stopPropagation();

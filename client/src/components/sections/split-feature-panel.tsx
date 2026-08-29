@@ -1,4 +1,4 @@
-import { motion, useReducedMotion } from "framer-motion";
+import { motion } from "framer-motion";
 import type { Icon as PhosphorIcon } from "@phosphor-icons/react";
 import { cn } from "@/lib/utils";
 
@@ -13,7 +13,7 @@ interface SplitFeaturePanelProps {
   title: string;
   description: string;
   items: SplitFeatureItem[];
-  tone?: "light" | "navy";
+  tone?: "light" | "navy" | "plain";
   className?: string;
   testId?: string;
 }
@@ -27,8 +27,8 @@ export function SplitFeaturePanel({
   className,
   testId = "section-split-feature-panel",
 }: SplitFeaturePanelProps) {
-  const reducedMotion = useReducedMotion();
   const dark = tone === "navy";
+  const plain = tone === "plain";
 
   return (
     <section className={cn("section-gap", className)} data-testid={testId}>
@@ -38,13 +38,15 @@ export function SplitFeaturePanel({
             "relative overflow-hidden rounded-[24px]",
             dark
               ? "bg-deep-navy"
-              : "bg-[radial-gradient(circle_at_78%_78%,rgba(9,39,75,0.22),transparent_34%),radial-gradient(circle_at_18%_22%,rgba(255,255,255,0.95),transparent_42%),linear-gradient(135deg,#f5f2e9_0%,#e8eef1_52%,#c7d2d9_100%)]",
+              : plain
+                ? "border border-primary/15 bg-white shadow-[0_18px_60px_rgba(9,39,75,0.07)]"
+                : "bg-[radial-gradient(circle_at_78%_78%,rgba(9,39,75,0.22),transparent_34%),radial-gradient(circle_at_18%_22%,rgba(255,255,255,0.95),transparent_42%),linear-gradient(135deg,#f5f2e9_0%,#e8eef1_52%,#c7d2d9_100%)]",
           )}
         >
           <div className="relative z-10 grid grid-cols-1 gap-10 px-5 py-10 md:px-10 md:py-16 lg:grid-cols-12 lg:gap-16 lg:px-14 lg:py-20">
             <motion.div
               className="lg:col-span-4 lg:self-start lg:sticky lg:top-32"
-              initial={reducedMotion ? { opacity: 1, x: 0 } : { opacity: 0, x: -24 }}
+              initial={false}
               whileInView={{ opacity: 1, x: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.6 }}
@@ -67,7 +69,7 @@ export function SplitFeaturePanel({
                       "rounded-2xl border p-5 md:p-7",
                       dark ? "border-white/15 bg-white/7" : "border-white/60 bg-white/55 shadow-[0_12px_40px_rgba(9,39,75,0.08)] backdrop-blur-md",
                     )}
-                    initial={reducedMotion ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
+                    initial={false}
                     whileInView={{ opacity: 1, y: 0 }}
                     viewport={{ once: true }}
                     transition={{ duration: 0.5, delay: index * 0.06 }}

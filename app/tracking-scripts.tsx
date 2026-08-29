@@ -4,12 +4,15 @@ import {
   CONSENT_VERSION,
   GA4_MEASUREMENT_ID,
 } from "@shared/tracking";
-import Script from "next/script";
+import {
+  CONDITION_TRACKING_PATH_ALIASES,
+  CONDITION_TRACKING_TITLE_ALIASES,
+} from "@shared/tracking-route-privacy";
 import { publicRoutes } from "./lib/route-contract";
 
 const TRACKABLE_PATHS = publicRoutes.map(({ path }) => path);
 
-const bootstrap = `
+export const TRACKING_BOOTSTRAP = `
 (function () {
   var state = {
     necessary: true,
@@ -51,12 +54,68 @@ const bootstrap = `
   window.__fcmsConsentState = state;
   window.__fcmsAnalyticsInitialized = false;
   var allowedTrackingPaths = Object.freeze(${JSON.stringify(TRACKABLE_PATHS)});
+  var trackingPathAliases = Object.freeze(${JSON.stringify(CONDITION_TRACKING_PATH_ALIASES)});
+  var trackingTitleAliases = Object.freeze(${JSON.stringify(CONDITION_TRACKING_TITLE_ALIASES)});
+  function conditionGuideLinkForEvent(event) {
+    var target = event.target;
+    var element = target && target.nodeType === 1 ? target : target && target.parentElement;
+    var anchor = element && typeof element.closest === "function"
+      ? element.closest("a[href]")
+      : null;
+    if (!anchor) return null;
+
+    try {
+      var url = new URL(anchor.getAttribute("href"), window.location.href);
+      if (
+        url.origin !== window.location.origin ||
+        !Object.prototype.hasOwnProperty.call(trackingPathAliases, url.pathname)
+      ) {
+        return null;
+      }
+      // Hash links and other same-page actions inside a condition guide do
+      // not cross the privacy boundary. Leave their native behavior intact.
+      if (url.pathname === window.location.pathname) return null;
+      return { anchor: anchor, url: url };
+    } catch (error) {
+      return null;
+    }
+  }
+  function guardConditionGuideClick(event) {
+    var match = conditionGuideLinkForEvent(event);
+    if (!match) return;
+
+    // This listener is installed before Clarity. Stop the exact guide click
+    // from reaching later capture listeners while preserving native modified
+    // clicks and new-tab behavior.
+    event.stopImmediatePropagation();
+    var opensSeparateContext =
+      event.metaKey ||
+      event.ctrlKey ||
+      event.shiftKey ||
+      event.altKey ||
+      event.button !== 0 ||
+      match.anchor.getAttribute("target") === "_blank";
+    if (event.type === "click" && !opensSeparateContext) {
+      event.preventDefault();
+      window.location.assign(match.url.href);
+    }
+  }
+  window.addEventListener("click", guardConditionGuideClick, true);
+  window.addEventListener("auxclick", guardConditionGuideClick, true);
+  function safeTrackingPath(pathname) {
+    if (allowedTrackingPaths.indexOf(pathname) === -1) return "/404";
+    return trackingPathAliases[pathname] || pathname;
+  }
+  function safeTrackingTitle(pathname) {
+    return trackingTitleAliases[pathname] || document.title;
+  }
   window.__fcmsAllowedTrackingPaths = allowedTrackingPaths;
   var trackingPathAllowed = allowedTrackingPaths.indexOf(window.location.pathname) !== -1;
-  var clarityEligible = true;
-  var pagePath = trackingPathAllowed ? window.location.pathname : "/404";
+  var clarityEligible = !trackingPathAliases[window.location.pathname];
+  var pagePath = safeTrackingPath(window.location.pathname);
   var pageLocation = window.location.origin + pagePath;
   var pageReferrer = "";
+  var pageTitle = safeTrackingTitle(window.location.pathname);
 
   window.gtag("consent", "default", {
     ad_storage: "denied",
@@ -96,11 +155,13 @@ const bootstrap = `
         var serializedParameters = retainedParameters.toString();
         retainedSearch = serializedParameters ? "?" + serializedParameters : "";
       }
-      clarityEligible = trackingPathAllowed && !originalUrl.search && !originalUrl.hash && !referrerUrl;
+      clarityEligible = trackingPathAllowed
+        && !trackingPathAliases[originalUrl.pathname]
+        && !originalUrl.search
+        && !originalUrl.hash
+        && !referrerUrl;
       if (referrerUrl) {
-        var referrerPath = allowedTrackingPaths.indexOf(referrerUrl.pathname) !== -1
-          ? referrerUrl.pathname
-          : "/404";
+        var referrerPath = safeTrackingPath(referrerUrl.pathname);
         pageReferrer = referrerUrl.origin === originalUrl.origin
           ? referrerUrl.origin + referrerPath
           : referrerUrl.origin;
@@ -112,8 +173,9 @@ const bootstrap = `
           originalUrl.pathname + retainedSearch + safeHash
         );
       }
-      pagePath = trackingPathAllowed ? originalUrl.pathname : "/404";
+      pagePath = safeTrackingPath(originalUrl.pathname);
       pageLocation = originalUrl.origin + pagePath;
+      pageTitle = safeTrackingTitle(originalUrl.pathname);
       window.__fcmsInitialPageLocation = pageLocation;
     } catch (error) {
       clarityEligible = false;
@@ -129,8 +191,9 @@ const bootstrap = `
 
     window.clarity("consentv2", {
       ad_Storage: "denied",
-      analytics_Storage: "granted"
+      analytics_Storage: clarityEligible ? "granted" : "denied"
     });
+    if (!clarityEligible) window.clarity("consent", false);
 
     window.gtag("js", new Date());
     window.gtag("config", ${JSON.stringify(GA4_MEASUREMENT_ID)}, {
@@ -139,6 +202,7 @@ const bootstrap = `
       page_location: pageLocation,
       page_path: pagePath,
       page_referrer: pageReferrer,
+      page_title: pageTitle,
       send_page_view: false
     });
   }
@@ -167,13 +231,3 @@ const bootstrap = `
   }
 })();
 `;
-
-export function TrackingScripts() {
-  return (
-    <Script
-      id="fcms-consent-bootstrap"
-      strategy="beforeInteractive"
-      dangerouslySetInnerHTML={{ __html: bootstrap }}
-    />
-  );
-}

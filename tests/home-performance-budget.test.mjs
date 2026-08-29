@@ -4,6 +4,7 @@ import { chromium } from "playwright";
 import { baseUrl, unlockPreview } from "./preview-access.mjs";
 
 const MAX_INITIAL_SCRIPT_BYTES = 650 * 1024;
+const MAX_CONDITION_SCRIPT_BYTES = 390 * 1024;
 
 async function inspectHeroVariant(browser, viewport, expectedTestId, hiddenVariantTestId, maxTransferBytes) {
   const context = await browser.newContext({
@@ -72,6 +73,42 @@ test("homepage enforces responsive hero and initial transfer budgets", async () 
     await inspectHeroVariant(browser, { width: 390, height: 844 }, "img-hero-mobile", "img-hero-bg", 1_000 * 1024);
     await inspectHeroVariant(browser, { width: 1440, height: 900 }, "img-hero-bg", "img-hero-mobile", 1_600 * 1024);
   } finally {
+    await browser.close();
+  }
+});
+
+test("split condition heroes do not load the GSAP parallax runtime", async () => {
+  const browser = await chromium.launch();
+  const context = await browser.newContext({
+    viewport: { width: 1440, height: 900 },
+    extraHTTPHeaders: { "x-vercel-skip-toolbar": "1" },
+  });
+
+  try {
+    await unlockPreview(context);
+    const page = await context.newPage();
+    const response = await page.goto(`${baseUrl}/primary-care/high-blood-pressure-care`, { waitUntil: "networkidle" });
+    assert.equal(response?.status(), 200);
+
+    const scripts = await page.evaluate(() => performance
+      .getEntriesByType("resource")
+      .filter((resource) => resource.initiatorType === "script")
+      .map((resource) => ({ url: resource.name, bytes: resource.encodedBodySize })));
+    const scriptBytes = scripts.reduce((sum, script) => sum + script.bytes, 0);
+    assert.ok(
+      scriptBytes <= MAX_CONDITION_SCRIPT_BYTES,
+      `condition script transfer exceeded ${MAX_CONDITION_SCRIPT_BYTES} bytes: ${scriptBytes}`,
+    );
+
+    const gsapRuntimeScripts = [];
+    for (const script of scripts) {
+      const scriptResponse = await context.request.get(script.url);
+      const source = await scriptResponse.text();
+      if (/GreenSock|CSSPlugin/.test(source)) gsapRuntimeScripts.push(script.url);
+    }
+    assert.deepEqual(gsapRuntimeScripts, [], "split condition hero loaded the GSAP runtime despite having no parallax");
+  } finally {
+    await context.close();
     await browser.close();
   }
 });

@@ -3,6 +3,10 @@ import {
   GA4_MEASUREMENT_ID,
   type ConsentCategories,
 } from "@shared/tracking";
+import {
+  privacySafeTrackingPath,
+  privacySafeTrackingTitle,
+} from "@shared/tracking-route-privacy";
 
 type TrackingValue = string | number | boolean | null | undefined;
 type TrackingParameters = Record<string, TrackingValue>;
@@ -23,8 +27,12 @@ declare global {
   }
 }
 
-function safeTrackingPath(pathname: string) {
+function allowedTrackingPath(pathname: string) {
   return window.__fcmsAllowedTrackingPaths?.includes(pathname) ? pathname : "/404";
+}
+
+function safeTrackingPath(pathname: string) {
+  return privacySafeTrackingPath(allowedTrackingPath(pathname));
 }
 
 function sanitizedReferrer() {
@@ -40,11 +48,13 @@ function sanitizedReferrer() {
 }
 
 function currentPageContext() {
-  const pagePath = safeTrackingPath(window.location.pathname);
+  const routePath = allowedTrackingPath(window.location.pathname);
+  const pagePath = privacySafeTrackingPath(routePath);
   return {
     page_path: pagePath,
     page_location: `${window.location.origin}${pagePath}`,
     page_referrer: sanitizedReferrer(),
+    page_title: privacySafeTrackingTitle(routePath, document.title),
   };
 }
 
@@ -85,7 +95,9 @@ function prepareBrowserUrlForTracking(state: ConsentCategories) {
   }
   const serializedParameters = retainedParameters.toString();
   const retainedSearch = serializedParameters ? `?${serializedParameters}` : "";
-  const clarityEligible = pagePath !== "/404"
+  const routePath = allowedTrackingPath(originalUrl.pathname);
+  const clarityEligible = routePath !== "/404"
+    && privacySafeTrackingPath(routePath) === routePath
     && !originalUrl.search
     && !originalUrl.hash
     && !document.referrer;
@@ -123,10 +135,6 @@ function ensureAnalyticsLoaded(
   const pageContext = currentPageContext();
   window.__fcmsInitialPageLocation = initialPageLocation;
 
-  window.clarity?.("consentv2", {
-    ad_Storage: "denied",
-    analytics_Storage: "granted",
-  });
   window.gtag?.("js", new Date());
   window.gtag?.("config", GA4_MEASUREMENT_ID, {
     allow_google_signals: false,
@@ -134,6 +142,7 @@ function ensureAnalyticsLoaded(
     page_location: initialPageLocation,
     page_path: pageContext.page_path,
     page_referrer: pageContext.page_referrer,
+    page_title: pageContext.page_title,
     send_page_view: false,
   });
   loadTrackingTag(
@@ -213,8 +222,12 @@ export function updateTrackingConsent(state: ConsentCategories): boolean {
   if (state.analytics) {
     window.clarity?.("consentv2", {
       ad_Storage: "denied",
-      analytics_Storage: "granted",
+      analytics_Storage: prepared.clarityEligible ? "granted" : "denied",
     });
+    if (!prepared.clarityEligible) {
+      window.clarity?.("consent", false);
+      clearCookiesWithPrefixes(["_clck", "_clsk"]);
+    }
     ensureAnalyticsLoaded(state, prepared);
     trackPageView();
   } else {
@@ -252,6 +265,7 @@ export function trackEvent(name: string, parameters: TrackingParameters = {}) {
     page_path: pageContext.page_path,
     page_location: pageLocation,
     page_referrer: pageContext.page_referrer,
+    page_title: pageContext.page_title,
   });
   if (name === "page_view") window.__fcmsInitialPageLocation = undefined;
 }
@@ -268,13 +282,23 @@ export function trackLead(formId: string, sourcePage: string) {
 
 export function trackPageView() {
   if (typeof window === "undefined" || window.__fcmsConsentState?.analytics !== true) return;
-  const pagePath = safeTrackingPath(window.location.pathname);
-  if (pagePath === "/404") return;
-  if (window.__fcmsLastTrackedPage === pagePath) return;
-  window.__fcmsLastTrackedPage = pagePath;
+  const routePath = allowedTrackingPath(window.location.pathname);
+  if (routePath === "/404") return;
+  if (window.__fcmsLastTrackedPage === routePath) return;
+  window.__fcmsLastTrackedPage = routePath;
+  const pagePath = privacySafeTrackingPath(routePath);
+
+  if (pagePath !== routePath) {
+    window.clarity?.("consentv2", {
+      ad_Storage: "denied",
+      analytics_Storage: "denied",
+    });
+    window.clarity?.("consent", false);
+    clearCookiesWithPrefixes(["_clck", "_clsk"]);
+  }
 
   trackEvent("page_view", {
     page_path: pagePath,
-    page_title: document.title,
+    page_title: privacySafeTrackingTitle(routePath, document.title),
   });
 }
