@@ -43,14 +43,13 @@ function visibleText(html) {
 }
 
 test("all sixteen condition guides ship substantial server HTML and their exact canonical", async () => {
-  const results = await Promise.all(
-    CONDITION_ROUTE_PATHS.map(async (path) => {
-      const response = await previewFetch(path, {
-        headers: { "User-Agent": "Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)" },
-      });
-      return { path, response, html: await response.text() };
-    }),
-  );
+  const results = [];
+  for (const path of CONDITION_ROUTE_PATHS) {
+    const response = await previewFetch(path, {
+      headers: { "User-Agent": "Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)" },
+    });
+    results.push({ path, response, html: await response.text() });
+  }
 
   for (const { path, response, html } of results) {
     assert.equal(response.status, 200, `${path} returned ${response.status}`);
