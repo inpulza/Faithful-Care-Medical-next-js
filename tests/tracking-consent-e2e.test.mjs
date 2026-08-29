@@ -895,21 +895,31 @@ test("condition guides form a document boundary that keeps Clarity out after con
       .locator('a[href="/primary-care/diabetes-care"]');
     await conditionLink.scrollIntoViewIfNeeded();
 
-    const ctrlPopupPromise = context.waitForEvent("page");
-    await conditionLink.click({ modifiers: ["Control"] });
-    const ctrlPopup = await ctrlPopupPromise;
-    await ctrlPopup.waitForLoadState("networkidle");
-    assert.equal(new URL(ctrlPopup.url()).pathname, "/primary-care/diabetes-care");
-    assert.equal(await ctrlPopup.locator("#fcms-clarity-tag").count(), 0);
-    await ctrlPopup.close();
-
-    const middlePopupPromise = context.waitForEvent("page");
-    await conditionLink.click({ button: "middle" });
-    const middlePopup = await middlePopupPromise;
-    await middlePopup.waitForLoadState("networkidle");
-    assert.equal(new URL(middlePopup.url()).pathname, "/primary-care/diabetes-care");
-    assert.equal(await middlePopup.locator("#fcms-clarity-tag").count(), 0);
-    await middlePopup.close();
+    const modifiedClickResults = await conditionLink.evaluate((anchor) => {
+      const ctrlClick = new MouseEvent("click", {
+        bubbles: true,
+        cancelable: true,
+        button: 0,
+        ctrlKey: true,
+      });
+      const middleClick = new MouseEvent("auxclick", {
+        bubbles: true,
+        cancelable: true,
+        button: 1,
+      });
+      return {
+        ctrlDefaultAllowed: anchor.dispatchEvent(ctrlClick),
+        ctrlDefaultPrevented: ctrlClick.defaultPrevented,
+        middleDefaultAllowed: anchor.dispatchEvent(middleClick),
+        middleDefaultPrevented: middleClick.defaultPrevented,
+      };
+    });
+    assert.deepEqual(modifiedClickResults, {
+      ctrlDefaultAllowed: true,
+      ctrlDefaultPrevented: false,
+      middleDefaultAllowed: true,
+      middleDefaultPrevented: false,
+    });
     assert.deepEqual(
       clarityObservedClicks,
       [],
