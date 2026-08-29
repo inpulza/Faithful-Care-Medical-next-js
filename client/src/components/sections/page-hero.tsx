@@ -105,23 +105,25 @@ function TrustBadge({
   );
 }
 
-function useHeroParallax() {
+function useHeroParallax(enabled: boolean) {
   const ref = React.useRef<HTMLElement | null>(null);
 
   React.useEffect(() => {
+    const el = ref.current;
+    if (!enabled || !el) return;
+
     let ctx: any;
+    let cancelled = false;
 
     (async () => {
       const gsapMod = await import("gsap");
       const stMod = await import("gsap/ScrollTrigger");
+      if (cancelled) return;
 
       const gsap = gsapMod.gsap;
       const ScrollTrigger = stMod.ScrollTrigger;
 
       gsap.registerPlugin(ScrollTrigger);
-
-      const el = ref.current;
-      if (!el) return;
 
       ctx = gsap.context(() => {
         gsap.to(el, {
@@ -138,9 +140,10 @@ function useHeroParallax() {
     })();
 
     return () => {
+      cancelled = true;
       if (ctx) ctx.revert();
     };
-  }, []);
+  }, [enabled]);
 
   return ref;
 }
@@ -722,7 +725,7 @@ export function PageHero({
   const reducedMotion = useReducedMotion();
   const isLight = heroTextTheme === "light";
   const isSplitHero = heroLayout === "split";
-  const photoRef = useHeroParallax();
+  const photoRef = useHeroParallax(!isSplitHero && !reducedMotion);
   const [mobileFormOpen, setMobileFormOpen] = React.useState(false);
   const [desktopLoaded, setDesktopLoaded] = React.useState(false);
   const [mobileLoaded, setMobileLoaded] = React.useState(false);
@@ -730,6 +733,8 @@ export function PageHero({
   const [mobileBlurVisible, setMobileBlurVisible] = React.useState(true);
   const desktopImgRef = React.useRef<HTMLImageElement | null>(null);
   const mobileImgRef = React.useRef<HTMLImageElement | null>(null);
+  const openMobileForm = React.useCallback(() => setMobileFormOpen(true), []);
+  const closeMobileForm = React.useCallback(() => setMobileFormOpen(false), []);
 
   const { navigateTo } = usePageTransition();
 
@@ -1237,8 +1242,8 @@ export function PageHero({
             </div>
           </div>
 
-          <MobileContactFab onClick={() => setMobileFormOpen(true)} lang={formLang} />
-          <MobileContactModal isOpen={mobileFormOpen} onClose={() => setMobileFormOpen(false)} lang={formLang} />
+          <MobileContactFab onClick={openMobileForm} lang={formLang} />
+          <MobileContactModal isOpen={mobileFormOpen} onClose={closeMobileForm} lang={formLang} />
         </>
       )}
 
@@ -1251,8 +1256,8 @@ export function PageHero({
           </section>
 
           <div className="xl:hidden">
-            <MobileContactFab onClick={() => setMobileFormOpen(true)} lang={formLang} />
-            <MobileContactModal isOpen={mobileFormOpen} onClose={() => setMobileFormOpen(false)} lang={formLang} />
+            <MobileContactFab onClick={openMobileForm} lang={formLang} />
+            <MobileContactModal isOpen={mobileFormOpen} onClose={closeMobileForm} lang={formLang} />
           </div>
         </>
       )}

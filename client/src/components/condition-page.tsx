@@ -33,7 +33,12 @@ function ConditionQuickFacts({ facts }: { facts: ConditionPageData["quickFacts"]
                   <Icon className="h-5 w-5" weight="duotone" aria-hidden="true" />
                 </span>
                 <span className="min-w-0">
-                  <span className="block text-xs font-semibold uppercase tracking-wider text-primary/65">{fact.label}</span>
+                  <span
+                    className="block text-xs font-semibold uppercase tracking-wider text-primary"
+                    data-testid="condition-fact-label"
+                  >
+                    {fact.label}
+                  </span>
                   <span className="mt-1 block text-sm font-semibold leading-snug text-deep-navy md:text-base">{fact.value}</span>
                 </span>
               </div>

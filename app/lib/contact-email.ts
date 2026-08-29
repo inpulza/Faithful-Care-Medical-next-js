@@ -32,6 +32,13 @@ interface ContactFormData {
   sourcePage: string;
 }
 
+export function normalizeExternalContactSourcePage(sourcePage: string): string {
+  if (sourcePage.startsWith("/primary-care/")) return "/primary-care";
+  if (sourcePage.startsWith("/palliative-care/")) return "/palliative-care";
+  if (sourcePage === "/es/medico-de-familia-naples" || sourcePage === "/es/cuidados-paliativos-naples") return "/es";
+  return sourcePage;
+}
+
 const PHI_KEYWORDS = [
   "diabetes", "diabetic", "insulin", "a1c", "hba1c",
   "cancer", "tumor", "chemo", "chemotherapy", "radiation", "biopsy", "oncology",
@@ -399,6 +406,25 @@ function buildClinicNotificationHtml(data: ContactFormData): string {
 </html>`;
 }
 
+export function prepareClinicNotification(data: ContactFormData): {
+  data: ContactFormData;
+  pageLabel: string;
+  subject: string;
+  html: string;
+} {
+  const safeData = {
+    ...data,
+    sourcePage: normalizeExternalContactSourcePage(data.sourcePage),
+  };
+  const pageLabel = getPageLabel(safeData.sourcePage);
+  return {
+    data: safeData,
+    pageLabel,
+    subject: `New Contact: ${safeData.name} - ${pageLabel}`,
+    html: buildClinicNotificationHtml(safeData),
+  };
+}
+
 function classifyEmailError(message: string): string {
   if (/auth|api[_-]?key|unauthor/i.test(message)) return "auth";
   if (/rate|limit|throttle/i.test(message)) return "rate_limited";
@@ -418,8 +444,9 @@ export async function sendContactFormEmails(
     return { success: false, error: "missing_api_key" };
   }
   const resend = new Resend(apiKey);
-  const pageLabel = getPageLabel(data.sourcePage);
-  const risk = classifyMessageRisk(data.message);
+  const notification = prepareClinicNotification(data);
+  const { data: safeData, pageLabel } = notification;
+  const risk = classifyMessageRisk(safeData.message);
   if (risk.risky) {
     console.log(
       `[email] request=${requestId} message_redacted reason=${risk.reason} source=${pageLabel}`
@@ -429,9 +456,9 @@ export async function sendContactFormEmails(
     const clinicResult = await resend.emails.send({
       from: FROM_EMAIL,
       to: [CLINIC_EMAIL],
-      subject: `New Contact: ${data.name} - ${pageLabel}`,
-      replyTo: data.email,
-      html: buildClinicNotificationHtml(data),
+      subject: notification.subject,
+      replyTo: safeData.email,
+      html: notification.html,
     });
 
     if (clinicResult.error) {
@@ -443,9 +470,9 @@ export async function sendContactFormEmails(
 
     const clientResult = await resend.emails.send({
       from: FROM_EMAIL,
-      to: [data.email],
+      to: [safeData.email],
       subject: "We received your message - Faithful Care Medical Services",
-      html: buildClientConfirmationHtml(data),
+      html: buildClientConfirmationHtml(safeData),
     });
 
     if (clientResult.error) {

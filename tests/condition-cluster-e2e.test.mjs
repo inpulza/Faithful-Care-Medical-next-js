@@ -143,6 +143,49 @@ test("representative condition layouts work without overflow or browser errors o
         assert.ok(Math.max(...cardHeights) - Math.min(...cardHeights) <= 1, `${path} related cards have unequal heights at ${viewport.name}`);
         assert.ok(Math.max(...ctaBottoms) - Math.min(...ctaBottoms) <= 1, `${path} related-card CTAs are misaligned at ${viewport.name}`);
 
+        const smallTextContrasts = await page
+          .locator('[data-testid="condition-fact-label"], [data-testid="related-care-index"]')
+          .evaluateAll((elements) => {
+            const luminance = (rgb) => {
+              const linear = rgb.map((channel) => {
+                const value = channel / 255;
+                return value <= 0.04045 ? value / 12.92 : ((value + 0.055) / 1.055) ** 2.4;
+              });
+              return 0.2126 * linear[0] + 0.7152 * linear[1] + 0.0722 * linear[2];
+            };
+            const ratio = (foreground, background) => {
+              const canvas = document.createElement("canvas");
+              canvas.width = 1;
+              canvas.height = 1;
+              const context = canvas.getContext("2d", { willReadFrequently: true });
+              context.fillStyle = "#ffffff";
+              context.fillRect(0, 0, 1, 1);
+              context.fillStyle = background;
+              context.fillRect(0, 0, 1, 1);
+              const backgroundRgb = Array.from(context.getImageData(0, 0, 1, 1).data).slice(0, 3);
+              context.fillStyle = foreground;
+              context.fillRect(0, 0, 1, 1);
+              const foregroundRgb = Array.from(context.getImageData(0, 0, 1, 1).data).slice(0, 3);
+              const foregroundLuminance = luminance(foregroundRgb);
+              const backgroundLuminance = luminance(backgroundRgb);
+              return (Math.max(foregroundLuminance, backgroundLuminance) + 0.05)
+                / (Math.min(foregroundLuminance, backgroundLuminance) + 0.05);
+            };
+
+            return elements.map((element) => {
+              const surface = element.matches('[data-testid="related-care-index"]')
+                ? element.closest('[data-testid^="related-care-link-"]')
+                : element.closest('[data-testid="section-condition-quick-facts"]')?.querySelector("div.rounded-2xl");
+              return {
+                text: element.textContent?.trim(),
+                ratio: ratio(getComputedStyle(element).color, getComputedStyle(surface || document.body).backgroundColor),
+              };
+            });
+          });
+        for (const sample of smallTextContrasts) {
+          assert.ok(sample.ratio >= 4.5, `${path} small label "${sample.text}" contrast was ${sample.ratio.toFixed(2)}:1 at ${viewport.name}`);
+        }
+
         const failedImages = await page.locator("main img").evaluateAll((images) =>
           images
             .filter((image) => !image.closest('[aria-hidden="true"]'))

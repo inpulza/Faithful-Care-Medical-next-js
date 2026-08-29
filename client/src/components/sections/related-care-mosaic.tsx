@@ -113,7 +113,9 @@ export function RelatedCareMosaic({
                   className="group flex h-full min-h-48 flex-col rounded-3xl border border-primary/15 bg-[#f5f8fb] p-6 transition-colors hover:border-primary/35 hover:bg-primary/5 md:p-7"
                   data-testid={`related-care-link-${index}`}
                 >
-                  <span className="mb-4 font-mono text-xs text-primary/70">{String(index + 1).padStart(2, "0")}</span>
+                  <span className="mb-4 font-mono text-xs text-primary" data-testid="related-care-index">
+                    {String(index + 1).padStart(2, "0")}
+                  </span>
                   <h3 className="text-xl font-semibold leading-snug text-deep-navy transition-colors group-hover:text-primary">{item.title}</h3>
                   <p className="mt-3 flex-1 text-[15px] leading-relaxed text-deep-navy/[0.72]">{item.description}</p>
                   <span className="mt-5 inline-flex items-center gap-2 text-sm font-semibold text-primary">

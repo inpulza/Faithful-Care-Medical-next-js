@@ -120,3 +120,52 @@ test("homepage interactive controls expose valid names, contrast, and touch targ
     await browser.close();
   }
 });
+
+test("homepage tablet booking sheet keeps focus while the hero carousel advances", async () => {
+  const browser = await chromium.launch();
+  const context = await browser.newContext({ viewport: { width: 1024, height: 900 } });
+  await unlockPreview(context);
+  const page = await context.newPage();
+  const pageErrors = [];
+  const consoleErrors = [];
+  page.on("pageerror", (error) => pageErrors.push(error.message));
+  page.on("console", (message) => {
+    if (message.type() === "error" && !message.text().includes("/_next/webpack-hmr")) {
+      consoleErrors.push(message.text());
+    }
+  });
+
+  try {
+    const response = await page.goto(`${baseUrl}/`, { waitUntil: "networkidle" });
+    assert.equal(response?.status(), 200);
+
+    const fab = page.getByTestId("button-mobile-contact-fab");
+    await fab.waitFor({ state: "visible" });
+    await fab.click();
+
+    const dialog = page.getByRole("dialog", { name: "Request a Visit" });
+    await dialog.waitFor({ state: "visible" });
+    const nameInput = dialog.getByTestId("input-contact-name");
+    await nameInput.fill("Focus stays here");
+    await nameInput.focus();
+
+    const visibleSlide = () => page
+      .getByTestId("hero-media")
+      .locator('img[data-testid^="img-hero"]')
+      .evaluateAll((images) => images.find((image) => Number(getComputedStyle(image).opacity) > 0.5)?.getAttribute("data-testid"));
+    const initialSlide = await visibleSlide();
+    await page.waitForTimeout(6_500);
+    const advancedSlide = await visibleSlide();
+
+    assert.notEqual(advancedSlide, initialSlide, "the regression test must observe one carousel advance");
+    assert.equal(await nameInput.inputValue(), "Focus stays here");
+    assert.equal(await nameInput.evaluate((element) => document.activeElement === element), true, "carousel advance moved focus out of the field");
+    assert.equal(await dialog.isVisible(), true, "carousel advance closed or reset the booking sheet");
+    assert.equal(await page.evaluate(() => document.body.style.overflow), "hidden", "carousel advance unlocked background scrolling");
+    assert.deepEqual(pageErrors, [], "tablet homepage emitted unexpected page errors");
+    assert.deepEqual(consoleErrors, [], "tablet homepage emitted unexpected console errors");
+  } finally {
+    await context.close();
+    await browser.close();
+  }
+});
