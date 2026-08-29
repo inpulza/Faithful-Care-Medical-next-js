@@ -179,6 +179,12 @@ test("homepage tablet booking sheet keeps focus while the hero carousel advances
     assert.equal(await fab.isVisible(), false, "tablet booking trigger remained visible at the desktop breakpoint");
     assert.equal(await page.getByTestId("search-bar-wrapper").evaluate((element) => getComputedStyle(element).display), "block", "desktop contact form did not activate at the xl breakpoint");
     assert.equal(await page.locator('[data-testid="contact-form-card"]:visible').count(), 1, "desktop exposes more than one visible contact form");
+    const desktopNameInput = page.getByTestId("search-bar-wrapper").getByTestId("input-contact-name");
+    assert.equal(
+      await desktopNameInput.evaluate((element) => document.activeElement === element),
+      true,
+      "crossing the desktop breakpoint did not move focus to the visible inline form",
+    );
     assert.deepEqual(pageErrors, [], "tablet homepage emitted unexpected page errors");
     assert.deepEqual(consoleErrors, [], "tablet homepage emitted unexpected console errors");
   } finally {

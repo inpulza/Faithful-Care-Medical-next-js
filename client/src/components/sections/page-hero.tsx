@@ -263,6 +263,7 @@ function MobileContactModal({ isOpen, onClose, lang = "en" }: { isOpen: boolean;
   const sheetRef = React.useRef<HTMLDivElement | null>(null);
   const closeButtonRef = React.useRef<HTMLButtonElement | null>(null);
   const previousFocusRef = React.useRef<HTMLElement | null>(null);
+  const desktopReturnFocusRef = React.useRef<HTMLElement | null>(null);
 
   React.useEffect(() => {
     if (!isOpen) return;
@@ -274,11 +275,16 @@ function MobileContactModal({ isOpen, onClose, lang = "en" }: { isOpen: boolean;
     }
 
     previousFocusRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    desktopReturnFocusRef.current = null;
     document.body.style.overflow = 'hidden';
     const focusTimer = window.setTimeout(() => closeButtonRef.current?.focus(), 0);
 
     const handleDesktopBreakpoint = (event: MediaQueryListEvent) => {
-      if (event.matches) onClose();
+      if (!event.matches) return;
+      desktopReturnFocusRef.current = document.querySelector<HTMLElement>(
+        '[data-testid="search-bar-wrapper"] [data-testid="input-contact-name"]',
+      );
+      onClose();
     };
 
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -324,7 +330,9 @@ function MobileContactModal({ isOpen, onClose, lang = "en" }: { isOpen: boolean;
       desktopQuery.removeEventListener('change', handleDesktopBreakpoint);
       document.removeEventListener('keydown', handleKeyDown);
       document.body.style.overflow = '';
-      previousFocusRef.current?.focus();
+      const returnFocusTarget = desktopReturnFocusRef.current ?? previousFocusRef.current;
+      desktopReturnFocusRef.current = null;
+      returnFocusTarget?.focus();
     };
   }, [isOpen, onClose]);
 
