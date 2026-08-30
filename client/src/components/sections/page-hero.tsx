@@ -611,8 +611,8 @@ function ContactFormCard({ expanded = false, lang = "en" }: { expanded?: boolean
         </form>
       ) : (
         <form onSubmit={handleSubmit} className="flex flex-col gap-4" data-testid="hero-contact-form" data-clarity-mask="true" aria-busy={submitting}>
-          <div className="flex flex-col lg:flex-row items-end gap-4">
-          <div className="flex-1 w-full lg:w-auto">
+          <div className="grid grid-cols-1 items-end gap-4 md:grid-cols-2 xl:grid-cols-[repeat(4,minmax(0,1fr))_auto]">
+          <div className="w-full min-w-0">
             <label className="block text-sm font-semibold text-[hsl(var(--foreground))] mb-1.5" htmlFor={nameId}>
               {t.nameLabel}
             </label>
@@ -628,7 +628,7 @@ function ContactFormCard({ expanded = false, lang = "en" }: { expanded?: boolean
               data-testid="input-contact-name"
             />
           </div>
-          <div className="flex-1 w-full lg:w-auto">
+          <div className="w-full min-w-0">
             <label className="block text-sm font-semibold text-[hsl(var(--foreground))] mb-1.5" htmlFor={emailId}>
               {t.emailLabel}
             </label>
@@ -643,7 +643,7 @@ function ContactFormCard({ expanded = false, lang = "en" }: { expanded?: boolean
               data-testid="input-contact-email"
             />
           </div>
-          <div className="flex-1 w-full lg:w-auto">
+          <div className="w-full min-w-0">
             <label className="block text-sm font-semibold text-[hsl(var(--foreground))] mb-1.5" htmlFor={phoneId}>
               {t.phoneLabel}
             </label>
@@ -657,7 +657,7 @@ function ContactFormCard({ expanded = false, lang = "en" }: { expanded?: boolean
               data-testid="input-contact-phone"
             />
           </div>
-          <div className="flex-1 w-full lg:w-auto">
+          <div className="w-full min-w-0">
             <label className="block text-sm font-semibold text-[hsl(var(--foreground))] mb-1.5" htmlFor={serviceId}>
               {t.helpLabel}
             </label>
@@ -674,7 +674,7 @@ function ContactFormCard({ expanded = false, lang = "en" }: { expanded?: boolean
               ))}
             </select>
           </div>
-          <div className="w-full lg:w-auto flex flex-col gap-2">
+          <div className="flex w-full flex-col gap-2 md:col-span-2 xl:col-span-1 xl:w-auto">
             {error && (
               <p className="text-sm text-red-600 bg-red-50 rounded-lg px-4 py-3" data-testid="text-form-error" role="alert" aria-live="assertive">{error}</p>
             )}
@@ -682,7 +682,7 @@ function ContactFormCard({ expanded = false, lang = "en" }: { expanded?: boolean
               type="submit"
               size="lg"
               disabled={submitting}
-              className="w-full lg:w-auto flex-shrink-0 whitespace-nowrap"
+              className="w-full flex-shrink-0 whitespace-nowrap xl:w-auto"
               data-testid="button-contact-submit"
             >
               {submitting ? (
@@ -910,7 +910,7 @@ export function PageHero({
         )
       )}
       <section
-        className={cn("relative w-full overflow-hidden bg-white", isSplitHero && "pt-[72px] xl:pt-0")}
+        className={cn("relative w-full overflow-hidden bg-white", isSplitHero && "pt-[72px] lg:pt-0")}
         data-testid="section-hero"
       >
         <div
@@ -918,7 +918,7 @@ export function PageHero({
           className={cn(
             "relative hidden",
             isSplitHero
-              ? "xl:block xl:h-[clamp(700px,52vw,780px)] xl:bg-[#f0fbfc]"
+              ? "lg:block lg:h-[clamp(700px,52vw,780px)] lg:bg-[#f0fbfc]"
               : variant === "interior"
                 ? "lg:block lg:h-[clamp(520px,48vw,760px)]"
               : "lg:block lg:min-h-[500px] xl:min-h-[640px]",
@@ -1016,7 +1016,7 @@ export function PageHero({
         <div
           className={cn(
             "relative w-full overflow-hidden",
-            isSplitHero ? "aspect-[4/3] md:aspect-[16/9] xl:hidden" : "h-[45vh] lg:hidden",
+            isSplitHero ? "aspect-[4/3] md:aspect-[16/9] lg:hidden" : "h-[45vh] lg:hidden",
           )}
           data-testid="hero-media-mobile"
         >
@@ -1110,13 +1110,13 @@ export function PageHero({
         <div className={cn(
           "relative z-10 container-radical py-8",
           isSplitHero
-            ? "xl:absolute xl:inset-0 xl:flex xl:items-start xl:pb-10 xl:pt-[clamp(96px,7vw,112px)]"
+            ? "lg:absolute lg:inset-0 lg:flex lg:items-start lg:pb-10 lg:pt-[clamp(96px,7vw,112px)]"
             : "lg:absolute lg:inset-0 lg:flex lg:items-center lg:py-0",
           mapConfig && "lg:justify-between lg:gap-6 xl:gap-8"
         )} data-testid="hero-content">
           <div className={cn(
             isSplitHero
-              ? "max-w-[860px] xl:w-[54%] xl:max-w-[690px]"
+              ? "max-w-[860px] lg:w-[54%] lg:max-w-[690px]"
               : "lg:[margin-top:clamp(-30px,-2vw,0px)]",
             mapConfig ? "lg:flex-1 lg:min-w-0 lg:max-w-[60%]" : !isSplitHero && "max-w-[860px]"
           )} data-testid="hero-copy-region" data-hero-copy-surface={isSplitHero ? "plain" : undefined}>
@@ -1225,7 +1225,7 @@ export function PageHero({
             )}
 
             <div 
-              className={cn("relative overflow-hidden", isSplitHero && "xl:hidden")}
+              className={cn("relative overflow-hidden", isSplitHero && "lg:hidden")}
               style={{ 
                 marginTop: 'clamp(16px, 2vw, 32px)',
                 maskImage: 'linear-gradient(to right, transparent, black 15%, black 85%, transparent)',

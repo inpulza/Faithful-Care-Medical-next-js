@@ -21,8 +21,9 @@ const representativeRoutes = [
 const heroMatrixViewports = [
   { width: 390, height: 844 },
   { width: 768, height: 900 },
-  { width: 1024, height: 900 },
-  { width: 1279, height: 900 },
+  { width: 1023, height: 768 },
+  { width: 1024, height: 768 },
+  { width: 1279, height: 800 },
   { width: 1280, height: 900 },
   { width: 1440, height: 900 },
   { width: 1920, height: 1080 },
@@ -385,13 +386,16 @@ test("all condition heroes hold their geometry and conversion path across the fu
             h1Clipped: h1Element && h1Style
               ? ["hidden", "clip"].includes(h1Style.overflowY) && h1Element.scrollHeight > h1Element.clientHeight + 1
               : true,
+            h1InViewport: inViewport(h1),
+            primaryCtaInViewport: inViewport(primaryCta),
             hasViewportAction: [primaryCta, fab, headerCall].some(inViewport),
           };
-        }, { desktop: viewport.width >= 1280 });
+        }, { desktop: viewport.width >= 1024 });
 
         assert.ok(geometry.media && geometry.image && geometry.copy && geometry.h1 && geometry.header, `${path} hero geometry is incomplete at ${viewport.width}px`);
         assert.ok(geometry.overflow <= 1, `${path} overflows by ${geometry.overflow}px at ${viewport.width}px`);
         assert.equal(geometry.h1Clipped, false, `${path} clips its H1 at ${viewport.width}px`);
+        assert.equal(geometry.h1InViewport, true, `${path} pushes its H1 below the first viewport at ${viewport.width}px`);
         assert.ok(geometry.h1.left >= -1 && geometry.h1.right <= viewport.width + 1, `${path} pushes its H1 outside the viewport at ${viewport.width}px`);
         assert.ok(geometry.h1.top >= geometry.header.bottom + 16, `${path} places its H1 under the fixed header at ${viewport.width}px`);
         if (viewport.width >= 2560) {
@@ -405,6 +409,9 @@ test("all condition heroes hold their geometry and conversion path across the fu
         assert.ok(geometry.hasViewportAction || path === "/palliative-care/shortness-of-breath", `${path} has no visible safe action at ${viewport.width}px`);
 
         const suppressesHeroActions = path === "/palliative-care/shortness-of-breath";
+        if (viewport.width >= 1024 && !suppressesHeroActions) {
+          assert.equal(geometry.primaryCtaInViewport, true, `${path} pushes its primary CTA below the first viewport at ${viewport.width}px`);
+        }
         const inlineFormVisible = await page.getByTestId("search-bar-wrapper").isVisible();
         const visibleFormCount = await page.locator('[data-testid="contact-form-card"]:visible').count();
         if (suppressesHeroActions) {
@@ -417,11 +424,15 @@ test("all condition heroes hold their geometry and conversion path across the fu
           assert.equal(visibleFormCount, 0, `${path} exposes a hidden-range contact form before the sheet opens at ${viewport.width}px`);
         }
 
-        if (viewport.width >= 1280) {
+        if (viewport.width >= 1024) {
           assert.ok(geometry.copy.bottom <= geometry.media.bottom - 12, `${path} clips copy at ${viewport.width}px`);
-          assert.equal(await page.getByTestId("button-mobile-contact-fab").isVisible(), false, `${path} leaves the tablet FAB visible at ${viewport.width}px`);
         } else {
           assert.ok(geometry.copy.top >= geometry.media.bottom + 20, `${path} overlaps copy and image at ${viewport.width}px`);
+        }
+
+        if (viewport.width >= 1280) {
+          assert.equal(await page.getByTestId("button-mobile-contact-fab").isVisible(), false, `${path} leaves the tablet FAB visible at ${viewport.width}px`);
+        } else {
           const hasUrgentNotice = await page.getByTestId("condition-urgent-notice").count() > 0;
           if (viewport.width >= 768 && !hasUrgentNotice) {
             assert.equal(await page.getByTestId("button-mobile-contact-fab").isVisible(), true, `${path} loses the tablet booking action at ${viewport.width}px`);
@@ -539,6 +550,48 @@ test("tablet booking sheet announces outcomes, traps focus, and remains keyboard
     assert.equal(await page.evaluate(() => document.activeElement?.getAttribute("data-testid")), "button-mobile-contact-fab");
     assert.deepEqual(pageErrors, [], "tablet sheet page errors");
     assert.deepEqual(consoleErrors, [], "tablet sheet console errors");
+  } finally {
+    await context.close();
+    await browser.close();
+  }
+});
+
+test("tablet booking sheet keeps every compact field readable at 1024px", async () => {
+  const browser = await chromium.launch();
+  const context = await browser.newContext({
+    viewport: { width: 1024, height: 768 },
+    reducedMotion: "reduce",
+  });
+  await unlockPreview(context);
+  const page = await context.newPage();
+
+  try {
+    const response = await page.goto(`${baseUrl}/primary-care/memory-screening`, { waitUntil: "networkidle" });
+    assert.equal(response?.status(), 200);
+    await page.getByTestId("button-mobile-contact-fab").click();
+
+    const dialog = page.getByRole("dialog");
+    await dialog.waitFor({ state: "visible" });
+    const metrics = await dialog.getByTestId("hero-contact-form").evaluate((form) => {
+      const controls = [
+        form.querySelector('[data-testid="input-contact-name"]'),
+        form.querySelector('[data-testid="input-contact-email"]'),
+        form.querySelector('[data-testid="input-contact-phone"]'),
+        form.querySelector('[data-testid="select-contact-service"]'),
+      ];
+      return controls.map((control) => {
+        const rect = control?.getBoundingClientRect();
+        return rect ? { width: rect.width, top: rect.top } : null;
+      });
+    });
+
+    assert.equal(metrics.every(Boolean), true, "tablet sheet is missing a compact form control");
+    assert.equal(metrics.every((metric) => metric.width >= 280), true, `tablet controls are too narrow: ${JSON.stringify(metrics)}`);
+    assert.ok(Math.abs(metrics[0].top - metrics[1].top) <= 1, "name and email do not share the first tablet row");
+    assert.ok(Math.abs(metrics[2].top - metrics[3].top) <= 1, "phone and reason do not share the second tablet row");
+
+    const overflow = await dialog.evaluate((element) => element.scrollWidth - element.clientWidth);
+    assert.ok(overflow <= 1, `tablet sheet overflows horizontally by ${overflow}px`);
   } finally {
     await context.close();
     await browser.close();
