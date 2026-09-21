@@ -22,14 +22,26 @@ Cada consulta registra un evento. Las lecturas saludables se conservan 24 horas 
 El navegador coordina las etapas: al cerrar la pestaña, la petición ya iniciada puede terminar; al volver, continúa desde el último checkpoint. No existe un trabajador permanente en segundo plano. Una operación incierta se detiene sin repetir a ciegas la llamada de pago.
 
 ## Verificación y límites
-31 pruebas del blog y TypeScript pasan. Las pruebas de navegador cubren login, borrador privado, estados, filtros, generador, recuperación, imágenes reales en Blob, publicación solo local, índice lateral, categorías, canonical/sitemap, privacidad y retirada.
-La prueba del proveedor en la cadena automática usa respuestas simuladas; verifica coordinación y persistencia, no calidad real de OpenAI.
+33 pruebas del blog y TypeScript pasan. Las pruebas de navegador cubren login, borrador privado, estados, filtros, generador, recuperación, imágenes reales en Blob, publicación solo local, índice lateral, categorías, canonical/sitemap, privacidad y retirada.
+Además de las pruebas simuladas, se completó una ejecución real de las 15 etapas en Vercel Preview: run 8520081a-7d77-40e9-86a1-0aaaf1b97c6b, código 99b8b8582e9c956f3f74aee4ecea5fd061b1bb07. Se guardaron dos borradores EN/ES, una portada y dos imágenes interiores, alt text por visión y SEO traducido. Nada se publicó. Las respuestas usan JSON Schema estricto; el brief permite una sola reparación y mantiene la comprobación literal de evidencia.
 Se capturan cinco tamaños: 390x844, 1024x768, 1440x900, 1920x1080 y 3440x1440.
-Los PR17–19 tienen CI y Vercel verdes. El nuevo PR requiere sus propios checks y verificación del SHA desplegado.
+Los PR17–20 tienen CI y Vercel verdes. En el código de la ejecución real pasaron 133 pruebas y las pruebas de navegador. La revisión posterior de ambos borradores cubrió los cinco tamaños, sin errores de página ni consola y sin nuevas generaciones.
 
 ## Pendientes para cerrar el motor completo
-- Clave OpenAI autorizada y prueba real de un artículo EN/ES con portada, dos imágenes interiores y alt text.
 - Autorización explícita del destino Vercel para conectar las credenciales de Google; la revisión automática rechazó previamente esa transferencia. No se reintentó.
 - Revisión visual de Jordan y revisión clínica de contenido real.
 - Revisiones de código vigentes de todos los PR y aprobación final para producción.
 Los PR siguen en borrador. Producción no se modificó.
+
+## Conexión y credenciales
+La clave autorizada de agencia se leyó directamente desde su archivo original en 05. Pass. OPENAI_API_KEY es Sensitive y solo está configurada para Preview en feat/blog-xl-layout-faithful-brand. BLOG_AI_ENABLED y BLOG_IMAGES_ENABLED están activos en esa rama. La nueva configuración se aplicó mediante redeploy; no se modificó producción.
+Los modelos verificados con la cuenta son gpt-5.6-sol para texto, traducción y visión, y gpt-image-2.5-sunburst para imágenes. Las credenciales se leen solo en servidor: OPENAI_API_KEY, DATABASE_URL, BLOB_READ_WRITE_TOKEN, BLOG_ADMIN_PASSWORD_HASH y BLOG_ADMIN_SESSION_SECRET nunca llevan NEXT_PUBLIC_. La contraseña de administrador se conserva en la carpeta protegida del cliente; Vercel utiliza su hash scrypt y un secreto de sesión distinto.
+Los archivos temporales de carga, cookies y credenciales de QA se retiran al acabar las verificaciones. No se guardan estados de navegador ni trazas con sesiones. Las originales en 05. Pass y los secretos necesarios de Vercel se conservan.
+
+## Repetir la revisión sin generar ni publicar
+La prueba tests/blog-real-review.e2e.mjs requiere BLOG_RUN_REAL=1, BLOG_PREVIEW_URL, EXPECTED_SHA y BLOG_PASS_DIRECTORY. Lee admin-preview.json y un cookie jar temporal de acceso a Preview directamente en memoria. Exige un run ya completado, abre los artículos por su título, comprueba su privacidad y revisión pendiente, captura los cinco tamaños y cierra la sesión. Bloquea las mutaciones de generación, edición y publicación; no incurre en nuevas llamadas de IA.
+La prueba real detectó dos fallos de formato previos al guardado. Se corrigieron con esquemas estructurados y se conservaron ambos runs fallidos. El contador interno de generación del Preview se restableció una vez, después de comprobar que esos dos intentos no habían guardado artículos ni imágenes. No se modificaron límites de producción ni cuotas del proveedor.
+
+## Revisión editorial pendiente
+Los borradores de prueba demuestran el funcionamiento del motor, no aprobación médica. Además de la revisión clínica, conviene pulir la repetición de avisos y la frase sobre la fuente suministrada en el artículo de prueba. No se marcaron fuentes, imágenes ni contenido clínico como aprobados para forzar una publicación.
+Referencias técnicas: https://developers.openai.com/api/docs/guides/structured-outputs y https://github.com/StefanTerdell/zod-to-json-schema.
