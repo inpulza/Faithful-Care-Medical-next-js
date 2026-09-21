@@ -14,7 +14,7 @@ try{
  const page=await context.newPage(),errors=[];page.on("pageerror",e=>errors.push(e.message));
  await page.goto(base+"/admin/login");await page.getByLabel("Username",{exact:true}).fill(credentials.username);await page.getByLabel("Password",{exact:true}).fill(credentials.password);await page.getByRole("button",{name:"Sign in",exact:true}).click();await page.waitForURL("**/admin/blog");
  const run=(await(await context.request.get(base+"/api/admin/blog/auto/current")).json()).run;assert.equal(run.status,"completed","Review only: no new generation is allowed");
- const posts=[];for(const id of [run.postId,run.translationId]){const post=(await(await context.request.get(base+"/api/admin/blog/posts/"+id)).json()).post;assert.equal(post.status,"draft");assert.equal(post.data.reviewConfirmed,false);assert.equal((await context.request.get(base+(post.language==="es"?"/es":"")+"/blog/"+post.slug)).status(),404);posts.push(post);}
+ const posts=[];for(const id of [run.postId,run.translationId]){const post=(await(await context.request.get(base+"/api/admin/blog/posts/"+id)).json()).post;assert(["draft","pending_review"].includes(post.status),"Review only: the article must remain private");assert.equal(post.data.reviewConfirmed,false);assert.equal((await context.request.get(base+(post.language==="es"?"/es":"")+"/blog/"+post.slug)).status(),404);posts.push(post);}
  const blocked=[];await page.route("**/api/admin/blog/**",async route=>{const req=route.request(),url=new URL(req.url());if(req.method()!=="GET"&&!url.pathname.endsWith("/logout")){blocked.push(url.pathname);return route.abort();}return route.continue();});
  page.on("console",e=>{if(e.type()==="error")errors.push(e.text());});
  const sizes=[[390,844],[1024,768],[1440,900],[1920,1080],[3440,1440]];
