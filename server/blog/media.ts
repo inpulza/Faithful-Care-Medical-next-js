@@ -17,7 +17,7 @@ async function storeImage(post:Post,bytes:Buffer,role:"hero"|"inline",alt:string
  const image=sharp(bytes,{limitInputPixels:40000000,animated:false});
  const metadata=await image.metadata();
  if(!["jpeg","png","webp"].includes(metadata.format||""))throw new BlogError(415,"Use JPEG, PNG or WebP.");
- if(!metadata.width||!metadata.height||metadata.width<600||metadata.height<300)throw new BlogError(422,"Use an image at least 600Ã—300 pixels.");
+ if(!metadata.width||!metadata.height||metadata.width<600||metadata.height<300)throw new BlogError(422,"Use an image at least 600×300 pixels.");
  const encoded=await image.rotate().resize({width:1600,withoutEnlargement:true}).webp({quality:85}).toBuffer();
  const blob=await put("faithful-care/blog/"+post.id+"/"+randomUUID()+".webp",encoded,{access:"public",contentType:"image/webp",addRandomSuffix:false,token:process.env.BLOB_READ_WRITE_TOKEN});
  if(!ownedMediaUrl(blob.url))throw new BlogError(503,"Image store hostname does not match the client configuration.");
