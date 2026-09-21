@@ -25,7 +25,7 @@ const nextConfig: NextConfig = {
     return redirectRules;
   },
   async headers() {
-    return [{ source: "/:path*", headers: productionHeaders }];
+    return [{ source: "/:path*", headers: productionHeaders }, {source:"/admin/:path*",headers:[{key:"X-Robots-Tag",value:"noindex, nofollow, noarchive"},{key:"Cache-Control",value:"private, no-store"}]}];
   },
 };
 

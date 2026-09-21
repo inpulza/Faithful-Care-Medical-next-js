@@ -12,7 +12,7 @@ const { schemasForRoute } = await import(structuredDataUrl.href);
 const path = "/direct-primary-care";
 const canonical = "https://faithfulcaremedical.com/direct-primary-care";
 
-test("Direct Primary Care has one canonical public route and deterministic discovery entry", () => {
+test("Direct Primary Care has one canonical public route and deterministic discovery entry", async () => {
   const route = routeForPath(path);
   assert.ok(route, `${path} is missing from the public route contract`);
   assert.equal(route.canonical, canonical);
@@ -21,7 +21,7 @@ test("Direct Primary Care has one canonical public route and deterministic disco
   assert.equal(publicRoutes.filter((candidate) => candidate.path === path).length, 1);
   assert.equal(publicRoutes.some((candidate) => candidate.path === "/dpc"), false);
 
-  const entries = sitemap().filter((entry) => entry.url === canonical);
+  const entries = (await sitemap()).filter((entry) => entry.url === canonical);
   assert.equal(entries.length, 1, "sitemap must expose one Direct Primary Care canonical");
 
   for (const expected of [
@@ -36,7 +36,7 @@ test("Direct Primary Care has one canonical public route and deterministic disco
   }
 });
 
-test("Direct Primary Care schema is a clinic-connected Service and WebPage main entity", () => {
+test("Direct Primary Care schema is a clinic-connected Service and WebPage main entity", async () => {
   const route = routeForPath(path);
   assert.ok(route, `${path} is missing from the public route contract`);
 

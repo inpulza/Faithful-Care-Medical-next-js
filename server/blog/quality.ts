@@ -1,0 +1,39 @@
+import type { Post } from "./types";
+import { wordCount,hrefs,sanitize } from "./content";
+import { query } from "./db";
+import { publicRoutes } from "../../app/lib/route-contract";
+export async function verify(post:Post) {
+  const blockers:string[]=[];
+  const warnings:string[]=[];
+  const words=wordCount(post.content);
+  if(words<800) blockers.push("At least 800 useful words are required.");
+  if(!/<h2\b/i.test(post.content)) blockers.push("Add clear article sections.");
+  if(sanitize(post.content)!==post.content) blockers.push("Unsafe article HTML.");
+  if(post.data.excerpt.length<30) blockers.push("Add a meaningful excerpt.");
+  if(post.data.metaTitle.length<10||post.data.metaTitle.length>60) blockers.push("SEO title must contain 10–60 characters.");
+  if(post.data.metaDescription.length<50||post.data.metaDescription.length>160) blockers.push("SEO description must contain 50–160 characters.");
+  if(!post.data.reviewConfirmed||!post.data.reviewer.trim()) blockers.push("Clinical review must be confirmed by the editor.");
+  if(post.data.disclaimer.length<50) blockers.push("Add a medical information disclaimer.");
+  if(!post.data.tags.length) blockers.push("Choose at least one topic tag.");
+  if(!post.data.hero) warnings.push("Select a hero image before the final editorial review.");
+  if(post.data.hero&&!post.data.heroAlt.trim()) blockers.push("The hero image needs alternative text.");
+  const links=hrefs(post.content);
+  const internal=links.filter(x=>x.startsWith("/"));
+  const known=new Set(publicRoutes.map(x=>x.path));
+  for(const link of internal) {
+    const path=link.split(/[?#]/)[0];
+    if(!known.has(path)) {
+      const match=path.match(/^(\/es)?\/blog\/([a-z0-9-]+)$/);
+      const exists=match ? await query("SELECT id FROM fc_blog_posts WHERE language=$1 AND slug=$2 AND status='published'",[match[1]?"es":"en",match[2]]) : [];
+      if(!exists.length) blockers.push("Unknown internal link: "+link);
+    }
+  }
+  if(internal.length<2) blockers.push("Include at least two relevant internal links.");
+  const external=links.filter(x=>x.startsWith("https://"));
+  if(!external.length) blockers.push("Cite a medical source in the article.");
+  for(const url of [...new Set([...external,...post.data.sources])]) {
+    const valid=await query("SELECT url FROM fc_blog_links WHERE url=$1 AND approved=true AND health='healthy' AND score>=70 AND checked_at>now()-interval '7 days'",[url]);
+    if(!valid.length) blockers.push("Source needs approval and a recent healthy link check: "+url);
+  }
+  return {ready:!blockers.length,words,blockers,warnings};
+}
