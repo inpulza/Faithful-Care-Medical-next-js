@@ -9,7 +9,7 @@ const {createPost,editPost,getPost,listPosts,transition,publicPost}=await import
 const {blankData}=await import("../server/blog/types.ts");
 const {sanitize}=await import("../server/blog/content.ts");
 let db;
-before(async()=>{db=new PGlite();await db.exec(await fs.readFile(new URL("../migrations/blog/001-foundation.sql",import.meta.url),"utf8"));setTestDatabase(db);process.env.BLOG_ADMIN_USERNAME="test-editor";process.env.BLOG_ADMIN_PASSWORD_HASH=passwordHash("unit-only-example");process.env.BLOG_ADMIN_SESSION_SECRET="unit-only-secret-1234567890123456789012345";});
+before(async()=>{db=new PGlite();for(const name of (await fs.readdir(new URL("../migrations/blog/",import.meta.url))).filter(n=>n.endsWith(".sql")).sort())await db.exec(await fs.readFile(new URL("../migrations/blog/"+name,import.meta.url),"utf8"));setTestDatabase(db);process.env.BLOG_ADMIN_USERNAME="test-editor";process.env.BLOG_ADMIN_PASSWORD_HASH=passwordHash("unit-only-example");process.env.BLOG_ADMIN_SESSION_SECRET="unit-only-secret-1234567890123456789012345";});
 after(async()=>{setTestDatabase();await db.close();});
 const input=(slug)=>({language:"en",title:"Preparing for your visit",slug,content:"<h2>Preparing</h2><p>Bring your questions.</p>",data:{...blankData}});
 test("credentials, revocation, rotation, CSRF and durable rate limits",async()=>{
@@ -56,4 +56,16 @@ test("sanitization is idempotent and rejects encoded active content",()=>{
  const clean=sanitize('<p><a href="https://medlineplus.gov/">Reference</a><a href="/contact">Care</a><img src=x onerror=alert(1)></p>');
  assert.equal(sanitize(clean),clean);
  assert(!sanitize('<a href="&#106;avascript:alert(1)">bad</a>').includes("javascript"));
+});
+
+test("generation operation IDs cannot duplicate drafts and saving completes atomically",async()=>{
+ const {claimJob,saveGeneratedPost}=await import("../server/blog/jobs.ts");
+ const key="2bb3a3a9-a2e6-4e2c-9c1a-89349079018d";
+ const job=await claimJob("generate",key,"tester",{topicId:"visit-preparation"});
+ await assert.rejects(()=>claimJob("generate",key,"tester"),e=>e.status===409);
+ const p=await saveGeneratedPost(input("generated-atomic"),"tester",job.id);
+ const [saved]=await query("SELECT * FROM fc_blog_jobs WHERE id=$1",[job.id]);
+ assert.equal(saved.status,"completed");assert.equal(saved.post_id,p.id);
+ assert.equal(p.status,"draft");assert.equal(p.published_at,null);
+ await assert.rejects(()=>saveGeneratedPost(input("generated-repeat"),"tester",job.id),e=>e.status===409);
 });

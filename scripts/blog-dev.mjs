@@ -6,7 +6,7 @@ import {PGlite} from "@electric-sql/pglite";
 const directory=path.join(process.cwd(),".blog-test-db");
 await fs.mkdir(directory,{recursive:true});
 const db=new PGlite(directory);
-await db.exec(await fs.readFile("migrations/blog/001-foundation.sql","utf8"));
+for(const name of (await fs.readdir("migrations/blog")).filter(n=>n.endsWith(".sql")).sort())await db.exec(await fs.readFile("migrations/blog/"+name,"utf8"));
 await db.query("INSERT INTO fc_blog_links(url,kind,publisher,score,reason,approved,health,checked_at) VALUES($1,'external','MedlinePlus',95,'LOCAL TEST FIXTURE',true,'healthy',now()) ON CONFLICT(url) DO UPDATE SET checked_at=now()",["https://medlineplus.gov/healthscreening.html"]);
 await db.close();
 const password=randomBytes(24).toString("base64url"),salt=randomBytes(16).toString("hex");
