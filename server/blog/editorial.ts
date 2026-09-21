@@ -7,6 +7,10 @@ import {blankData,BlogError,type Language,type Post} from "./types";
 
 const category=z.enum(["prevention","primary-care","chronic-care","senior-care","palliative-care","family-support"]);
 const candidateSchema=z.object({id:z.string().regex(/^[a-z0-9-]+$/).max(100),title:z.string().min(10).max(170),angle:z.string().min(20).max(500),keyword:z.string().min(3).max(100),category,sourceUrls:z.array(z.string().url()).min(1).max(2)});
+const candidatesSchema=z.object({candidates:z.array(candidateSchema).min(2).max(6)});
+const reviewsSchema=z.object({reviews:z.array(z.object({id:z.string(),recommendation:z.enum(["create_new","change_angle","update_existing"]),reason:z.string().min(10).max(600),matches:z.array(z.string()).max(10)}))});
+const briefSchema=z.object({audience:z.string().min(10).max(300),intent:z.string().min(10).max(300),sections:z.array(z.string().min(5).max(180)).min(4).max(8),facts:z.array(z.object({claim:z.string().min(10).max(450),url:z.string().url(),support:z.string().min(10).max(250)})).min(2).max(8),limits:z.array(z.string().max(400)).min(1).max(6)});
+const articleSchema=z.object({title:z.string().min(10).max(180),content:z.string().max(150000)});
 export type Candidate=z.infer<typeof candidateSchema>;
 export type AssessedCandidate=Candidate & {overlap:number;score:number;recommendation:"create_new"|"change_angle"|"update_existing";reason:string;matches:string[]};
 export type Research={url:string;title:string;publisher:string;excerpt:string;checkedAt:string;score:number}[];
@@ -23,16 +27,16 @@ export function portfolio(posts:Post[]){
 }
 export async function ideate(language:Language,focus:string,posts:Post[]){
  rejectPrivateInformation(focus);
- const result=await generateJson(clinicalRules+" Return JSON {candidates:[{id,title,angle,keyword,category,sourceUrls}]}. Propose 4 distinct useful article ideas in the requested language, grounded in available sources and actual services. Balance primary care, prevention, chronic care, seniors, palliative care and family support. Avoid duplicate intent, saturated categories, location-only rewrites and generic Top/Best lists. Use only allowed categories and exact source URLs whose subjects support the angle. IDs must be meaningful lowercase hyphenated terms.",{language,focus,categories,sources:SOURCES,portfolio:portfolio(posts)});
- const candidates=z.object({candidates:z.array(candidateSchema).min(2).max(6)}).parse(result).candidates;
+ const result=await generateJson(clinicalRules+" Return JSON {candidates:[{id,title,angle,keyword,category,sourceUrls}]}. Propose 4 distinct useful article ideas in the requested language, grounded in available sources and actual services. Balance primary care, prevention, chronic care, seniors, palliative care and family support. Avoid duplicate intent, saturated categories, location-only rewrites and generic Top/Best lists. Use only allowed categories and exact source URLs whose subjects support the angle. IDs must be meaningful lowercase hyphenated terms.",{language,focus,categories,sources:SOURCES,portfolio:portfolio(posts)},[],candidatesSchema);
+ const candidates=candidatesSchema.parse(result).candidates;
  if(new Set(candidates.map(c=>c.id)).size!==candidates.length)throw new BlogError(422,"The topic planner repeated a candidate.");
  for(const c of candidates){rejectPrivateInformation(c.title+" "+c.angle+" "+c.keyword);if(c.sourceUrls.some(u=>!SOURCES.some(s=>s.url===u&&(s.categories as readonly string[]).includes(c.category))))throw new BlogError(422,"The topic planner selected a source outside its clinical category.");}
  return candidates;
 }
 export async function assess(candidates:Candidate[],posts:Post[]):Promise<{candidates:AssessedCandidate[];selected:AssessedCandidate}>{
  const memory=portfolio(posts);
- const judgments=z.object({reviews:z.array(z.object({id:z.string(),recommendation:z.enum(["create_new","change_angle","update_existing"]),reason:z.string().min(10).max(600),matches:z.array(z.string()).max(10)}))}).parse(await generateJson(
- clinicalRules+" Act as an independent editorial topic reviewer. Return JSON {reviews:[{id,recommendation,reason,matches}]}, one review per candidate. Compare intent, angle, body, tags and topic across both languages, not just matching words. A translation is the same intent. Recommend update_existing for the same question, change_angle for substantial overlap, create_new only when clearly distinct and supported by the listed sources. matches contains only supplied existing post IDs.",{candidates,existing:memory}));
+ const judgments=reviewsSchema.parse(await generateJson(
+ clinicalRules+" Act as an independent editorial topic reviewer. Return JSON {reviews:[{id,recommendation,reason,matches}]}, one review per candidate. Compare intent, angle, body, tags and topic across both languages, not just matching words. A translation is the same intent. Recommend update_existing for the same question, change_angle for substantial overlap, create_new only when clearly distinct and supported by the listed sources. matches contains only supplied existing post IDs.",{candidates,existing:memory},[],reviewsSchema));
  if(judgments.reviews.length!==candidates.length||new Set(judgments.reviews.map(r=>r.id)).size!==candidates.length)throw new BlogError(422,"Semantic review did not assess every candidate.");
  const assessed=candidates.map(c=>{
   const j=judgments.reviews.find(r=>r.id===c.id);if(!j||j.matches.some(id=>!memory.some(p=>p.id===id)))throw new BlogError(422,"Semantic review returned unknown article references.");
@@ -53,7 +57,7 @@ export async function research(candidate:Candidate,actor:string):Promise<Researc
  return results;
 }
 export function validateBrief(value:unknown,sources:Research):Brief{
- const brief=z.object({audience:z.string().min(10).max(300),intent:z.string().min(10).max(300),sections:z.array(z.string().min(5).max(180)).min(4).max(8),facts:z.array(z.object({claim:z.string().min(10).max(450),url:z.string().url(),support:z.string().min(10).max(250)})).min(2).max(8),limits:z.array(z.string().max(400)).min(1).max(6)}).parse(value);
+ const brief=briefSchema.parse(value);
  const normalize=(s:string)=>s.replace(/\s+/g," ").trim().toLowerCase();
  for(const fact of brief.facts){const source=sources.find(s=>s.url===fact.url);if(!source||!normalize(source.excerpt).includes(normalize(fact.support)))throw new BlogError(422,"Research evidence was not found in the fetched source. Review the source before generating.");}
  return brief;
@@ -61,14 +65,14 @@ export function validateBrief(value:unknown,sources:Research):Brief{
 export async function buildBrief(candidate:Candidate,language:Language,sources:Research){
  const instruction=clinicalRules+" Return JSON {audience,intent,sections,facts:[{claim,url,support}],limits}. All fields are strings except sections, facts and limits, which are arrays. audience and intent: 10-300 characters each. sections: 4-8 plain heading strings, each 5-180 characters. facts: 2-8 objects, claim 10-450 characters, exact supplied url, support 10-250 characters. limits: 1-6 strings, each at most 400 characters. Use the requested language for the brief but preserve each support quote in the source language. For each factual claim supply an exact short contiguous support quote from a provided excerpt with its exact URL. Do not invent, paraphrase or combine support quotes. Include practical appointment questions, limitations and a restrained care invitation. Plan 1000-1500 useful words.";
  const context={language,candidate,sources,internalLinks:internalLinks(candidate.category,language)};
- let value=await generateJson(instruction,context);
+ let value=await generateJson(instruction,context,[],briefSchema);
  for(let attempt=0;attempt<2;attempt++){
   try{return validateBrief(value,sources);}
   catch(error){
    if(!(error instanceof z.ZodError)&&!(error instanceof BlogError&&error.status===422))throw error;
    const issues=error instanceof z.ZodError?error.issues.map(i=>({path:i.path,message:i.message})):[{path:["facts"],message:error.message}];
    if(attempt===1)throw new BlogError(422,"The research brief still fails structure or source-evidence checks after one repair. No article was written.");
-   value=await generateJson(instruction+" Repair the previous brief using the reported validation issues. Keep evidence grounded in the supplied excerpts; never fabricate a quote to satisfy a check.",{...context,previous:value,issues});
+   value=await generateJson(instruction+" Repair the previous brief using the reported validation issues. Keep evidence grounded in the supplied excerpts; never fabricate a quote to satisfy a check.",{...context,previous:value,issues},[],briefSchema);
   }
  }
  throw new BlogError(422,"The research brief could not be validated.");
@@ -80,22 +84,22 @@ export function assertLinks(value:string,allowed:string[]){
  for(const url of value.match(/https?:\/\/[^\s<>"'\]\)]+/g)||[])if(!permitted.has(url.replace(/[.,;:!?]+$/,"")))throw new BlogError(422,"Generated text contains an unapproved URL.");
 }
 export async function writeArticle(candidate:Candidate,language:Language,brief:Brief){
- const article=z.object({title:z.string().min(10).max(180),content:z.string().max(150000)}).parse(await generateJson(
- clinicalRules+" Return JSON {title,content}. title becomes the single H1, not an H1 inside content. Write 1000-1500 useful words in the requested language, follow the selected angle and brief. HTML only p,h2,h3,ul,ol,li,strong,em,a,blockquote. Use at least four H2 sections and the supplied two internal links plus exact research source citations. Do not repeat paragraphs or pad. Do not copy research support quotes into the article.",{candidate,language,brief,internalLinks:internalLinks(candidate.category,language)}));
+ const article=articleSchema.parse(await generateJson(
+ clinicalRules+" Return JSON {title,content}. title becomes the single H1, not an H1 inside content. Write 1000-1500 useful words in the requested language, follow the selected angle and brief. HTML only p,h2,h3,ul,ol,li,strong,em,a,blockquote. Use at least four H2 sections and the supplied two internal links plus exact research source citations. Do not repeat paragraphs or pad. Do not copy research support quotes into the article.",{candidate,language,brief,internalLinks:internalLinks(candidate.category,language)},[],articleSchema));
  return {...article,content:clean(article.content)};
 }
 export async function expandArticle(article:Article,candidate:Candidate,language:Language,brief:Brief){
  if(wordCount(article.content)>=1000&&(article.content.match(/<h2\b/gi)||[]).length>=4)return {...article,content:clean(article.content)};
- const expanded=z.object({title:z.string().min(10).max(180),content:z.string().max(150000)}).parse(await generateJson(
- clinicalRules+" Return JSON {title,content}. Revise the supplied draft to 1000-1500 useful words with at least four H2 sections. Add practical discussion questions and explanations supported by the brief only. Preserve title, selected intent, exact approved links and caveats. No filler or repeated paragraphs. HTML only p,h2,h3,ul,ol,li,strong,em,a,blockquote.",{article,candidate,language,brief,internalLinks:internalLinks(candidate.category,language)}));
+ const expanded=articleSchema.parse(await generateJson(
+ clinicalRules+" Return JSON {title,content}. Revise the supplied draft to 1000-1500 useful words with at least four H2 sections. Add practical discussion questions and explanations supported by the brief only. Preserve title, selected intent, exact approved links and caveats. No filler or repeated paragraphs. HTML only p,h2,h3,ul,ol,li,strong,em,a,blockquote.",{article,candidate,language,brief,internalLinks:internalLinks(candidate.category,language)},[],articleSchema));
  return {...expanded,content:clean(expanded.content)};
 }
 const metadataSchema=z.object({slug:z.string().regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/).max(180),excerpt:z.string().min(30).max(500),metaTitle:z.string().min(10).max(60),metaDescription:z.string().min(50).max(160),tags:z.array(z.string().min(2).max(50)).min(2).max(4)});
 export async function makeMetadata(article:Article,candidate:Candidate,language:Language){
  const instruction=clinicalRules+" Return JSON {slug,excerpt,metaTitle,metaDescription,tags}. Produce accurate SEO metadata for this exact article in its language: lowercase hyphenated slug <=180 chars, excerpt 30-500 chars, metaTitle 10-60 chars, metaDescription 50-160 chars, 2-4 concise tags. No URLs. Preserve the topic and avoid guarantees or keyword stuffing.";
- let value=await generateJson(instruction,{language,candidate,article});
+ let value=await generateJson(instruction,{language,candidate,article},[],metadataSchema);
  let parsed=metadataSchema.safeParse(value);
- if(!parsed.success){value=await generateJson(instruction+" Correct only the reported metadata constraints; do not rewrite the article.",{language,title:article.title,excerpt:plain(article.content).slice(0,2500),previous:value,issues:parsed.error.issues.map(i=>({path:i.path,message:i.message}))});parsed=metadataSchema.safeParse(value);}
+ if(!parsed.success){value=await generateJson(instruction+" Correct only the reported metadata constraints; do not rewrite the article.",{language,title:article.title,excerpt:plain(article.content).slice(0,2500),previous:value,issues:parsed.error.issues.map(i=>({path:i.path,message:i.message}))},[],metadataSchema);parsed=metadataSchema.safeParse(value);}
  if(!parsed.success)throw new BlogError(422,"SEO metadata still fails its length or format checks.");
  assertLinks(JSON.stringify(parsed.data),[]);
  return parsed.data;
