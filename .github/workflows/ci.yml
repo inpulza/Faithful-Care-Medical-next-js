@@ -52,6 +52,7 @@ jobs:
           trap 'kill "$blog_pid" 2>/dev/null || true' EXIT
           for attempt in {1..40}; do
             if curl --fail --silent --output /dev/null http://127.0.0.1:3187/admin/login; then
+              node --import tsx tests/blog-auto.e2e.mjs
               node tests/blog-ui.e2e.mjs
               exit $?
             fi
