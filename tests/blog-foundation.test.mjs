@@ -86,8 +86,12 @@ test("unreviewed images cannot bypass publication; translated siblings may share
  await assert.rejects(()=>selectImage(p.id,candidate.id,p.version-1,"tester","A calm waiting room"),e=>e.status===409);
  const es=await createPost({...input("media-es-test"),language:"es",data:{...blankData,hero:url,heroAlt:"Una sala de espera tranquila"}},"tester",p.translation_group);
  assert(!(await verify(es)).blockers.some(x=>x.includes("Review and select")));
+ const {mediaList}=await import("../server/blog/media.ts");assert.equal((await mediaList(es.id))[0].alt,"Una sala de espera tranquila");
+ const selectedEs=await selectImage(es.id,candidate.id,es.version,"tester","Una sala luminosa para esperar");assert.equal(selectedEs.data.heroAlt,"Una sala luminosa para esperar");assert.equal((await getPost(p.id)).data.heroAlt,"A calm waiting room");assert.equal((await query("SELECT alt FROM fc_blog_media WHERE id=$1",[candidate.id]))[0].alt,"A calm waiting room");
+
  const unrelated=await createPost({...input("media-other-test"),data:{...blankData,hero:url,heroAlt:"A calm waiting room"}},"tester");
  assert((await verify(unrelated)).blockers.some(x=>x.includes("Review and select")));
+ await assert.rejects(()=>selectImage(unrelated.id,candidate.id,unrelated.version,"tester","Wrong family"),e=>e.status===400);
  delete process.env.BLOB_PUBLIC_HOSTNAME;
 });
 
