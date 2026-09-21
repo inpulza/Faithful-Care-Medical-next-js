@@ -1,3 +1,4 @@
+import {ownedMediaUrl} from "./media-url";
 import type { Post } from "./types";
 import { wordCount,hrefs,sanitize } from "./content";
 import { query } from "./db";
@@ -17,6 +18,16 @@ export async function verify(post:Post) {
   if(!post.data.tags.length) blockers.push("Choose at least one topic tag.");
   if(!post.data.hero) warnings.push("Select a hero image before the final editorial review.");
   if(post.data.hero&&!post.data.heroAlt.trim()) blockers.push("The hero image needs alternative text.");
+  const media=[...(post.data.hero?[{url:post.data.hero,alt:post.data.heroAlt}]:[]),...post.data.images];
+  for(const image of media){
+    if(!ownedMediaUrl(image.url)){blockers.push("Images must come from this client's own media library.");continue;}
+    const approved=await query("SELECT m.id FROM fc_blog_media m JOIN fc_blog_posts p ON p.id=m.post_id WHERE m.url=$1 AND m.reviewed=true AND p.translation_group=$2",[image.url,post.translation_group]);
+    if(!approved.length)blockers.push("Review and select each image in this article's media library before publishing.");
+    if(!image.alt.trim())blockers.push("Every image needs descriptive alternative text.");
+  }
+  const headings=(post.content.match(/<h2\b/gi)||[]).length;
+  if(post.data.images.some(i=>i.afterHeading>headings))blockers.push("An inline image refers to a section that does not exist.");
+  if(new Set(post.data.images.map(i=>i.afterHeading)).size!==post.data.images.length)blockers.push("Choose only one image per section.");
   const links=hrefs(post.content);
   const internal=links.filter(x=>x.startsWith("/"));
   const known=new Set(publicRoutes.map(x=>x.path));

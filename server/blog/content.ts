@@ -1,3 +1,4 @@
+import {ownedMediaUrl} from "./media-url";
 import sanitizeHtml from "sanitize-html";
 import { z } from "zod";
 import { blankData } from "./types";
@@ -9,8 +10,8 @@ export const postInput=z.object({
     excerpt:z.string().max(500),metaTitle:z.string().max(80),metaDescription:z.string().max(180),
     category:z.enum(["prevention","primary-care","chronic-care","senior-care","palliative-care","family-support"]),
     tags:z.array(z.string().max(50)).max(10),author:z.string().max(150),reviewer:z.string().max(150),
-    reviewConfirmed:z.boolean(),hero:z.string().max(1000),heroAlt:z.string().max(250),
-    images:z.array(z.object({url:z.string().max(1000),alt:z.string().min(5).max(250),afterHeading:z.number().int().min(1).max(30)})).max(5),
+    reviewConfirmed:z.boolean(),hero:z.string().max(1000).refine(v=>!v||ownedMediaUrl(v),"Choose an image from the client media library."),heroAlt:z.string().max(250),
+    images:z.array(z.object({url:z.string().max(1000).refine(ownedMediaUrl),alt:z.string().min(5).max(250),afterHeading:z.number().int().min(1).max(30)})).max(5),
     sources:z.array(z.string().url().max(1000)).max(20),topic:z.string().max(300),disclaimer:z.string().max(1500),
   }).default(blankData),
 });

@@ -48,6 +48,17 @@ async function handle(request:NextRequest,context:Context) {
   if(path[0]==="posts"){
    if(path.length===1&&request.method==="GET")return json({posts:await listPosts(undefined,true)});
    if(path.length===1&&request.method==="POST")return json({post:await createPost(body,editor.username)},201);
+   if(path.length===3&&path[2]==="preview"&&request.method==="GET"){
+    const {previewHtml}=await import("../../../../../server/blog/render");
+    return new NextResponse(previewHtml(await getPost(path[1])),{headers:{...headers,"Content-Type":"text/html; charset=utf-8","Content-Security-Policy":"default-src 'none'; img-src https://"+(process.env.BLOB_PUBLIC_HOSTNAME||"invalid.invalid")+"; style-src 'unsafe-inline'; sandbox"}});
+   }
+   if(path[2]==="media"){
+    const m=await import("../../../../../server/blog/media");
+    if(path.length===3&&request.method==="GET")return json({media:await m.mediaList(path[1])});
+    if(request.method==="POST"){const alt=String(body.alt||"").trim();if(alt.length<5||alt.length>250)throw new BlogError(400,"Add useful image alternative text.");
+     if(path[3]==="select")return json({post:await m.selectImage(path[1],String(body.mediaId||""),Number(body.version),editor.username,alt)});
+     if(path[3]==="generate"){const placement=Number(body.placement||1);if(!Number.isInteger(placement)||placement<1||placement>30)throw new BlogError(400,"Invalid image placement.");return json({media:await m.generateImage(path[1],String(body.requestId||""),body.role==="inline"?"inline":"hero",alt,placement,editor.username)});}}
+   }
    if(path.length===3&&path[2]==="translate"&&request.method==="POST"){const m=await import("../../../../../server/blog/translation");return json({post:await m.translatePost(path[1],String(body.requestId||""),editor.username)},201);}
    if(path.length===2&&request.method==="GET")return json({post:await getPost(path[1])});
    if(path.length===2&&request.method==="PUT")return json({post:await editPost(path[1],body,Number(body.version),editor.username)});

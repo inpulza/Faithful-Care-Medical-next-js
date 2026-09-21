@@ -69,3 +69,23 @@ test("generation operation IDs cannot duplicate drafts and saving completes atom
  assert.equal(p.status,"draft");assert.equal(p.published_at,null);
  await assert.rejects(()=>saveGeneratedPost(input("generated-repeat"),"tester",job.id),e=>e.status===409);
 });
+
+// A selected candidate is required even if its URL belongs to our store.
+test("unreviewed images cannot bypass publication; translated siblings may share reviewed media",async()=>{
+ const {verify}=await import("../server/blog/quality.ts");
+ const {selectImage}=await import("../server/blog/media.ts");
+ process.env.BLOB_PUBLIC_HOSTNAME="client.public.blob.vercel-storage.com";
+ const url="https://client.public.blob.vercel-storage.com/faithful-care/blog/test.webp";
+ let p=await createPost({...input("media-review-test"),data:{...blankData,hero:url,heroAlt:"A calm waiting room"}},"tester");
+ assert((await verify(p)).blockers.some(x=>x.includes("Review and select")));
+ const [candidate]=await query("INSERT INTO fc_blog_media(post_id,url,role,alt,placement,source) VALUES($1,$2,'hero','A calm waiting room',1,'upload') RETURNING *",[p.id,url]);
+ p=await selectImage(p.id,candidate.id,p.version,"tester","A calm waiting room");
+ assert(!(await verify(p)).blockers.some(x=>x.includes("Review and select")));
+ assert.equal(p.data.reviewConfirmed,false);
+ await assert.rejects(()=>selectImage(p.id,candidate.id,p.version-1,"tester","A calm waiting room"),e=>e.status===409);
+ const es=await createPost({...input("media-es-test"),language:"es",data:{...blankData,hero:url,heroAlt:"Una sala de espera tranquila"}},"tester",p.translation_group);
+ assert(!(await verify(es)).blockers.some(x=>x.includes("Review and select")));
+ const unrelated=await createPost({...input("media-other-test"),data:{...blankData,hero:url,heroAlt:"A calm waiting room"}},"tester");
+ assert((await verify(unrelated)).blockers.some(x=>x.includes("Review and select")));
+ delete process.env.BLOB_PUBLIC_HOSTNAME;
+});
