@@ -48,6 +48,7 @@ async function handle(request:NextRequest,context:Context) {
   if(path[0]==="posts"){
    if(path.length===1&&request.method==="GET")return json({posts:await listPosts(undefined,true)});
    if(path.length===1&&request.method==="POST")return json({post:await createPost(body,editor.username)},201);
+   if(path.length===3&&path[2]==="translate"&&request.method==="POST"){const m=await import("../../../../../server/blog/translation");return json({post:await m.translatePost(path[1],String(body.requestId||""),editor.username)},201);}
    if(path.length===2&&request.method==="GET")return json({post:await getPost(path[1])});
    if(path.length===2&&request.method==="PUT")return json({post:await editPost(path[1],body,Number(body.version),editor.username)});
    if(path.length===3&&path[2]==="verify"&&request.method==="POST")return json(await verify(await getPost(path[1])));
