@@ -16,6 +16,7 @@ const productionHeaders = [
 
 const nextConfig: NextConfig = {
   reactStrictMode: true,
+  devIndicators: false,
   poweredByHeader: false,
   skipTrailingSlashRedirect: true,
   images: {

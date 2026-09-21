@@ -9,16 +9,17 @@ import { hreflangPairForPath, isSpanishPath } from "@shared/seo-data";
 
 interface MegaMenuProps {
   className?: string;
+  languageLinks?: {en:string;es:string};
 }
 
-export function MegaMenu({ className }: MegaMenuProps) {
+export function MegaMenu({ className, languageLinks }: MegaMenuProps) {
   const [isOpen, setIsOpen] = React.useState(false);
   const [isScrolled, setIsScrolled] = React.useState(false);
   const [location, setLocation] = useLocation();
   const isLocationPage = location.startsWith("/locations/");
   const normalizedPath = location === "/es/" ? "/es" : location;
   const isSpanish = isSpanishPath(normalizedPath);
-  const hreflangPair = hreflangPairForPath(normalizedPath);
+  const hreflangPair = languageLinks ?? hreflangPairForPath(normalizedPath);
   const englishHref = isSpanish ? (hreflangPair?.en ?? "/") : normalizedPath;
   const spanishHref = isSpanish ? normalizedPath : (hreflangPair?.es ?? "/es");
 
@@ -241,12 +242,13 @@ function CloseButton({ onClick }: { onClick: () => void }) {
 }
 
 function FullscreenOverlay({ onClose, onNavigate }: { onClose: () => void; onNavigate: (href: string) => void }) {
+  const [overlayLocation]=useLocation();
   const [hoveredIndex, setHoveredIndex] = React.useState<number | null>(null);
   const [expandedId, setExpandedId] = React.useState<string | null>(null);
 
   const allItems = [
     ...navigationData.map((cat) => ({ type: "category" as const, ...cat })),
-    ...standaloneLinks.map((link) => ({ type: "link" as const, ...link })),
+    ...standaloneLinks.map((link) => ({ type: "link" as const, ...link, ...(link.id==="journal"&&overlayLocation.startsWith("/es")?{title:"Diario de salud",href:"/es/blog"}:{}) })),
   ];
 
   return (

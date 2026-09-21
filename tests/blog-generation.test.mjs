@@ -11,3 +11,20 @@ test("provider truncation and malformed JSON never return content",async()=>{
   await assert.rejects(()=>generateJson("test",{}),e=>e.status===502);
  }finally{globalThis.fetch=original;delete process.env.OPENAI_API_KEY;process.env.BLOG_AI_ENABLED="false";}
 });
+
+test("provider sends configured model with current completion budget and parses completed JSON",async()=>{
+ const original=globalThis.fetch;const saved={...process.env};process.env.BLOG_AI_ENABLED="true";process.env.OPENAI_API_KEY="unit-only-key";
+ try{
+  for(const model of [undefined,"gpt-5.6-terra","gpt-4o-mini"]){
+   if(model)process.env.BLOG_AI_MODEL=model;else delete process.env.BLOG_AI_MODEL;
+   globalThis.fetch=async(url,options)=>{
+    assert.equal(url,"https://api.openai.com/v1/chat/completions");
+    const body=JSON.parse(options.body);assert.equal(body.model,model||"gpt-5.6-sol");
+    assert.equal(body.max_completion_tokens,12000);assert.equal(body.max_tokens,undefined);
+    assert.equal(body.reasoning_effort,body.model.startsWith("gpt-5")?"low":undefined);
+    return Response.json({choices:[{finish_reason:"stop",message:{content:'{"title":"Complete draft"}'}}]});
+   };
+   assert.deepEqual(await generateJson("Return JSON",{}),{title:"Complete draft"});
+  }
+ }finally{globalThis.fetch=original;for(const key of ["BLOG_AI_ENABLED","OPENAI_API_KEY","BLOG_AI_MODEL"]){if(saved[key]===undefined)delete process.env[key];else process.env[key]=saved[key];}}
+});

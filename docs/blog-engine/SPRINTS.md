@@ -19,5 +19,5 @@ Vercel Faithful Care: prj_b3fsRo4umfNT77dQ6ywkOM2PD58l. CLI autenticada. Inicial
 Adapto contratos probados sin copiar datos clínicos, rutas antiguas ni secretos de otros clientes. Una base/bucket por cliente. Toda generación queda en draft. Publicación humana y aprobación visual antes de merge. No afirmo autoría/revisión médica sin confirmación. Sitemap enviado no significa indexación. La Indexing API de Google solo admite JobPosting/BroadcastEvent, no artículos generales.
 Desarrollo fuera de OneDrive. No publicación de contenido médico de prueba en producción.
 
-## Infraestructura pendiente
-PostgreSQL de Faithful Care, credenciales propias, proveedor IA, bucket y conexión GCC por entorno. El conector Neon devolvió cero proyectos; no se presupone que sea la cuenta/integración de los clientes.
+## Infraestructura y cierre
+PostgreSQL y Blob exclusivos de Preview creados mediante la integración Vercel existente. Login propio configurado. Pendientes: credencial IA, autorización de transferencia de conexión Google, revisión visual y lanzamiento. Ver ESTADO.md y OPERACION.md para evidencias y límites actualizados.

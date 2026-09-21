@@ -1,3 +1,4 @@
+import {after} from "next/server";
 import { NextRequest,NextResponse } from "next/server";
 import { COOKIE,cookieOptions,assertOrigin,login,logout,session } from "../../../../../server/blog/auth";
 import { BlogError } from "../../../../../server/blog/types";
@@ -36,6 +37,7 @@ async function handle(request:NextRequest,context:Context) {
   if(path.join("/")==="logout"&&request.method==="POST"){
     await logout(token);const response=json({ok:true});response.cookies.set(COOKIE,"",{...cookieOptions,maxAge:0});return response;
   }
+  if(path.join("/")==="google-connection"&&request.method==="GET"){const m=await import("../../../../../server/blog/seo");return json(await m.googleConnection());}
   if(path[0]==="topics"&&request.method==="GET"){const m=await import("../../../../../server/blog/generation");return json({topics:await m.topicPlan(request.nextUrl.searchParams.get("language")==="es"?"es":"en")});}
   if(path[0]==="jobs"&&request.method==="GET"){const m=await import("../../../../../server/blog/jobs");return json({jobs:await m.jobHistory()});}
   if(path[0]==="generate"&&request.method==="POST"){if(!["en","es"].includes(body.language))throw new BlogError(400,"Choose a language.");const m=await import("../../../../../server/blog/generation");return json({post:await m.generateDraft(String(body.topicId||""),body.language,String(body.requestId||""),editor.username)},201);}
@@ -48,9 +50,10 @@ async function handle(request:NextRequest,context:Context) {
   if(path[0]==="posts"){
    if(path.length===1&&request.method==="GET")return json({posts:await listPosts(undefined,true)});
    if(path.length===1&&request.method==="POST")return json({post:await createPost(body,editor.username)},201);
+   if(path.length===3&&path[2]==="seo"){const m=await import("../../../../../server/blog/seo");if(request.method==="GET")return json({events:await m.seoHistory(path[1])});if(request.method==="POST")return json(await m.publishSeo(path[1],editor.username));}
    if(path.length===3&&path[2]==="preview"&&request.method==="GET"){
     const {previewHtml}=await import("../../../../../server/blog/render");
-    return new NextResponse(previewHtml(await getPost(path[1])),{headers:{...headers,"Content-Type":"text/html; charset=utf-8","Content-Security-Policy":"default-src 'none'; img-src https://"+(process.env.BLOB_PUBLIC_HOSTNAME||"invalid.invalid")+"; style-src 'unsafe-inline'; sandbox"}});
+    return new NextResponse(previewHtml(await getPost(path[1])),{headers:{...headers,"Content-Type":"text/html; charset=utf-8","X-Frame-Options":"SAMEORIGIN","Content-Security-Policy":"default-src 'none'; img-src https://"+(process.env.BLOB_PUBLIC_HOSTNAME||"invalid.invalid")+"; style-src 'unsafe-inline'; sandbox"}});
    }
    if(path[2]==="media"){
     const m=await import("../../../../../server/blog/media");
@@ -65,14 +68,16 @@ async function handle(request:NextRequest,context:Context) {
    if(path.length===3&&path[2]==="verify"&&request.method==="POST")return json(await verify(await getPost(path[1])));
    if(path.length===3&&path[2]==="status"&&request.method==="POST"){
     if(!["draft","pending_review","published","rejected"].includes(body.status))throw new BlogError(400,"Invalid status.");
-    return json({post:await transition(path[1],body.status,Number(body.version),editor.username,String(body.reviewer||"").slice(0,150))});
+    const post=await transition(path[1],body.status,Number(body.version),editor.username,String(body.reviewer||"").slice(0,150));
+    if(post.status==="published")after(async()=>{try{const m=await import("../../../../../server/blog/seo");await m.publishSeo(post.id,editor.username);}catch{console.error("Blog Google check did not complete; use the editorial retry control.");}});
+    return json({post});
    }
   }
   throw new BlogError(404,"Editorial endpoint not found.");
  }catch(error){
   if(error instanceof BlogError)return json({error:error.message},error.status);
   if(error instanceof ZodError)return json({error:"Please check the article fields.",fields:error.flatten()},400);
-  if((error as {code?:string})?.code==="23505")return json({error:"That slug or translation already exists."},409);
+  if((error as {code?:string})?.code==="23505")return json({error:"That slug, topic or translation already exists."},409);
   console.error("Blog request failed",error instanceof Error?error.name:"unknown");
   return json({error:"The editorial service is unavailable. Try again later."},503);
  }

@@ -44,6 +44,12 @@ try{
    assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),"No horizontal overflow");
    await page.screenshot({path:"artifacts/blog/archive-"+language+"-"+width+"x"+height+".png",fullPage:false});
   }
+  await page.goto(config.baseUrl+"/es",{waitUntil:"networkidle"});
+  await page.getByTestId("button-explore-menu").click();
+  await page.getByTestId("overlay-trigger-journal").click();
+  await page.waitForURL(url=>url.pathname==="/es/blog");
+  await page.getByTestId("link-lang-en").click();
+  await page.waitForURL(url=>url.pathname==="/blog");
   await page.goto(config.baseUrl+"/admin/login",{waitUntil:"networkidle"});
   await page.screenshot({path:"artifacts/blog/login-"+width+"x"+height+".png",fullPage:false});
   assert.deepEqual(errors,[],"Unexpected browser errors");
