@@ -12,7 +12,7 @@ Actualizado: 2026-09-21. Producción sin cambios; PRs en borrador.
 - Aislamiento de rastreadores al navegar hacia y desde artículos sanitarios.
 
 ## Evidencia
-15 pruebas de contratos del blog pasan. E2E completo desktop/mobile pasa con carga real de hero e inline, selección, revisión, publicación local, canonical, sitemap, privacidad y retirada. Matriz visual: 390x844, 1024x768, 1440x900, 1920x1080, 3440x1440.
+16 pruebas de contratos del blog pasan. E2E completo desktop/mobile pasa con carga real de hero e inline, selección, revisión, publicación local, canonical, sitemap, privacidad y retirada. Matriz visual: 390x844, 1024x768, 1440x900, 1920x1080, 3440x1440.
 Las imágenes sólidas y textos repetidos de las pruebas son fixtures técnicos, no contenido aprobado.
 La CI de PR15 está verde. El sprint integrado debe verificar su propio SHA y CI antes de cualquier merge.
 

@@ -242,12 +242,13 @@ function CloseButton({ onClick }: { onClick: () => void }) {
 }
 
 function FullscreenOverlay({ onClose, onNavigate }: { onClose: () => void; onNavigate: (href: string) => void }) {
+  const [overlayLocation]=useLocation();
   const [hoveredIndex, setHoveredIndex] = React.useState<number | null>(null);
   const [expandedId, setExpandedId] = React.useState<string | null>(null);
 
   const allItems = [
     ...navigationData.map((cat) => ({ type: "category" as const, ...cat })),
-    ...standaloneLinks.map((link) => ({ type: "link" as const, ...link })),
+    ...standaloneLinks.map((link) => ({ type: "link" as const, ...link, ...(link.id==="journal"&&overlayLocation.startsWith("/es")?{title:"Diario de salud",href:"/es/blog"}:{}) })),
   ];
 
   return (

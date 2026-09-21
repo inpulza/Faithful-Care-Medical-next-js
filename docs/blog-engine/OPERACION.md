@@ -2,7 +2,7 @@
 
 ## Acceso
 /admin/login y /admin/blog. Las credenciales reales están en 05. Pass/Blog Engine/admin-preview.json. No se añaden contraseñas a Git ni a documentos.
-Cambiar username, hash o secreto de sesión revoca las sesiones anteriores. El hash se genera con scripts/blog-password.mjs si está disponible; en otro caso usar passwordHash de server/blog/auth.ts sin imprimir la contraseña.
+Cambiar username, hash o secreto de sesión revoca las sesiones anteriores. Generar el hash con passwordHash de server/blog/auth.ts y guardarlo directamente en la configuración protegida, sin imprimir la contraseña.
 
 ## Flujo editorial
 1. Revisar el catálogo de fuentes, comprobar sus URLs y aprobar solo las pertinentes.

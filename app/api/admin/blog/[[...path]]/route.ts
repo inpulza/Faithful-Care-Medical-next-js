@@ -77,7 +77,7 @@ async function handle(request:NextRequest,context:Context) {
  }catch(error){
   if(error instanceof BlogError)return json({error:error.message},error.status);
   if(error instanceof ZodError)return json({error:"Please check the article fields.",fields:error.flatten()},400);
-  if((error as {code?:string})?.code==="23505")return json({error:"That slug or translation already exists."},409);
+  if((error as {code?:string})?.code==="23505")return json({error:"That slug, topic or translation already exists."},409);
   console.error("Blog request failed",error instanceof Error?error.name:"unknown");
   return json({error:"The editorial service is unavailable. Try again later."},503);
  }

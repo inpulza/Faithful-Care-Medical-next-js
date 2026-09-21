@@ -5,7 +5,7 @@ import {spawn} from "node:child_process";
 import {randomBytes,scryptSync} from "node:crypto";
 import {PGlite} from "@electric-sql/pglite";
 if(process.env.BLOG_PREVIEW_ENV_FILE){const loaded=parseEnv(await fs.readFile(process.env.BLOG_PREVIEW_ENV_FILE,"utf8"));for(const key of ["BLOB_READ_WRITE_TOKEN","BLOB_PUBLIC_HOSTNAME"])if(loaded[key]&&loaded[key]!=="[SENSITIVE]")process.env[key]=loaded[key];}
-const directory=path.join(process.cwd(),".blog-test-db");
+const directory=path.join(process.cwd(),".local","blog-db");
 await fs.mkdir(directory,{recursive:true});
 const db=new PGlite(directory);
 for(const name of (await fs.readdir("migrations/blog")).filter(n=>n.endsWith(".sql")).sort())await db.exec(await fs.readFile("migrations/blog/"+name,"utf8"));

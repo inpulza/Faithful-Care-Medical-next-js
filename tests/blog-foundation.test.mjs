@@ -89,3 +89,17 @@ test("unreviewed images cannot bypass publication; translated siblings may share
  assert((await verify(unrelated)).blockers.some(x=>x.includes("Review and select")));
  delete process.env.BLOB_PUBLIC_HOSTNAME;
 });
+
+test("concurrent requests cannot generate the same topic twice; stale translations are not saved",async()=>{
+ const {claimJob,saveGeneratedPost}=await import("../server/blog/jobs.ts");
+ const {randomUUID}=await import("node:crypto");
+ const first=await claimJob("generate",randomUUID(),"tester",{topicId:"topic-concurrency",language:"en"});
+ await assert.rejects(()=>claimJob("generate",randomUUID(),"tester",{topicId:"topic-concurrency",language:"en"}),e=>e.status===409);
+ const source=await saveGeneratedPost({...input("topic-first"),data:{...blankData,topic:"topic-concurrency"}},"tester",first.id);
+ const second=await claimJob("generate",randomUUID(),"tester",{topicId:"topic-concurrency",language:"en"});
+ await assert.rejects(()=>saveGeneratedPost({...input("topic-second"),data:{...blankData,topic:"topic-concurrency"}},"tester",second.id),e=>e.code==="23505");
+ const translation=await claimJob("translate",randomUUID(),"tester",{sourceId:source.id});
+ await assert.rejects(()=>saveGeneratedPost({...input("stale-translation"),language:"es"},"tester",translation.id,source.translation_group,{id:source.id,version:source.version+1}),e=>e.status===409);
+ assert.equal((await query("SELECT id FROM fc_blog_posts WHERE slug='stale-translation'")).length,0);
+});
+
