@@ -157,3 +157,6 @@
 .journal-latest{display:block;color:#008a95;font-size:11px;font-weight:650;letter-spacing:.12em;margin-bottom:28px}
 .journal-read{display:inline-block;margin-top:24px;color:#0065c4;text-decoration:underline}
 @media(max-width:760px){.journal-featured{display:block}.journal-featured-image{width:100%}.journal-featured-image img{min-height:0;aspect-ratio:16/10}.journal-featured-copy{padding:26px}.journal-latest{margin-bottom:18px}}
+/* Keep the whole image visible while its review controls stay alongside it. */
+@media(min-width:900px){.media-hero .media-candidate{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(280px,1fr);align-items:center}.media-hero .media-candidate img{max-height:420px}}
+.media-candidate img{object-fit:contain;background:#e8f0f5}

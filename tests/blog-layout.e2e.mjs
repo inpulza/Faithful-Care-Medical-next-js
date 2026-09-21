@@ -14,7 +14,7 @@ try{
  await page.getByLabel("Search sources",{exact:true}).fill("Diabetes");assert.equal(await page.locator(".source-card").count(),1);await page.getByLabel("Search sources",{exact:true}).fill("");
  for(const [width,height] of [[390,844],[1024,768],[1440,900],[1920,1080],[3440,1440]]){
   await page.setViewportSize({width,height});await page.evaluate(()=>scrollTo(0,0));await page.screenshot({path:`artifacts/blog-layout/dashboard-${width}x${height}.png`});assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1));
-  await page.locator(".source-workspace").scrollIntoViewIfNeeded();await page.screenshot({path:`artifacts/blog-layout/sources-${width}x${height}.png`});
+  await page.locator(".source-workspace").evaluate(el=>scrollTo({top:el.getBoundingClientRect().top+scrollY-24,behavior:"instant"}));await page.screenshot({path:`artifacts/blog-layout/sources-${width}x${height}.png`});
   await page.getByRole("button",{name:"Auto Generate",exact:true}).click();await page.getByRole("dialog").waitFor();assert(await page.getByRole("dialog").getByRole("button",{name:"Auto Generate",exact:true}).isDisabled());await page.screenshot({path:`artifacts/blog-layout/generator-${width}x${height}.png`});await page.getByRole("button",{name:"Close generator"}).click();
  }
  await page.getByRole("button",{name:"Consultation history",exact:true}).click();await page.locator(".source-history").waitFor();await page.getByRole("button",{name:"Source library",exact:true}).click();
