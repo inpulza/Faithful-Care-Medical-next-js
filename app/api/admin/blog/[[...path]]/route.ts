@@ -37,6 +37,32 @@ async function handle(request:NextRequest,context:Context) {
   if(path.join("/")==="logout"&&request.method==="POST"){
     await logout(token);const response=json({ok:true});response.cookies.set(COOKIE,"",{...cookieOptions,maxAge:0});return response;
   }
+  if(path[0]==="auto"){
+   const m=await import("../../../../../server/blog/auto");
+   if(path.length===2&&path[1]==="config"&&request.method==="GET")return json(m.autoConfiguration());
+   if(path.length===2&&path[1]==="current"&&request.method==="GET"){const run=await m.currentRun();return json({run:run?m.viewRun(run):null});}
+   if(path.length===2&&path[1]==="start"&&request.method==="POST")return json({run:m.viewRun(await m.startAuto(body,editor.username))},201);
+   if(path.length===2&&request.method==="GET")return json({run:m.viewRun(await m.autoRun(path[1]))});
+   if(path.length===3&&path[2]==="advance"&&request.method==="POST"){if(!Number.isInteger(body.cursor)||body.cursor<0||body.cursor>14)throw new BlogError(400,"Invalid workflow step.");return json({run:m.viewRun(await m.advanceAuto(path[1],body.cursor))});}
+   if(path.length===3&&path[2]==="cancel"&&request.method==="POST")return json({run:m.viewRun(await m.cancelAuto(path[1]))});
+   if(path.length===3&&path[2]==="events"&&request.method==="GET"){
+    await m.autoRun(path[1]);
+    let cancelled=false;
+    const stream=new ReadableStream({async start(controller){
+     const encoder=new TextEncoder();let last="";const deadline=Date.now()+25000;
+     try{while(!cancelled&&!request.signal.aborted&&Date.now()<deadline){
+      if(!await session(token)){controller.enqueue(encoder.encode('data: {"authExpired":true}\n\n'));break;}
+      const run=m.viewRun(await m.autoRun(path[1])),payload=JSON.stringify({run});
+      if(payload!==last){controller.enqueue(encoder.encode("data: "+payload+"\n\n"));last=payload;}
+      if(run.status!=="running")break;
+      await new Promise(resolve=>setTimeout(resolve,1500));
+     }}catch{if(!cancelled&&!request.signal.aborted)controller.enqueue(encoder.encode('data: {"reconnect":true}\n\n'));}
+     finally{if(!cancelled){try{controller.close();}catch{}}}
+    },cancel(){cancelled=true;}});
+    return new NextResponse(stream,{headers:{...headers,"Content-Type":"text/event-stream","Connection":"keep-alive","X-Accel-Buffering":"no"}});
+   }
+  }
+
   if(path.join("/")==="google-connection"&&request.method==="GET"){const m=await import("../../../../../server/blog/seo");return json(await m.googleConnection());}
   if(path[0]==="topics"&&request.method==="GET"){const m=await import("../../../../../server/blog/generation");return json({topics:await m.topicPlan(request.nextUrl.searchParams.get("language")==="es"?"es":"en")});}
   if(path[0]==="jobs"&&request.method==="GET"){const m=await import("../../../../../server/blog/jobs");return json({jobs:await m.jobHistory()});}
