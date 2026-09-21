@@ -48,6 +48,8 @@ export async function auditSource(url:string,actor:string){
  const score=75+(readable?15:0)+(health==="healthy"?10:0);
  const reason="Publisher 35/35; government health source 25/25; exact stable HTTPS URL 15/15; readability "+(readable?"15":"0")+"/15; HTTP health "+(health==="healthy"?"10":"0")+"/10. Article-specific clinical relevance must still be reviewed.";
  const [record]=await query<LinkRecord>("UPDATE fc_blog_links SET score=$2,reason=$3,health=$4,http_status=$5,checked_at=now(),approved=CASE WHEN $4='healthy' THEN approved ELSE false END WHERE url=$1 RETURNING *",[url,score,reason,health,status]);
+ if(health==="healthy")await query("INSERT INTO fc_blog_source_cache(url,excerpt,fetched_at,expires_at) VALUES($1,$2,$3::timestamptz,$3::timestamptz+interval '24 hours') ON CONFLICT(url) DO UPDATE SET excerpt=excluded.excerpt,fetched_at=excluded.fetched_at,expires_at=excluded.expires_at",[url,excerpt,record.checked_at]);
+ else await query("DELETE FROM fc_blog_source_cache WHERE url=$1",[url]);
  await event(null,"source_checked",actor,{url,health,status,score});
  return {record,excerpt};
 }
@@ -57,4 +59,20 @@ export async function approveSource(url:string,approved:boolean,actor:string){
  if(!rows[0])throw new BlogError(422,"Run a successful live check before approval.");
  await event(null,approved?"source_approved":"source_blocked",actor,{url});
  return rows[0];
+}
+
+export async function sourceDashboard(){
+ const links=await linkLibrary();
+ const cached=await query<{url:string;expires_at:string}>("SELECT url,expires_at FROM fc_blog_source_cache");
+ const posts=await query<{id:string;title:string;language:string;status:string;sources:string[]}>("SELECT id,title,language,status,data->'sources' AS sources FROM fc_blog_posts ORDER BY updated_at DESC");
+ const history=await query("SELECT id,action,created_at,detail FROM fc_blog_events WHERE action IN ('source_checked','source_reused','source_researched','source_approved','source_blocked') ORDER BY id DESC LIMIT 100");
+ return {links:links.map(link=>{const source=SOURCES.find(s=>s.url===link.url);const articles=posts.filter(p=>Array.isArray(p.sources)&&p.sources.includes(link.url)).map(({sources,...p})=>p);return {...link,title:source?.title||link.url,categories:source?.categories||[],cache_expires_at:cached.find(c=>c.url===link.url)?.expires_at||null,usage:articles.length,articles};}),history};
+}
+export async function researchSource(url:string,actor:string){
+ if(!allowedSource(url))throw new BlogError(400,"Unknown catalog source.");
+ const [cached]=await query<LinkRecord & {excerpt:string}>(`SELECT l.*,c.excerpt FROM fc_blog_links l JOIN fc_blog_source_cache c ON c.url=l.url WHERE l.url=$1 AND l.health='healthy' AND c.expires_at>now() AND c.fetched_at=l.checked_at`,[url]);
+ if(cached){const {excerpt,...record}=cached;await event(null,"source_reused",actor,{url,checkedAt:record.checked_at});return {record,excerpt};}
+ const result=await auditSource(url,actor);
+ await event(null,"source_researched",actor,{url,health:result.record.health,score:result.record.score});
+ return result;
 }

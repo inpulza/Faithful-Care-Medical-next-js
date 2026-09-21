@@ -41,7 +41,9 @@ try{
   await page.getByLabel("After section number",{exact:true}).fill("1");
   await page.getByRole("button",{name:"Upload candidate",exact:true}).click();
   await page.getByRole("status").filter({hasText:"Candidate uploaded"}).waitFor();
-  await page.getByRole("button",{name:"Use reviewed image",exact:true}).first().click();await page.getByRole("status").filter({hasText:"Image selected"}).waitFor();
+  await page.locator(".media-inline").getByRole("button",{name:"Use reviewed image",exact:true}).first().click();await page.getByRole("status").filter({hasText:"Image selected"}).waitFor();
+    for(const [w,h] of [[390,844],[1024,768],[1440,900],[1920,1080],[3440,1440]]){await page.setViewportSize({width:w,height:h});await page.locator(".media-organizer").evaluate(el=>scrollTo({top:el.getBoundingClientRect().top+scrollY-24,behavior:"instant"}));await page.screenshot({path:"artifacts/blog-layout/images-"+w+"x"+h+".png"});}
+  await page.setViewportSize({width,height});
   await page.getByText("Preview the saved article",{exact:true}).click();
   const frame=page.frameLocator('iframe[title="Private article preview"]');await frame.getByRole("heading",{level:1}).waitFor();
   assert.equal(await frame.locator("img").count(),2);
@@ -63,7 +65,17 @@ try{
   assert.equal(await publicPage.getByTestId("link-lang-es").getAttribute("href"),"/es/blog");
   const map=await (await context.request.get(config.baseUrl+"/sitemap.xml")).text();assert(map.includes("/blog/"+slug));
   assert.deepEqual(tracking,[],"Health article and editor never load tracking, even with prior consent");
-  for(const [w,h] of [[390,844],[1024,768],[1440,900],[1920,1080],[3440,1440]]){await publicPage.setViewportSize({width:w,height:h});assert(await publicPage.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1));await publicPage.screenshot({path:"artifacts/blog/article-"+w+"x"+h+".png"});}
+  for(const [w,h] of [[390,844],[1024,768],[1440,900],[1920,1080],[3440,1440]]){await publicPage.setViewportSize({width:w,height:h});assert(await publicPage.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1));await publicPage.evaluate(()=>scrollTo({top:0,behavior:"instant"}));await publicPage.screenshot({path:"artifacts/blog/article-"+w+"x"+h+".png"});await publicPage.locator("#article-section-1").evaluate(el=>el.scrollIntoView({behavior:"instant"}));await publicPage.screenshot({path:"artifacts/blog-layout/reading-"+w+"x"+h+".png"});}
+    await publicPage.setViewportSize({width,height});
+  const toc=publicPage.getByRole("navigation",{name:"Article contents",exact:true});
+  if(width===390)await toc.locator("summary").click();
+  await toc.getByRole("link",{name:"Questions and next steps",exact:true}).filter({visible:true}).click();
+  await publicPage.waitForFunction(()=>Math.abs(document.querySelector("#article-section-2").getBoundingClientRect().top-140)<5);
+  assert.equal(await toc.locator('a[aria-current="location"]:visible').textContent(),"Questions and next steps");
+    await publicPage.goto(config.baseUrl+"/blog",{waitUntil:"networkidle"});
+  await publicPage.getByRole("button",{name:"Prevention",exact:true}).click();assert.equal(await publicPage.locator(".journal-featured").count(),0);assert(await publicPage.locator(".blog-card").count()>0);
+  await publicPage.getByRole("button",{name:"All topics",exact:true}).click();await publicPage.locator(".journal-featured").waitFor();
+  for(const [w,h] of [[390,844],[1024,768],[1440,900],[1920,1080],[3440,1440]]){await publicPage.setViewportSize({width:w,height:h});await publicPage.locator(".journal-archive").evaluate(el=>scrollTo({top:el.getBoundingClientRect().top+scrollY-100,behavior:"instant"}));await publicPage.screenshot({path:"artifacts/blog-layout/archive-"+w+"x"+h+".png"});}
   await publicPage.close();
   await page.getByRole("button",{name:"Unpublish",exact:true}).click();await page.getByRole("status").filter({hasText:"Editorial status updated."}).waitFor();
   assert.equal((await context.request.get(config.baseUrl+"/blog/"+slug)).status(),404);

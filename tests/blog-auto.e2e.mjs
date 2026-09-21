@@ -11,7 +11,7 @@ try{
   const page=await context.newPage(),errors=[];
   page.on("pageerror",e=>errors.push(e.message));page.on("console",m=>{if(m.type()==="error")errors.push(m.text());});
   await page.goto(auth.baseUrl+"/admin/login");await page.getByLabel("Username",{exact:true}).fill(auth.username);await page.getByLabel("Password",{exact:true}).fill(auth.password);await page.getByRole("button",{name:"Sign in",exact:true}).click();await page.waitForURL("**/admin/blog");
-  const button=page.getByRole("button",{name:"Auto Generate",exact:true});await button.waitFor();assert(await button.isDisabled());assert.equal(await page.locator(".auto-steps>li").count(),15);
+  await page.getByRole("button",{name:"Auto Generate",exact:true}).click(); const button=page.getByRole("dialog").getByRole("button",{name:"Auto Generate",exact:true});await button.waitFor();assert(await button.isDisabled());assert.equal(await page.locator(".auto-steps>li").count(),15);
   assert.equal((await context.request.post(auth.baseUrl+"/api/admin/blog/auto/start",{headers:{origin:auth.baseUrl},data:{requestId:randomUUID(),language:"en",focus:"",translate:true}})).status(),503);
   // Browser rendering/reconnection contract. Providers are explicitly simulated here;
   // the server/database workflow is independently exercised by blog-auto.test.mjs.
@@ -31,11 +31,11 @@ try{
    else response={run};
    await route.fulfill({status:200,contentType:"application/json",body:JSON.stringify(response)});
   });
-  await page.reload();await page.waitForFunction(()=>!document.querySelector(".auto-generator button")?.disabled);
+  await page.reload();await page.getByRole("button",{name:"Auto Generate",exact:true}).click();await page.waitForFunction(()=>!document.querySelector(".auto-generator button")?.disabled);
   await page.getByRole("combobox",{name:"Original article language",exact:true}).selectOption(width===390?"es":"en");
   await button.click();
   await page.locator('.auto-steps [data-status="completed"]').first().waitFor();
-  await page.reload();
+  await page.reload();await page.getByRole("button",{name:/Auto Generate|View generation progress/}).click();
   await page.getByText("Draft preparation finished.",{exact:false}).waitFor({timeout:20000});
   assert.equal(executed.size,15);assert.equal(await page.locator('.auto-steps>li[data-status="completed"]').count(),15);
   await page.getByRole("button",{name:"Open English draft",exact:true}).waitFor();await page.getByRole("button",{name:"Open Spanish draft",exact:true}).waitFor();

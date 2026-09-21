@@ -1,23 +1,25 @@
 "use client";
-import {useEffect,useState} from "react";
+import {useEffect,useState,useRef} from "react";
 import type {Post} from "../../../server/blog/types";
 import ArticlePreview from "./article-preview";
 import SeoPanel from "./seo-panel";
 import MediaPanel from "./media-panel";
 import AutoGenerator from "./auto-generator";
 import Sources from "./sources";
+import Dashboard from "./dashboard";
 import {blankData} from "../../../server/blog/types";
 type Draft=Pick<Post,"title"|"slug"|"language"|"content"|"data"> & Partial<Post>;
 const fresh=():Draft=>({title:"",slug:"",language:"en",content:"",data:{...blankData}});
 export default function Editor({username}:{username:string}){
  const [posts,setPosts]=useState<Post[]>([]),[draft,setDraft]=useState<Draft>(fresh),[message,setMessage]=useState(""),[busy,setBusy]=useState(false),[reviewer,setReviewer]=useState(""),[reviewed,setReviewed]=useState(false);
  const [generating,setGenerating]=useState(false);
+ const [editing,setEditing]=useState(false); const autoDialog=useRef<HTMLDialogElement>(null);
  const [dirty,setDirty]=useState(false);
  const [report,setReport]=useState<{blockers:string[];warnings:string[];words:number}|null>(null);
  async function api(path:string,method="GET",body?:unknown){const r=await fetch("/api/admin/blog/"+path,{method,headers:body?{"Content-Type":"application/json"}:undefined,body:body?JSON.stringify(body):undefined});const d=await r.json();if(r.status===401){window.location.href="/admin/login";throw Error("Sign in again.");}if(!r.ok)throw Error(d.error||"Request failed.");return d;}
  async function refresh(){const d=await api("posts");setPosts(d.posts);}
  useEffect(()=>{refresh().catch(e=>setMessage(e.message));},[]);
- function choose(p:Draft){setDirty(false);setDraft(p);setReviewer("");setReviewed(false);setReport(null);setMessage("");}
+ function choose(p:Draft){setEditing(true);setDirty(false);setDraft(p);setReviewer("");setReviewed(false);setReport(null);setMessage("");}
  function field(key:string,value:unknown){setDirty(true);setDraft(p=>({...p,[key]:value}));setReport(null);setReviewed(false);}
  function data(key:string,value:unknown){setDirty(true);setDraft(p=>({...p,data:{...p.data,[key]:value}}));setReport(null);setReviewed(false);}
  async function run(action:()=>Promise<void>){setBusy(true);setMessage("");try{await action();}catch(e){setMessage(e instanceof Error?e.message:"Request failed.");}finally{setBusy(false);}}
@@ -25,10 +27,8 @@ export default function Editor({username}:{username:string}){
  async function state(status:string){if(!draft.id)return;const d=await api("posts/"+draft.id+"/status","POST",{status,version:draft.version,reviewer:reviewed?reviewer:""});choose(d.post);setMessage(status==="published"?"Article published.":"Editorial status updated.");await refresh();}
  const locked=draft.status==="published";
  return <div className="editor"><header className="editor-header"><a href="/">Faithful Care <span>Editorial studio</span></a><div><span>{username}</span><button className="secondary" onClick={()=>run(async()=>{await api("logout","POST",{});window.location.href="/admin/login";})}>Sign out</button></div></header>
- <div className="editor-grid"><aside><div className="editor-list-heading"><h1>Articles</h1><button onClick={()=>choose(fresh())}>New draft</button></div><p>Every useful article begins with a careful review.</p>{posts.length===0&&<p>No articles yet. Create your first draft.</p>}{posts.map(p=><button className={"editor-post "+(draft.id===p.id?"selected":"")} key={p.id} onClick={()=>choose(p)}><span>{p.language.toUpperCase()} · {p.status.replace("_"," ")}</span><strong>{p.title}</strong></button>)}</aside>
- <main><div className="editor-title"><div><p className="blog-eyebrow">{draft.id?"ARTICLE WORKSPACE":"START SOMETHING USEFUL"}</p><h2>{draft.id?draft.title:"A new patient resource"}</h2></div><span className="blog-pill">{draft.status||"draft"}</span></div>
- <AutoGenerator api={api} dirty={dirty} onActive={setGenerating} onDraft={p=>{choose(p);refresh().catch(e=>setMessage(e.message));}}/>
- {dirty&&<p className="editor-message">Save your changes before verification or publication.</p>}
+ <dialog ref={autoDialog} className="editor-dialog" aria-label="Automatic article preparation"><div className="dialog-toolbar"><span>Faithful Care · AI editorial workflow</span><button className="secondary" onClick={()=>autoDialog.current?.close()}>Close generator</button></div><AutoGenerator api={api} dirty={dirty} onActive={setGenerating} onDraft={p=>{choose(p);autoDialog.current?.close();refresh().catch(e=>setMessage(e.message));}}/></dialog>
+ {!editing?<main className="blog-dashboard"><Dashboard posts={posts} generating={generating} onGenerate={()=>autoDialog.current?.showModal()} onNew={()=>choose(fresh())} onSelect={choose}/>{message&&<p role="status" className="editor-message">{message}</p>}<Sources api={api}/></main>:<main className="article-workspace"><div className="workspace-toolbar"><button className="secondary" disabled={dirty||busy} onClick={()=>{setEditing(false);refresh().catch(e=>setMessage(e.message));}}>Back to dashboard</button><button className="secondary" onClick={()=>autoDialog.current?.showModal()}>{generating?"View generation progress":"Auto Generate"}</button></div><div className="editor-title"><div><p className="blog-eyebrow">{draft.id?"ARTICLE WORKSPACE":"START SOMETHING USEFUL"}</p><h1>{draft.id?draft.title:"A new patient resource"}</h1></div><span className="blog-pill">{draft.status||"draft"}</span></div> {dirty&&<p className="editor-message">Save your changes before verification or publication.</p>}
  {message&&<p role="status" className="editor-message">{message}</p>}
  <fieldset disabled={busy||generating||locked}><div className="editor-fields"><label>Title<input value={draft.title} onChange={e=>field("title",e.target.value)}/></label><label>Language<select disabled={!!draft.id} value={draft.language} onChange={e=>field("language",e.target.value)}><option value="en">English</option><option value="es">Español</option></select></label><label>URL slug<input value={draft.slug} onChange={e=>field("slug",e.target.value)}/></label><label>Category<select value={draft.data.category} onChange={e=>data("category",e.target.value)}>{["prevention","primary-care","chronic-care","senior-care","palliative-care","family-support"].map(c=><option key={c}>{c}</option>)}</select></label></div>
  <label>Summary<textarea rows={2} value={draft.data.excerpt} onChange={e=>data("excerpt",e.target.value)}/></label>
@@ -38,5 +38,5 @@ export default function Editor({username}:{username:string}){
  {report&&<section className="editor-report"><h3>Prepublication checks · {report.words} words</h3>{report.blockers.map((b,i)=><p key={i}>Required: {b}</p>)}{report.warnings.map((w,i)=><p key={i}>Review: {w}</p>)}{!report.blockers.length&&<p>Technical checks passed. Confirm clinical review before publication.</p>}</section>}
  {draft.status==="pending_review"&&<section className="editor-review"><h3>Clinical review</h3><p>Only confirm a review that actually happened. This confirmation is recorded with your editor account.</p><label>Reviewing clinician<input value={reviewer} onChange={e=>setReviewer(e.target.value)}/></label><label className="editor-check"><input type="checkbox" checked={reviewed} onChange={e=>setReviewed(e.target.checked)}/>I confirm the named clinician reviewed this exact saved article.</label><button disabled={busy||generating||dirty||!reviewed||!reviewer.trim()} onClick={()=>run(()=>state("published"))}>Publish reviewed article</button><button className="secondary" disabled={busy||generating} onClick={()=>run(()=>state("draft"))}>Return to draft</button></section>}
  {draft.id&&<SeoPanel id={draft.id} version={draft.version!} published={locked} api={api}/>}{draft.id&&!dirty&&<ArticlePreview key={draft.id+":"+draft.version} id={draft.id}/>}
- {draft.id&&<MediaPanel key={draft.id} postId={draft.id} version={draft.version!} disabled={busy||generating||dirty||locked} api={api} onChange={p=>{choose(p);refresh().catch(e=>setMessage(e.message));}}/>}<Sources api={api}/></main></div></div>;
+ {draft.id&&<MediaPanel key={draft.id} postId={draft.id} version={draft.version!} disabled={busy||generating||dirty||locked} selected={draft.data} api={api} onChange={p=>{choose(p);refresh().catch(e=>setMessage(e.message));}}/>}</main>}</div>;
 }

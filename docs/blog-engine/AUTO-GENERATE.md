@@ -1,25 +1,35 @@
-# Auto Generate: corrección del alcance
+# Auto Generate y adaptación de XL Homes
 Fecha: 2026-09-21.
 
-## Diferencia encontrada
-El Preview de PR16 aporta CMS, generación puntual, traducción puntual e imágenes puntuales. No equivale al motor Auto Generate de las referencias. Los ocho temas fijos y el mensaje genérico de espera no cumplen el contrato de selección inteligente y progreso real.
+## Alcance corregido
+El PR16 aportó un CMS con generación, traducción e imágenes puntuales. No equivalía al motor Auto Generate solicitado. Los PR17–19 incorporan la cadena automática; esta rama añade la organización y UI de XL Homes con el diseño de Faithful Care.
 
-## Fuente canónica
-OneDrive: 00 Inpulza/Desarrolllos/inpulza-seo-blog-engine/docs/METHODOLOGY.md y XL_HOMES_OPERATIONAL_PORTING_BRIEF.md.
-Implementaciones consultadas: XL-Home/server/blog/routes.ts y Healing-Minds-web-Next/server/blog/admin-routes.ts, generation/storage.ts y client/src/pages/admin/BlogAdminPage.tsx.
+## Referencias verificadas
+- Metodología: 00 Inpulza/Desarrolllos/inpulza-seo-blog-engine/docs/METHODOLOGY.md y XL_HOMES_OPERATIONAL_PORTING_BRIEF.md.
+- XL Homes: inpulza/XL-Home, main 798c822b7c0469f7546a240a9d10e50c49095895. BlogAdminPage, BlogPage, BlogPostPage, LinkLibraryPanel, SourcesLinkHealthPanel y motor server/blog.
+- Healing Minds: server/blog/admin-routes.ts y generation/storage.ts.
+- Branding: tokens existentes de Faithful Care, azul primary, turquesa secondary, Inter y DM Serif Display.
 
-## Sprints correctivos
-1. Inteligencia editorial: candidatos IA, diversidad, comparación determinista y juez semántico, fuentes institucionales verificadas, brief con evidencia, escritura, expansión, limpieza y SEO con reparación acotada.
-2. Imágenes contextuales: plan hero/inline, prompts relacionados con secciones reales, alt text asistido por visión y colocación como candidatos pendientes de revisión.
-3. Auto Generate visible: una acción, progreso real persistido y SSE, recuperación tras recarga, checkpoints por etapa, EN/ES, verificación final y enlaces al borrador. No publicar automáticamente.
+## Sprints implementados
+1. PR17: candidatos IA, diversidad, comparación determinista y juez semántico, fuentes institucionales verificadas, brief con evidencia, escritura, expansión, limpieza y SEO con reparación acotada.
+2. PR18: plan de portada y dos imágenes interiores por secciones reales, alt text asistido por visión, candidatos pendientes de revisión.
+3. PR19: Auto Generate, 15 etapas persistidas, progreso SSE, recuperación tras recarga, EN/ES y verificación final. Prepara borradores privados; requiere revisión antes de publicar.
+4. Rama feat/blog-xl-layout-faithful-brand: tablero con contadores, búsqueda, filtros y miniaturas; generador en diálogo; imágenes separadas por función; biblioteca de fuentes, historial y citas por artículo; archivo público con destacado y categorías; índice lateral activo en escritorio y desplegable móvil.
 
-## Criterios de aceptación
-- El botón Auto Generate aparece al entrar al administrador, antes del formulario manual.
-- Una corrida prepara tema, investigación, H1/cuerpo, slug, extracto, meta title, meta description, tags, hero, dos imágenes interiores y alt text; traducción al otro idioma seleccionada por defecto.
-- El progreso muestra estados y resultados reales del servidor, nunca porcentajes inventados.
-- Una recarga o petición repetida no duplica artículos ni cobros. Una etapa con resultado incierto se detiene para inspección.
-- Las imágenes y fuentes mantienen su revisión, y ambos idiomas requieren revisión clínica antes de publicar.
-- Probar comportamiento de servidor, navegador móvil/escritorio y cinco tamaños; verificar Preview y SHA. Prueba con IA real pendiente de clave autorizada, no sustituible por mocks.
+## Datos y recuperación
+Las migraciones 005 y 006 añaden historial del motor y copias de investigación. Se aplicaron a la base Preview aislada.
+Cada consulta registra un evento. Las lecturas saludables se conservan 24 horas y se reutilizan solo si corresponden al último chequeo saludable. Un chequeo fallido invalida la copia y revoca aprobación. El botón de chequeo siempre consulta la URL en vivo. La UI distingue calidad del enlace, aprobación de fuente y revisión clínica.
+El navegador coordina las etapas: al cerrar la pestaña, la petición ya iniciada puede terminar; al volver, continúa desde el último checkpoint. No existe un trabajador permanente en segundo plano. Una operación incierta se detiene sin repetir a ciegas la llamada de pago.
 
-## Estado
-Sprint 1 en desarrollo. La ausencia de clave OpenAI impide certificar calidad de artículos, imágenes y traducción reales. El acceso y las pruebas del CMS no prueban el motor completo.
+## Verificación y límites
+31 pruebas del blog y TypeScript pasan. Las pruebas de navegador cubren login, borrador privado, estados, filtros, generador, recuperación, imágenes reales en Blob, publicación solo local, índice lateral, categorías, canonical/sitemap, privacidad y retirada.
+La prueba del proveedor en la cadena automática usa respuestas simuladas; verifica coordinación y persistencia, no calidad real de OpenAI.
+Se capturan cinco tamaños: 390x844, 1024x768, 1440x900, 1920x1080 y 3440x1440.
+Los PR17–19 tienen CI y Vercel verdes. El nuevo PR requiere sus propios checks y verificación del SHA desplegado.
+
+## Pendientes para cerrar el motor completo
+- Clave OpenAI autorizada y prueba real de un artículo EN/ES con portada, dos imágenes interiores y alt text.
+- Autorización explícita del destino Vercel para conectar las credenciales de Google; la revisión automática rechazó previamente esa transferencia. No se reintentó.
+- Revisión visual de Jordan y revisión clínica de contenido real.
+- Revisiones de código vigentes de todos los PR y aprobación final para producción.
+Los PR siguen en borrador. Producción no se modificó.

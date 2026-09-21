@@ -1,7 +1,7 @@
 import {z} from "zod";
 import {generateJson,rejectPrivateInformation} from "./provider";
 import {SOURCES,internalLinks,DISCLAIMERS} from "./catalog";
-import {auditSource} from "./links";
+import {researchSource} from "./links";
 import {plain,hrefs,wordCount,sanitize,slugify,postInput} from "./content";
 import {blankData,BlogError,type Language,type Post} from "./types";
 
@@ -48,7 +48,7 @@ export async function assess(candidates:Candidate[],posts:Post[]):Promise<{candi
 export async function research(candidate:Candidate,actor:string):Promise<Research>{
  const results:Research=[];
  for(const url of candidate.sourceUrls){const source=SOURCES.find(s=>s.url===url);if(!source)throw new BlogError(422,"Unknown research source.");
- const audited=await auditSource(url,actor);if(audited.record.health!=="healthy"||!audited.excerpt)throw new BlogError(422,"A research source could not be verified. No unsupported article will be written.");
+ const audited=await researchSource(url,actor);if(audited.record.health!=="healthy"||!audited.excerpt)throw new BlogError(422,"A research source could not be verified. No unsupported article will be written.");
  results.push({url,title:source.title,publisher:source.publisher,excerpt:audited.excerpt,checkedAt:audited.record.checked_at||new Date().toISOString(),score:audited.record.score});}
  return results;
 }

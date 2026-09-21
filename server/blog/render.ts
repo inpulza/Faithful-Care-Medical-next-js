@@ -1,12 +1,14 @@
-import {sanitize} from "./content";
+import {decodeHTML} from "entities";
+import {sanitize,plain} from "./content";
 import {ownedMediaUrl} from "./media-url";
 import type {Post} from "./types";
 export const escapeHtml=(s:string)=>s.replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]!));
+export function articleHeadings(post:Post){return [...sanitize(post.content).matchAll(/<h2\b[^>]*>([\s\S]*?)<\/h2>/gi)].map((m,i)=>({id:"article-section-"+(i+1),title:decodeHTML(plain(m[1]))}));}
 export function articleHtml(post:Post){
  const sections=sanitize(post.content).split(/(?=<h2\b)/i);
  let heading=0;
  return sections.map(section=>{
-  if(/^<h2\b/i.test(section))heading++;
+  if(/^<h2\b/i.test(section)){heading++;section=section.replace(/<h2\b[^>]*>/i,'<h2 id="article-section-'+heading+'">');}
   const media=post.data.images.filter(i=>i.afterHeading===heading&&ownedMediaUrl(i.url));
   return section+media.map(i=>'<figure><img src="'+escapeHtml(i.url)+'" alt="'+escapeHtml(i.alt)+'" loading="lazy"/></figure>').join("");
  }).join("");

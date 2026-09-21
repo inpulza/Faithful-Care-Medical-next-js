@@ -70,6 +70,7 @@ async function handle(request:NextRequest,context:Context) {
   if(path[0]==="links"){
     const links=await import("../../../../../server/blog/links");
     if(path.length===1&&request.method==="GET")return json({links:await links.linkLibrary()});
+    if(path.length===2&&path[1]==="dashboard"&&request.method==="GET")return json(await links.sourceDashboard());
     if(path[1]==="check"&&request.method==="POST")return json(await links.auditSource(String(body.url||""),editor.username));
     if(path[1]==="approve"&&request.method==="POST"&&typeof body.approved==="boolean")return json({link:await links.approveSource(String(body.url||""),body.approved,editor.username)});
   }
