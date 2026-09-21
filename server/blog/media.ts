@@ -17,7 +17,7 @@ async function storeImage(post:Post,bytes:Buffer,role:"hero"|"inline",alt:string
  const image=sharp(bytes,{limitInputPixels:40000000,animated:false});
  const metadata=await image.metadata();
  if(!["jpeg","png","webp"].includes(metadata.format||""))throw new BlogError(415,"Use JPEG, PNG or WebP.");
- if(!metadata.width||!metadata.height||metadata.width<600||metadata.height<300)throw new BlogError(422,"Use an image at least 600×300 pixels.");
+ if(!metadata.width||!metadata.height||metadata.width<600||metadata.height<300)throw new BlogError(422,"Use an image at least 600Ã—300 pixels.");
  const encoded=await image.rotate().resize({width:1600,withoutEnlargement:true}).webp({quality:85}).toBuffer();
  const blob=await put("faithful-care/blog/"+post.id+"/"+randomUUID()+".webp",encoded,{access:"public",contentType:"image/webp",addRandomSuffix:false,token:process.env.BLOB_READ_WRITE_TOKEN});
  if(!ownedMediaUrl(blob.url))throw new BlogError(503,"Image store hostname does not match the client configuration.");
@@ -47,7 +47,7 @@ export async function generateImage(id:string,key:string,role:"hero"|"inline",al
  if(process.env.BLOG_IMAGES_ENABLED!=="true"||!process.env.OPENAI_API_KEY||!mediaConfigured())throw new BlogError(503,"Image generation is disabled until a provider and this client's storage are configured.");
  const post=await getPost(id);if(post.status==="published")throw new BlogError(409,"Unpublish before changing images.");
  rejectPrivateInformation(post.title);
- const model=process.env.BLOG_IMAGE_MODEL||"gpt-image-2";
+ const model=process.env.BLOG_IMAGE_MODEL||"gpt-image-2.5-sunburst";
  const prompt="Create a calm, believable editorial photograph for a primary and palliative care educational article titled "+post.title+". Show an everyday, respectful still life related to preparing for care, with natural light, navy and soft teal accents. No identifiable patients, no doctors impersonating real staff, no visible medical records or names, no text or typography, no logos, no dramatic illness, no procedural demonstrations. Landscape composition. Create an entirely new image, never edit or reuse a previous generated image. Placement: "+role+".";
  const job=await claimJob("image",key,actor,{postId:id,role,model});
  try{
