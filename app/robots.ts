@@ -5,6 +5,7 @@ export default function robots(): MetadataRoute.Robots {
     rules: ["*", "GPTBot", "ChatGPT-User", "ClaudeBot", "PerplexityBot", "CCBot"].map((userAgent) => ({
       userAgent,
       allow: "/",
+      disallow: ["/admin/", "/api/admin/"],
     })),
     sitemap: "https://faithfulcaremedical.com/sitemap.xml",
   };

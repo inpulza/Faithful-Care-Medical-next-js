@@ -1,0 +1,18 @@
+import fs from "node:fs/promises";
+import path from "node:path";
+import {spawn} from "node:child_process";
+import {randomBytes,scryptSync} from "node:crypto";
+import {PGlite} from "@electric-sql/pglite";
+const directory=path.join(process.cwd(),".blog-test-db");
+await fs.mkdir(directory,{recursive:true});
+const db=new PGlite(directory);
+await db.exec(await fs.readFile("migrations/blog/001-foundation.sql","utf8"));
+await db.query("INSERT INTO fc_blog_links(url,kind,publisher,score,reason,approved,health,checked_at) VALUES($1,'external','MedlinePlus',95,'LOCAL TEST FIXTURE',true,'healthy',now()) ON CONFLICT(url) DO UPDATE SET checked_at=now()",["https://medlineplus.gov/healthscreening.html"]);
+await db.close();
+const password=randomBytes(24).toString("base64url"),salt=randomBytes(16).toString("hex");
+const env={...process.env,BLOG_ENABLED:"true",BLOG_LOCAL_TEST_DB:directory,BLOG_ADMIN_USERNAME:"local-editor",BLOG_ADMIN_PASSWORD_HASH:"scrypt:"+salt+":"+scryptSync(password,salt,32).toString("hex"),BLOG_ADMIN_SESSION_SECRET:randomBytes(48).toString("hex")};
+await fs.mkdir(".local",{recursive:true});
+await fs.writeFile(".local/blog-e2e.json",JSON.stringify({username:"local-editor",password,baseUrl:"http://127.0.0.1:3187"}),{mode:0o600});
+const child=spawn(process.execPath,["node_modules/next/dist/bin/next","dev","--hostname","127.0.0.1","--port","3187"],{env,stdio:"inherit"});
+for(const signal of ["SIGINT","SIGTERM"])process.on(signal,()=>child.kill(signal));
+child.on("exit",code=>process.exit(code||0));

@@ -11,7 +11,9 @@
     "build": "next build",
     "start": "next start",
     "check": "tsc --noEmit",
-    "test": "node --import tsx --test --test-concurrency=4 tests/*.test.mjs"
+    "test": "node --import tsx --test --test-concurrency=4 tests/*.test.mjs",
+    "test:blog": "node --import tsx --test --test-concurrency=1 tests/blog-*.test.mjs",
+    "blog:migrate": "node --env-file=.env.local scripts/blog-migrate.mjs"
   },
   "dependencies": {
     "@phosphor-icons/react": "^2.1.10",
@@ -53,8 +55,9 @@
     "gsap": "^3.14.2",
     "input-otp": "^1.4.2",
     "lenis": "^1.3.17",
-    "next": "^16.2.12",
+    "next": "^16.3.3",
     "next-themes": "^0.4.6",
+    "pg": "^8.23.0",
     "react": "^19.2.0",
     "react-day-picker": "^9.11.1",
     "react-dom": "^19.2.0",
@@ -62,6 +65,7 @@
     "react-resizable-panels": "^2.1.9",
     "recharts": "^2.15.4",
     "resend": "^6.18.1",
+    "sanitize-html": "^2.17.7",
     "sonner": "^2.0.7",
     "tailwind-merge": "^3.3.1",
     "tw-animate-css": "^1.4.0",
@@ -69,10 +73,13 @@
     "zod": "^3.25.76"
   },
   "devDependencies": {
+    "@electric-sql/pglite": "^0.5.8",
     "@tailwindcss/postcss": "^4.3.3",
     "@types/node": "^20.19.0",
+    "@types/pg": "^8.23.1",
     "@types/react": "^19.2.0",
     "@types/react-dom": "^19.2.0",
+    "@types/sanitize-html": "^2.16.1",
     "autoprefixer": "^10.4.21",
     "playwright": "^1.62.1",
     "postcss": "^8.5.6",
@@ -84,7 +91,7 @@
     "nanoid": "3.3.18",
     "next": {
       "postcss": "8.5.25",
-      "sharp": "0.35.3"
+      "sharp": "0.35.4"
     }
   }
 }
