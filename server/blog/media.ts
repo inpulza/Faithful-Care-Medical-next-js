@@ -43,12 +43,13 @@ export async function selectImage(id:string,mediaId:string,version:number,actor:
  if(!rows[0])throw new BlogError(409,"The article changed. Reload before selecting the image.");
  return rows[0];
 }
-export async function generateImage(id:string,key:string,role:"hero"|"inline",alt:string,placement:number,actor:string){
+export async function generateImage(id:string,key:string,role:"hero"|"inline",alt:string,placement:number,actor:string,contextPrompt?:string){
  if(process.env.BLOG_IMAGES_ENABLED!=="true"||!process.env.OPENAI_API_KEY||!mediaConfigured())throw new BlogError(503,"Image generation is disabled until a provider and this client's storage are configured.");
  const post=await getPost(id);if(post.status==="published")throw new BlogError(409,"Unpublish before changing images.");
  rejectPrivateInformation(post.title);
  const model=process.env.BLOG_IMAGE_MODEL||"gpt-image-2.5-sunburst";
- const prompt="Create a calm, believable editorial photograph for a primary and palliative care educational article titled "+post.title+". Show an everyday, respectful still life related to preparing for care, with natural light, navy and soft teal accents. No identifiable patients, no doctors impersonating real staff, no visible medical records or names, no text or typography, no logos, no dramatic illness, no procedural demonstrations. Landscape composition. Create an entirely new image, never edit or reuse a previous generated image. Placement: "+role+".";
+ if(contextPrompt)rejectPrivateInformation(contextPrompt);
+ const prompt=(contextPrompt?contextPrompt+" Contextual editorial assignment. ":"")+"Create a calm, believable editorial photograph for a primary and palliative care educational article titled "+post.title+". Show an everyday, respectful still life related to preparing for care, with natural light, navy and soft teal accents. No identifiable patients, no doctors impersonating real staff, no visible medical records or names, no text or typography, no logos, no dramatic illness, no procedural demonstrations. Landscape composition. Create an entirely new image, never edit or reuse a previous generated image. Placement: "+role+".";
  const job=await claimJob("image",key,actor,{postId:id,role,model});
  try{
   await consumeLimit("image-generation-global",3,3600);await jobStage(job.id,"generating_image");
