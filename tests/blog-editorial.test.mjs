@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import {test} from "node:test";
-import {portfolio,validateBrief,assertLinks,assess,makeMetadata,assemble} from "../server/blog/editorial.ts";
+import {portfolio,validateBrief,buildBrief,assertLinks,assess,makeMetadata,assemble} from "../server/blog/editorial.ts";
 import {blankData} from "../server/blog/types.ts";
 const candidate={id:"preventive-visit",title:"Preparing a preventive visit",angle:"Prepare a practical question list with a clinician",keyword:"preventive visit",category:"prevention",sourceUrls:["https://medlineplus.gov/healthscreening.html"]};
 async function provider(values,fn){const fetch=globalThis.fetch,saved={...process.env};let count=0;process.env.BLOG_AI_ENABLED="true";process.env.OPENAI_API_KEY="unit-only";globalThis.fetch=async()=>Response.json({choices:[{finish_reason:"stop",message:{content:JSON.stringify(values[count++])}}]});try{await fn(()=>count);}finally{globalThis.fetch=fetch;for(const key of ["BLOG_AI_ENABLED","OPENAI_API_KEY"]){if(saved[key]===undefined)delete process.env[key];else process.env[key]=saved[key];}}}
@@ -27,4 +27,13 @@ test("metadata repair is bounded and validates every returned SEO field",async()
 });
 test("assembly does not save incomplete drafts or fabricate missing links",()=>{
  assert.throws(()=>assemble(candidate,"en",{title:candidate.title,content:"<p>Too short</p>"},{slug:"short",excerpt:"Short",metaTitle:"Short",metaDescription:"Short",tags:[]}),e=>e.status===422);
+});
+
+test("brief repair handles schema errors without weakening exact source evidence",async()=>{
+ const brief={audience:"Adults preparing a visit",intent:"Discuss screening with a clinician",sections:["First section","Second section","Third section","Fourth section"],facts:[{claim:"Discuss screening needs",url:candidate.sourceUrls[0],support:"Discuss screening needs"},{claim:"Discuss screening choices",url:candidate.sourceUrls[0],support:"Discuss screening choices"}],limits:["Not individual advice"]};
+ const sources=[{url:candidate.sourceUrls[0],excerpt:"Discuss screening needs. Discuss screening choices."}];
+ await provider([{...brief,sections:brief.sections.map(title=>({title}))},brief],async count=>{assert.deepEqual(await buildBrief(candidate,"en",sources),brief);assert.equal(count(),2);});
+ const invented={...brief,facts:brief.facts.map(f=>({...f,support:"This evidence was never in the source"}))};
+ await provider([invented,brief],async count=>{assert.deepEqual(await buildBrief(candidate,"en",sources),brief);assert.equal(count(),2);});
+ await provider([invented,invented,brief],async count=>{await assert.rejects(()=>buildBrief(candidate,"en",sources),e=>e.status===422&&e.message.includes("after one repair"));assert.equal(count(),2);});
 });

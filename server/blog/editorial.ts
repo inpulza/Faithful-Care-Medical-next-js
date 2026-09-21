@@ -59,7 +59,19 @@ export function validateBrief(value:unknown,sources:Research):Brief{
  return brief;
 }
 export async function buildBrief(candidate:Candidate,language:Language,sources:Research){
- return validateBrief(await generateJson(clinicalRules+" Return JSON {audience,intent,sections,facts:[{claim,url,support}],limits}. Build 4-8 informative sections in the requested language and a research brief. For each factual claim supply an exact short contiguous support quote from a provided excerpt, with its exact URL. Do not invent support quotes. Include a practical appointment question section, limits and a restrained care invitation. Target 1000-1500 useful words.",{language,candidate,sources,internalLinks:internalLinks(candidate.category,language)}),sources);
+ const instruction=clinicalRules+" Return JSON {audience,intent,sections,facts:[{claim,url,support}],limits}. All fields are strings except sections, facts and limits, which are arrays. audience and intent: 10-300 characters each. sections: 4-8 plain heading strings, each 5-180 characters. facts: 2-8 objects, claim 10-450 characters, exact supplied url, support 10-250 characters. limits: 1-6 strings, each at most 400 characters. Use the requested language for the brief but preserve each support quote in the source language. For each factual claim supply an exact short contiguous support quote from a provided excerpt with its exact URL. Do not invent, paraphrase or combine support quotes. Include practical appointment questions, limitations and a restrained care invitation. Plan 1000-1500 useful words.";
+ const context={language,candidate,sources,internalLinks:internalLinks(candidate.category,language)};
+ let value=await generateJson(instruction,context);
+ for(let attempt=0;attempt<2;attempt++){
+  try{return validateBrief(value,sources);}
+  catch(error){
+   if(!(error instanceof z.ZodError)&&!(error instanceof BlogError&&error.status===422))throw error;
+   const issues=error instanceof z.ZodError?error.issues.map(i=>({path:i.path,message:i.message})):[{path:["facts"],message:error.message}];
+   if(attempt===1)throw new BlogError(422,"The research brief still fails structure or source-evidence checks after one repair. No article was written.");
+   value=await generateJson(instruction+" Repair the previous brief using the reported validation issues. Keep evidence grounded in the supplied excerpts; never fabricate a quote to satisfy a check.",{...context,previous:value,issues});
+  }
+ }
+ throw new BlogError(422,"The research brief could not be validated.");
 }
 export function clean(content:string){return sanitize(content.replace(/[\u2014\u2013]/g," - ").replace(/[\u201c\u201d]/g,'"').replace(/[\u2018\u2019]/g,"'"));}
 export function assertLinks(value:string,allowed:string[]){
