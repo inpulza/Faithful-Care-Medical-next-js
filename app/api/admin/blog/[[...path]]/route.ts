@@ -36,6 +36,9 @@ async function handle(request:NextRequest,context:Context) {
   if(path.join("/")==="logout"&&request.method==="POST"){
     await logout(token);const response=json({ok:true});response.cookies.set(COOKIE,"",{...cookieOptions,maxAge:0});return response;
   }
+  if(path[0]==="topics"&&request.method==="GET"){const m=await import("../../../../../server/blog/generation");return json({topics:await m.topicPlan(request.nextUrl.searchParams.get("language")==="es"?"es":"en")});}
+  if(path[0]==="jobs"&&request.method==="GET"){const m=await import("../../../../../server/blog/jobs");return json({jobs:await m.jobHistory()});}
+  if(path[0]==="generate"&&request.method==="POST"){if(!["en","es"].includes(body.language))throw new BlogError(400,"Choose a language.");const m=await import("../../../../../server/blog/generation");return json({post:await m.generateDraft(String(body.topicId||""),body.language,String(body.requestId||""),editor.username)},201);}
   if(path[0]==="links"){
     const links=await import("../../../../../server/blog/links");
     if(path.length===1&&request.method==="GET")return json({links:await links.linkLibrary()});
