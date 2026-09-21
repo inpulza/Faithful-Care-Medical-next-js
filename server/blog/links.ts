@@ -13,6 +13,7 @@ export function publicIpv4(ip:string){
  return !(a===0||a===10||a===127||a>=224||(a===169&&b===254)||(a===172&&b>=16&&b<=31)||(a===192&&(b===168||b===0))||(a===100&&b>=64&&b<=127)||(a===198&&(b===18||b===19)));
 }
 export function allowedSource(url:string){return SOURCES.find(s=>s.url===url);}
+export function qualifiedSource(record?:LinkRecord){return !!record&&!!allowedSource(record.url)&&record.health==="healthy"&&record.score>=70&&!!record.checked_at&&Date.parse(record.checked_at)>Date.now()-7*86400000;}
 export async function readSource(url:string):Promise<{status:number;html:string}>{
  if(!allowedSource(url))throw new BlogError(400,"Only exact catalog source URLs may be checked.");
  const target=new URL(url);
@@ -53,20 +54,12 @@ export async function auditSource(url:string,actor:string){
  await event(null,"source_checked",actor,{url,health,status,score});
  return {record,excerpt};
 }
-export async function approveSource(url:string,approved:boolean,actor:string){
- if(!allowedSource(url))throw new BlogError(400,"Unknown catalog source.");
- const rows=await query<LinkRecord>("UPDATE fc_blog_links SET approved=$2 WHERE url=$1 AND (NOT $2 OR (health='healthy' AND checked_at>now()-interval '7 days')) RETURNING *",[url,approved]);
- if(!rows[0])throw new BlogError(422,"Run a successful live check before approval.");
- await event(null,approved?"source_approved":"source_blocked",actor,{url});
- return rows[0];
-}
-
 export async function sourceDashboard(){
  const links=await linkLibrary();
  const cached=await query<{url:string;expires_at:string}>("SELECT url,expires_at FROM fc_blog_source_cache");
  const posts=await query<{id:string;title:string;language:string;status:string;sources:string[]}>("SELECT id,title,language,status,data->'sources' AS sources FROM fc_blog_posts ORDER BY updated_at DESC");
  const history=await query("SELECT id,action,created_at,detail FROM fc_blog_events WHERE action IN ('source_checked','source_reused','source_researched','source_approved','source_blocked') ORDER BY id DESC LIMIT 100");
- return {links:links.map(link=>{const source=SOURCES.find(s=>s.url===link.url);const articles=posts.filter(p=>Array.isArray(p.sources)&&p.sources.includes(link.url)).map(({sources,...p})=>p);return {...link,title:source?.title||link.url,categories:source?.categories||[],cache_expires_at:cached.find(c=>c.url===link.url)?.expires_at||null,usage:articles.length,articles};}),history};
+ return {links:links.map(link=>{const source=SOURCES.find(s=>s.url===link.url);const articles=posts.filter(p=>Array.isArray(p.sources)&&p.sources.includes(link.url)).map(({sources,...p})=>p);return {...link,qualified:qualifiedSource(link),title:source?.title||link.url,categories:source?.categories||[],cache_expires_at:cached.find(c=>c.url===link.url)?.expires_at||null,usage:articles.length,articles};}),history};
 }
 export async function researchSource(url:string,actor:string){
  if(!allowedSource(url))throw new BlogError(400,"Unknown catalog source.");

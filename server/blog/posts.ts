@@ -36,19 +36,18 @@ export async function editPost(id:string,input:unknown,version:number,actor:stri
 
   return rows[0];
 }
-export async function transition(id:string,next:Status,version:number,actor:string,reviewer="") {
+export async function transition(id:string,next:Status,version:number,actor:string) {
   const post=await getPost(id);
-  const allowed:Record<Status,Status[]>={draft:["pending_review","rejected"],pending_review:["published","draft","rejected"],published:["draft"],rejected:["draft"]};
+  const allowed:Record<Status,Status[]>={draft:["pending_review","published","rejected"],pending_review:["published","draft","rejected"],published:["draft"],rejected:["draft"]};
   if(post.version!==version||!allowed[post.status].includes(next)) throw new BlogError(409,"Invalid or stale editorial transition.");
   if(next==="published") {
-    if(!reviewer.trim()) throw new BlogError(400,"Confirm the name of the clinician who actually reviewed this article.");
     const {verify}=await import("./quality");
-    const report=await verify({...post,data:{...post.data,reviewConfirmed:true,reviewer:reviewer.trim()}});
+    const report=await verify(post,{refreshSources:true,actor});
     if(report.blockers.length) throw new BlogError(422,report.blockers.join(" "));
   }
-  const data={...post.data,reviewConfirmed:next==="published",reviewer:next==="published"?reviewer.trim():""};
+  const data={...post.data,reviewConfirmed:false,reviewer:""};
   const rows=await query<Post>(`WITH changed AS (UPDATE fc_blog_posts SET status=$2,data=$3,version=version+1,updated_at=now(),
-    published_at=CASE WHEN $2='published' THEN now() ELSE NULL END WHERE id=$1 AND version=$4 RETURNING *), audit AS (INSERT INTO fc_blog_events(post_id,action,actor,detail) SELECT id,$2,$5,$6 FROM changed) SELECT * FROM changed`,[id,next,JSON.stringify(data),version,actor,JSON.stringify({reviewer:next==="published"?reviewer.trim():null})]);
+    published_at=CASE WHEN $2='published' THEN now() ELSE NULL END WHERE id=$1 AND version=$4 RETURNING *), audit AS (INSERT INTO fc_blog_events(post_id,action,actor,detail) SELECT id,$2,$5,$6 FROM changed) SELECT * FROM changed`,[id,next,JSON.stringify(data),version,actor,JSON.stringify({publicationChecks:next==="published"?"passed":null})]);
   if(!rows[0]) throw new BlogError(409,"The article changed. Reload before publishing.");
 
   return rows[0];

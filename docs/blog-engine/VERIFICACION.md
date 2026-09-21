@@ -19,3 +19,6 @@ Preview e969a7abecff00d4ed761927232249f4bde9fdfb: SHA, login/logout, persistenci
 Las pruebas de IA validan contratos y fallos, no generación real. No hay credencial autorizada configurada.
 GCC nativo verifica siteOwner de sc-domain:faithfulcaremedical.com. El flujo de la aplicación Vercel permanece sin credenciales y los envíos están desactivados.
 Producción y contenido médico público no se modificaron. No merge sin revisión visual, CI/E2E de HEAD y clasificación de notas de Code Review.
+
+## Editor simplificado, 21 septiembre 2026
+TypeScript y 37 pruebas del blog cubren publicación directa autenticada sin revisión ficticia, fuentes cualificadas automáticamente, tablas saneadas, enlaces relacionados de artículos públicos y estructura conservada en traducción. E2E local: login/logout y privacidad, Auto Generate simulado, biblioteca/filtros, preview integrado, edición visual, tablas y enlaces, publicación/retiro desde el dashboard en cinco tamaños. Las pruebas reales de Preview son de lectura: no regeneran ni publican artículos. La publicación de fixtures se limita a la base local.

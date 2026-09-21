@@ -4,13 +4,13 @@
 /admin/login y /admin/blog. Las credenciales reales están en 05. Pass/Blog Engine/admin-preview.json. No se añaden contraseñas a Git ni a documentos.
 Cambiar username, hash o secreto de sesión revoca las sesiones anteriores. Generar el hash con passwordHash de server/blog/auth.ts y guardarlo directamente en la configuración protegida, sin imprimir la contraseña.
 
-## Flujo editorial
-1. Revisar el catálogo de fuentes, comprobar sus URLs y aprobar solo las pertinentes.
-2. Elegir un tema del plan, generar un borrador EN o ES y revisar el texto.
-3. Traducir automáticamente la versión guardada; la pareja requiere una revisión clínica independiente.
-4. Subir o generar candidatos de imágenes, revisarlos, completar alt y seleccionar hero/posiciones inline.
-5. Revisar la vista previa y las comprobaciones. Enviar a revisión, identificar al clínico que realmente revisó y confirmar la publicación.
-6. Consultar el registro Google. Si hay error, corregir la causa y usar el reintento del editor. No interpretar una consulta de URL Inspection como solicitud ni garantía de indexación.
+## Flujo editorial vigente (petición de Jordan, 21 septiembre 2026)
+1. Auto Generate prepara el artículo, sus imágenes y la traducción como borradores privados.
+2. Preview abre el artículo para leerlo con portada, imágenes interiores, índice y tiempo de lectura. Edit text permite corregir texto con formato; Images agrupa portada e interiores; SEO & links muestra metadatos y conexiones.
+3. Las fuentes se cualifican automáticamente: URL exacta del catálogo institucional, calidad mínima 70/100, respuesta saludable y comprobación de menos de 7 días. La base conserva resultado e historial; no hay botones de aprobar fuentes. Check article y Publish renuevan comprobaciones caducadas o fallidas.
+4. La selección de imágenes conserva su revisión visual y alt text. Una imagen ajena a la biblioteca del artículo no puede usarse para publicar.
+5. En la fila del dashboard, Manage contiene Check article, Send to review, Publish y Return to draft/Unpublish. Pasar por pending_review es opcional. Publicar requiere una acción explícita del editor autenticado y los controles técnicos; no pide nombre ni checkbox de la doctora. Se registra el usuario que publica, sin atribuir una revisión clínica inexistente.
+6. Cada idioma se publica de manera independiente. Google visibility vive en Manage, fuera del editor. Preview nunca envía artículos a Google; URL Inspection no es solicitud ni garantía de indexación.
 
 ## Preparación de producción
 - Resolver credencial/modelos IA y autorización de la conexión Google.
@@ -35,6 +35,6 @@ Una interrupción de IA no debe provocar un reintento ciego: revisar el historia
 - Vercel: proyecto faithful-care-medical-next-js > Settings > Environment Variables > Preview. Añadir la clave como Sensitive y definir los dos modelos; activar BLOG_AI_ENABLED y BLOG_IMAGES_ENABLED al preparar la prueba controlada. Hacer redeploy después de guardar.
 - Usuario, hash de contraseña, secreto de sesión, base y Blob ya están configurados en Preview. La contraseña legible vive en 05. Pass; Vercel recibe su hash. Nunca usar NEXT_PUBLIC_ para claves, contraseñas ni tokens.
 - Desde el deployment Preview, abrir /admin/login. La protección de Vercel y el login editorial son dos accesos distintos. PR16 contiene el Preview integrado de los sprints anteriores.
-- Prueba real pendiente: generar EN, guardar, revisar imágenes, traducir a ES, revisar ambas versiones y publicar en Preview. Cada idioma se aprueba por separado. La publicación de Preview usa su propia base y no afecta al dominio de producción.
+- Generación real EN/ES e imágenes completada y conservada en borradores. Cada idioma se publica por separado desde el dashboard. La publicación de Preview usa su propia base y no afecta al dominio de producción.
 - Google continúa desactivado y pendiente de autorización de su transferencia de credenciales; no depende de la clave de OpenAI.
 Referencias oficiales: https://developers.openai.com/api/docs/models/gpt-image-2.5-sunburst y https://developers.openai.com/api/docs/models/gpt-5.6-sol.

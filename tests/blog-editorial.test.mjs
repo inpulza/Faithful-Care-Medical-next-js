@@ -37,3 +37,10 @@ test("brief repair handles schema errors without weakening exact source evidence
  await provider([invented,brief],async count=>{assert.deepEqual(await buildBrief(candidate,"en",sources),brief);assert.equal(count(),2);});
  await provider([invented,invented,brief],async count=>{await assert.rejects(()=>buildBrief(candidate,"en",sources),e=>e.status===422&&e.message.includes("after one repair"));assert.equal(count(),2);});
 });
+
+test("related article suggestions include only published same-language relevant pages",async()=>{
+ const {relatedArticleLinks}=await import("../server/blog/editorial.ts");
+ const post={title:"Discussing a preventive visit",slug:"preventive-questions",language:"en",status:"published",data:{...blankData,category:"prevention",topic:"different",excerpt:"A practical question list before a preventive visit"}};
+ const result=relatedArticleLinks([post,{...post,status:"draft",slug:"private"},{...post,language:"es",slug:"es"},{...post,data:{...post.data,category:"palliative-care"},slug:"other"},{...post,data:{...post.data,topic:candidate.id},slug:"duplicate"}],candidate,"en");
+ assert.deepEqual(result,[{url:"/blog/preventive-questions",title:post.title}]);
+});

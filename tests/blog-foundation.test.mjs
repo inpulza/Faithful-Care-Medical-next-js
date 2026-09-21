@@ -33,20 +33,21 @@ test("private drafts, sanitization, stale edits and publication gates",async()=>
  assert(!p.content.includes("<script"));assert(!p.content.includes("onclick"));assert(!p.content.includes("javascript:"));
  assert.equal(await publicPost("en",p.slug),null);
  assert.equal((await listPosts()).length,0);
- await assert.rejects(()=>transition(p.id,"published",p.version,"tester","Dr. Test"),e=>e.status===409);
+ await assert.rejects(()=>transition(p.id,"published",p.version,"tester"),e=>e.status===422);
  const edited=await editPost(p.id,input("private-test"),p.version,"tester");
  await assert.rejects(()=>editPost(p.id,input("stale-test"),p.version,"tester"),e=>e.status===409);
  const review=await transition(p.id,"pending_review",edited.version,"tester");
- await assert.rejects(()=>transition(p.id,"published",review.version,"tester","Dr. Test"),e=>e.status===422);
+ await assert.rejects(()=>transition(p.id,"published",review.version,"tester"),e=>e.status===422);
  assert.equal((await getPost(p.id)).status,"pending_review");
 });
 test("reviewed publish, language isolation and unpublish",async()=>{
  const source="https://medlineplus.gov/healthscreening.html";
- await query("INSERT INTO fc_blog_links(url,kind,publisher,score,reason,approved,health,checked_at) VALUES($1,'external','MedlinePlus',95,'US National Library of Medicine',true,'healthy',now())",[source]);
+ await query("INSERT INTO fc_blog_links(url,kind,publisher,score,reason,approved,health,checked_at) VALUES($1,'external','MedlinePlus',95,'US National Library of Medicine',false,'healthy',now())",[source]);
  const body="<h2>Prepare for the appointment</h2>"+Array.from({length:85},()=>"<p>Bring a written list of your questions and current medicines to discuss with your clinician.</p>").join("")+'<p><a href="/primary-care">Primary care</a> <a href="/contact">Contact</a> <a href="'+source+'">MedlinePlus</a></p>';
  const p=await createPost({...input("reviewed-test"),content:body,data:{...blankData,excerpt:"Practical questions to help prepare for an upcoming primary care visit.",metaTitle:"Preparing for a primary care visit",metaDescription:"Prepare for a primary care visit with a question list, your current medicines and practical information to discuss with your clinician.",tags:["prevention"],sources:[source],disclaimer:"This article provides general educational information and does not replace personal advice from a licensed clinician. In an emergency call 911."}},"tester");
- const review=await transition(p.id,"pending_review",p.version,"tester");
- const published=await transition(p.id,"published",review.version,"tester","Test clinician");
+ const published=await transition(p.id,"published",p.version,"tester");
+ assert.equal(published.data.reviewConfirmed,false);assert.equal(published.data.reviewer,"");
+ assert.equal((await query("SELECT actor FROM fc_blog_events WHERE post_id=$1 AND action='published'",[p.id]))[0].actor,"tester");
  assert.equal((await publicPost("en",p.slug)).id,p.id);assert.equal(await publicPost("es",p.slug),null);
  await assert.rejects(()=>editPost(p.id,input(p.slug),published.version,"tester"),e=>e.status===409);
  const unpublished=await transition(p.id,"draft",published.version,"tester");

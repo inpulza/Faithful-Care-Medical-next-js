@@ -27,3 +27,10 @@ test("article outline and rendered headings stay aligned without preserving inje
  assert.deepEqual(headings.map(h=>h.id),["article-section-1","article-section-2"]);
  assert.equal(headings[0].title,"First & second");assert(html.includes('id="article-section-2"'));assert(!html.includes('id="evil"'));assert(!html.includes("onclick"));
 });
+
+test("safe accessible tables survive saving and rendering while active content is removed",async()=>{
+ const {sanitize}=await import("../server/blog/content.ts");
+ const input='<table onclick="bad()"><caption>Appointment preparation</caption><thead><tr><th scope="col" style="color:red">Bring</th><th scope="col">Discuss</th></tr></thead><tbody><tr><td>Question list</td><td><a href="/contact">Contact the team</a><script>bad()</script></td></tr></tbody></table>';
+ const content=sanitize(input);assert(content.includes('<th scope="col">'));assert(content.includes('<caption>'));assert(!content.includes('onclick'));assert(!content.includes('<script'));assert.equal(sanitize(content),content);
+ const html=articleHtml({language:"en",content,data:{images:[]}});assert(html.includes('class="article-table-scroll"'));assert(html.includes('role="region"'));assert(html.includes('<table>'));
+});

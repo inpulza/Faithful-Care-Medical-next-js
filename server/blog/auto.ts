@@ -92,7 +92,7 @@ export async function advanceAuto(id:string,expectedCursor:number,services:AutoS
    case "writing":state.article=await services.writeArticle(state.plan.selected,run.language,state.brief);outputs.H1=state.article.title;break;
    case "expansion":state.article=await services.expandArticle(state.article,state.plan.selected,run.language,state.brief);outputs.H1=state.article.title;break;
    case "metadata":state.metadata=await services.makeMetadata(state.article,state.plan.selected,run.language);outputs.Slug=state.metadata.slug;outputs["Meta title"]=state.metadata.metaTitle;outputs["Meta description"]=state.metadata.metaDescription;outputs.Summary=state.metadata.excerpt;outputs.Tags=state.metadata.tags.join(", ");break;
-   case "save":{const input=services.assemble(state.plan.selected,run.language,state.article,state.metadata);const post=await persistDraft(run,token,input);postId=post.id;state.version=post.version;outputs.Status="Private draft saved";break;}
+   case "save":{const input=services.assemble(state.plan.selected,run.language,state.article,state.metadata,state.brief?.relatedLinks);const post=await persistDraft(run,token,input);postId=post.id;state.version=post.version;outputs.Status="Private draft saved";break;}
    case "visual_plan":{const post=await getPost(postId!);if(post.status!=="draft"||post.version!==state.version)throw new BlogError(409,"The saved draft changed. Stop and review it before generating images.");state.visuals=await services.planVisuals(post);outputs.Placement=state.visuals.map((v:any)=>v.role==="hero"?"Hero":"After section "+v.afterHeading).join("\n");break;}
    case "hero":case "inline_1":case "inline_2":{
     const post=await getPost(postId!);if(post.status!=="draft"||post.version!==state.version)throw new BlogError(409,"The saved draft changed before image generation.");
@@ -109,7 +109,7 @@ export async function advanceAuto(id:string,expectedCursor:number,services:AutoS
    case "verify":{
     const post=await getPost(postId!);state.verification=await services.verify(post);
     if(translationId)state.translationVerification=await services.verify(await getPost(translationId));
-    outputs.Words=String(state.verification.words);outputs["Before publication"]=[...state.verification.blockers,...state.verification.warnings].join("\n")||"Confirm editorial and clinical review.";
+    outputs.Words=String(state.verification.words);outputs["Before publication"]=[...state.verification.blockers,...state.verification.warnings].join("\n")||"Ready for the editor to publish from the dashboard.";
     outputs.Status="Draft preparation complete. Nothing was published.";break;
    }
   }

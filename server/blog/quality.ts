@@ -1,9 +1,10 @@
+import {allowedSource,auditSource,qualifiedSource,type LinkRecord} from "./links";
 import {ownedMediaUrl} from "./media-url";
 import type { Post } from "./types";
 import { wordCount,hrefs,sanitize } from "./content";
 import { query } from "./db";
 import { publicRoutes } from "../../app/lib/route-contract";
-export async function verify(post:Post) {
+export async function verify(post:Post,options:{refreshSources?:boolean;actor?:string}={}) {
   const blockers:string[]=[];
   const warnings:string[]=[];
   const words=wordCount(post.content);
@@ -13,7 +14,6 @@ export async function verify(post:Post) {
   if(post.data.excerpt.length<30) blockers.push("Add a meaningful excerpt.");
   if(post.data.metaTitle.length<10||post.data.metaTitle.length>60) blockers.push("SEO title must contain 10–60 characters.");
   if(post.data.metaDescription.length<50||post.data.metaDescription.length>160) blockers.push("SEO description must contain 50–160 characters.");
-  if(!post.data.reviewConfirmed||!post.data.reviewer.trim()) blockers.push("Clinical review must be confirmed by the editor.");
   if(post.data.disclaimer.length<50) blockers.push("Add a medical information disclaimer.");
   if(!post.data.tags.length) blockers.push("Choose at least one topic tag.");
   if(!post.data.hero) warnings.push("Select a hero image before the final editorial review.");
@@ -43,8 +43,10 @@ export async function verify(post:Post) {
   const external=links.filter(x=>x.startsWith("https://"));
   if(!external.length) blockers.push("Cite a medical source in the article.");
   for(const url of [...new Set([...external,...post.data.sources])]) {
-    const valid=await query("SELECT url FROM fc_blog_links WHERE url=$1 AND approved=true AND health='healthy' AND score>=70 AND checked_at>now()-interval '7 days'",[url]);
-    if(!valid.length) blockers.push("Source needs approval and a recent healthy link check: "+url);
+    if(!allowedSource(url)){blockers.push("Source is outside the verified authority catalog: "+url);continue;}
+    let [record]=await query<LinkRecord>("SELECT * FROM fc_blog_links WHERE url=$1",[url]);
+    if(!qualifiedSource(record)&&options.refreshSources)record=(await auditSource(url,options.actor||"editorial-check")).record;
+    if(!qualifiedSource(record))blockers.push("Source needs a successful recent link check: "+url);
   }
   return {ready:!blockers.length,words,blockers,warnings};
 }

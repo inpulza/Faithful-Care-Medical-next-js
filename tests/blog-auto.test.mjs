@@ -47,7 +47,7 @@ test("workflow runs every stage, saves private bilingual drafts and never approv
  const post=await getPost(run.post_id),translated=await getPost(run.translation_id);assert.equal(post.status,"draft");assert.equal(post.published_at,null);assert.equal(translated.translation_group,post.translation_group);assert.equal(post.data.images.length,2);
  assert.equal((await listPosts()).length,0);assert((await query("SELECT reviewed FROM fc_blog_media")).every(m=>m.reviewed===false));
  assert.equal(run.steps[6].outputs.Slug,metadata.slug);assert(run.steps[12].outputs["Hero alt"]);
- await assert.rejects(()=>transition(post.id,"published",post.version,"test-editor","Test clinician"),e=>e.status===409);
+ await assert.rejects(()=>transition(post.id,"published",post.version,"test-editor"),e=>e.status===422);
  const before=counts.images;await advanceAuto(run.id,9,services);assert.equal(counts.images,before);
 });
 test("two concurrent clients execute a stage only once and stale cursors do not advance",async()=>{

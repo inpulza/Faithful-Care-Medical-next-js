@@ -23,7 +23,7 @@ export async function generateDraft(topicId:string,language:Language,key:string,
   await jobStage(job.id,"writing");const article=await writeArticle(candidate,language,brief);
   await jobStage(job.id,"expanding");const expanded=await expandArticle(article,candidate,language,brief);
   await jobStage(job.id,"seo_metadata");const metadata=await makeMetadata(expanded,candidate,language);
-  const post=assemble(candidate,language,expanded,metadata);
+  const post=assemble(candidate,language,expanded,metadata,brief.relatedLinks);
   await jobStage(job.id,"saving_draft");return await saveGeneratedPost(post,actor,job.id);
  }catch(e){await failJob(job.id,e instanceof BlogError?e.message:"Generation failed safely.");throw e;}
 }

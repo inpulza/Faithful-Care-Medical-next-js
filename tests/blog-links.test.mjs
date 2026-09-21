@@ -6,3 +6,10 @@ test("source checking rejects arbitrary hosts and private addresses",async()=>{
  for(const url of ["https://medlineplus.gov.evil.test/diabetes.html","http://medlineplus.gov/diabetes.html","https://127.0.0.1/","https://medlineplus.gov/diabetes.html?redirect=x","https://user@medlineplus.gov/diabetes.html"]) {assert.equal(allowedSource(url),undefined);await assert.rejects(()=>readSource(url),e=>e.status===400);}
  assert(allowedSource("https://medlineplus.gov/diabetes.html"));
 });
+
+test("automatic qualification ignores legacy approval and rejects stale or non-catalog records",async()=>{
+ const {qualifiedSource}=await import("../server/blog/links.ts");
+ const record={url:"https://medlineplus.gov/diabetes.html",approved:false,health:"healthy",score:100,checked_at:new Date().toISOString()};
+ assert.equal(qualifiedSource(record),true);
+ for(const changed of [{health:"broken"},{score:69},{checked_at:null},{checked_at:new Date(Date.now()-8*86400000).toISOString()},{url:"https://example.com"}])assert.equal(qualifiedSource({...record,...changed}),false);
+});

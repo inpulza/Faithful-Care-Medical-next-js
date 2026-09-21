@@ -24,10 +24,10 @@ try{
   await page.getByRole("button",{name:"Auto Generate",exact:true}).click();await page.getByRole("dialog").waitFor();assert(await page.getByRole("dialog").getByRole("button",{name:"Auto Generate",exact:true}).isDisabled());await page.screenshot({path:`artifacts/blog-layout/generator-${width}x${height}.png`});await page.getByRole("button",{name:"Close generator"}).click();
  }
  await page.getByRole("button",{name:"Consultation history",exact:true}).click();await page.locator(".source-history").waitFor();await page.getByRole("button",{name:"Source library",exact:true}).click();
- await page.getByRole("combobox",{name:"Source status",exact:true}).selectOption("approved");
- const approved=page.locator(".source-card").filter({has:page.getByRole("heading",{name:"Health screening"})});await approved.waitFor();await approved.getByRole("button",{name:"Block source",exact:true}).click();await approved.waitFor({state:"detached"});
- await page.getByRole("combobox",{name:"Source status",exact:true}).selectOption("needs-review");await approved.waitFor();await approved.getByRole("button",{name:"Approve source",exact:true}).click();await approved.waitFor({state:"detached"});
- await page.getByRole("combobox",{name:"Source status",exact:true}).selectOption("all");await approved.waitFor();
- await sourcePanel.getByRole("button",{name:"Consultation history",exact:true}).click();assert(await page.locator(".source-history article").count()>0);await sourcePanel.getByRole("button",{name:"Source library",exact:true}).click();
+ await page.getByRole("combobox",{name:"Source status",exact:true}).selectOption("qualified");
+ const qualified=page.locator(".source-card").filter({has:page.getByRole("heading",{name:"Health screening"})});await qualified.waitFor();
+ assert.equal(await page.getByRole("button",{name:/Approve source|Block source/}).count(),0);
+ await page.getByRole("combobox",{name:"Source status",exact:true}).selectOption("needs-check");assert.equal(await qualified.count(),0);
+ await page.getByRole("combobox",{name:"Source status",exact:true}).selectOption("all");await qualified.waitFor();
  assert.deepEqual(errors,[]);await context.close();console.log("PASS XL-style dashboard, filters, source views, accessible generator dialog and five viewport matrix.");
 }finally{await browser.close();}

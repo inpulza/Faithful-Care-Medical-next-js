@@ -9,7 +9,7 @@ const directory=path.join(process.cwd(),".local","blog-db");
 await fs.mkdir(directory,{recursive:true});
 const db=new PGlite(directory);
 for(const name of (await fs.readdir("migrations/blog")).filter(n=>n.endsWith(".sql")).sort())await db.exec(await fs.readFile("migrations/blog/"+name,"utf8"));
-await db.query("INSERT INTO fc_blog_links(url,kind,publisher,score,reason,approved,health,checked_at) VALUES($1,'external','MedlinePlus',95,'LOCAL TEST FIXTURE',true,'healthy',now()) ON CONFLICT(url) DO UPDATE SET checked_at=now()",["https://medlineplus.gov/healthscreening.html"]);
+await db.query("INSERT INTO fc_blog_links(url,kind,publisher,score,reason,approved,health,checked_at) VALUES($1,'external','MedlinePlus',95,'LOCAL TEST FIXTURE',false,'healthy',now()) ON CONFLICT(url) DO UPDATE SET checked_at=now(),approved=false",["https://medlineplus.gov/healthscreening.html"]);
 await db.close();
 const password=randomBytes(24).toString("base64url"),salt=randomBytes(16).toString("hex");
 const env={...process.env,BLOG_ENABLED:"true",NEXT_PUBLIC_BLOG_ENABLED:"true",BLOG_LOCAL_TEST_DB:directory,BLOG_ADMIN_USERNAME:"local-editor",BLOG_ADMIN_PASSWORD_HASH:"scrypt:"+salt+":"+scryptSync(password,salt,32).toString("hex"),BLOG_ADMIN_SESSION_SECRET:randomBytes(48).toString("hex")};

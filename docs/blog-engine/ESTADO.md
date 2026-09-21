@@ -4,17 +4,17 @@ Actualizado: 2026-09-21. Producción sin cambios; PRs en borrador.
 ## Implementado y comprobado
 - Acceso protegido, sesiones revocables, CSRF, cuotas y PostgreSQL aislado.
 - Blog EN/ES renderizado en servidor, canonical, schema, sitemap y navegación.
-- Catálogo de fuentes MedlinePlus con comprobación real de HTTP, aprobación y puntuación explicada.
+- Catálogo de fuentes MedlinePlus con comprobación real de HTTP, cualificación automática y puntuación explicada.
 - Plan de ocho temas bilingües basado en servicios reales. Generación y traducción de borradores, operaciones persistentes y control de duplicados.
 - Hero e imágenes inline en Blob del cliente: WebP, metadatos eliminados, revisión, alt y pertenencia al artículo o su traducción.
-- Previsualización privada aislada. Publicación requiere revisión clínica declarada de la versión guardada.
+- Preview privado integrado y edición visual. Publicación desde el dashboard por el editor autenticado, sin confirmación clínica adicional ni aprobación manual de fuentes.
 - Auditoría de página canónica y sitemap, envío de sitemap y consulta URL Inspection preparados. Preview nunca envía artículos a Google.
 - Aislamiento de rastreadores al navegar hacia y desde artículos sanitarios.
 
 ## Evidencia
-16 pruebas de contratos del blog pasan. E2E completo desktop/mobile pasa con carga real de hero e inline, selección, revisión, publicación local, canonical, sitemap, privacidad y retirada. Matriz visual: 390x844, 1024x768, 1440x900, 1920x1080, 3440x1440.
+37 pruebas del blog pasan. E2E completo desktop/mobile pasa con carga real de hero e inline, selección, revisión, publicación local, canonical, sitemap, privacidad y retirada. Matriz visual: 390x844, 1024x768, 1440x900, 1920x1080, 3440x1440.
 Las imágenes sólidas y textos repetidos de las pruebas son fixtures técnicos, no contenido aprobado.
-La CI de PR15 está verde. El sprint integrado debe verificar su propio SHA y CI antes de cualquier merge.
+PR20 contiene la revisión vigente del editor. Se verifican su SHA, CI y E2E antes de entregar el Preview; no se fusiona sin revisión visual.
 
 ## Infraestructura
 Base Neon exclusiva Preview: store_Lw5RawlG6y0OQ228.

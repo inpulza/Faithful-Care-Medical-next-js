@@ -72,15 +72,16 @@ async function handle(request:NextRequest,context:Context) {
     if(path.length===1&&request.method==="GET")return json({links:await links.linkLibrary()});
     if(path.length===2&&path[1]==="dashboard"&&request.method==="GET")return json(await links.sourceDashboard());
     if(path[1]==="check"&&request.method==="POST")return json(await links.auditSource(String(body.url||""),editor.username));
-    if(path[1]==="approve"&&request.method==="POST"&&typeof body.approved==="boolean")return json({link:await links.approveSource(String(body.url||""),body.approved,editor.username)});
   }
   if(path[0]==="posts"){
    if(path.length===1&&request.method==="GET")return json({posts:await listPosts(undefined,true)});
    if(path.length===1&&request.method==="POST")return json({post:await createPost(body,editor.username)},201);
    if(path.length===3&&path[2]==="seo"){const m=await import("../../../../../server/blog/seo");if(request.method==="GET")return json({events:await m.seoHistory(path[1])});if(request.method==="POST")return json(await m.publishSeo(path[1],editor.username));}
    if(path.length===3&&path[2]==="preview"&&request.method==="GET"){
-    const {previewHtml}=await import("../../../../../server/blog/render");
-    return new NextResponse(previewHtml(await getPost(path[1])),{headers:{...headers,"Content-Type":"text/html; charset=utf-8","X-Frame-Options":"SAMEORIGIN","Content-Security-Policy":"default-src 'none'; img-src https://"+(process.env.BLOB_PUBLIC_HOSTNAME||"invalid.invalid")+"; style-src 'unsafe-inline'; sandbox"}});
+    const {previewHtml,previewArticle}=await import("../../../../../server/blog/render");
+    const post=await getPost(path[1]);
+    if(request.headers.get("accept")==="application/json")return json({html:previewArticle(post)});
+    return new NextResponse(previewHtml(post),{headers:{...headers,"Content-Type":"text/html; charset=utf-8","X-Frame-Options":"SAMEORIGIN","Content-Security-Policy":"default-src 'none'; img-src https://"+(process.env.BLOB_PUBLIC_HOSTNAME||"invalid.invalid")+"; style-src 'unsafe-inline'; sandbox"}});
    }
    if(path[2]==="media"){
     const m=await import("../../../../../server/blog/media");
@@ -92,10 +93,10 @@ async function handle(request:NextRequest,context:Context) {
    if(path.length===3&&path[2]==="translate"&&request.method==="POST"){const m=await import("../../../../../server/blog/translation");return json({post:await m.translatePost(path[1],String(body.requestId||""),editor.username)},201);}
    if(path.length===2&&request.method==="GET")return json({post:await getPost(path[1])});
    if(path.length===2&&request.method==="PUT")return json({post:await editPost(path[1],body,Number(body.version),editor.username)});
-   if(path.length===3&&path[2]==="verify"&&request.method==="POST")return json(await verify(await getPost(path[1])));
+   if(path.length===3&&path[2]==="verify"&&request.method==="POST")return json(await verify(await getPost(path[1]),{refreshSources:true,actor:editor.username}));
    if(path.length===3&&path[2]==="status"&&request.method==="POST"){
     if(!["draft","pending_review","published","rejected"].includes(body.status))throw new BlogError(400,"Invalid status.");
-    const post=await transition(path[1],body.status,Number(body.version),editor.username,String(body.reviewer||"").slice(0,150));
+    const post=await transition(path[1],body.status,Number(body.version),editor.username);
     if(post.status==="published")after(async()=>{try{const m=await import("../../../../../server/blog/seo");await m.publishSeo(post.id,editor.username);}catch{console.error("Blog Google check did not complete; use the editorial retry control.");}});
     return json({post});
    }

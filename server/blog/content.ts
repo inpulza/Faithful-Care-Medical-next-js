@@ -17,9 +17,9 @@ export const postInput=z.object({
 });
 export function sanitize(content:string) {
   return sanitizeHtml(content,{
-    allowedTags:["p","h2","h3","ul","ol","li","strong","em","blockquote","a","br"],
-    allowedAttributes:{a:["href","rel"]},allowedSchemes:["https"],allowProtocolRelative:false,
-    transformTags:{a:(_tag,a): {tagName:string;attribs:Record<string,string>}=>{
+    allowedTags:["p","h2","h3","ul","ol","li","strong","em","blockquote","a","br","table","caption","thead","tbody","tfoot","tr","th","td"],
+    allowedAttributes:{a:["href","rel"],th:["scope"]},allowedSchemes:["https"],allowProtocolRelative:false,
+    transformTags:{b:"strong",i:"em",div:"p",a:(_tag,a): {tagName:string;attribs:Record<string,string>}=>{
       const href=a.href||"";
       if(href.startsWith("/")&&!href.startsWith("//")&&!href.includes("\\")) return {tagName:"a",attribs:{href}};
       try { const u=new URL(href); if(u.protocol==="https:"&&!u.username&&!u.password)
