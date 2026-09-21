@@ -39,7 +39,9 @@ const floridaPath = geoPath(projection)(
 ) ?? "";
 
 function projectPoint(lat: number, lng: number): [number, number] {
-  return projection([lng, lat]) ?? [0, 0];
+  const point = projection([lng, lat]) ?? [0, 0];
+  // Match the SVG path precision across server and browser math implementations.
+  return [Number(point[0].toFixed(3)), Number(point[1].toFixed(3))];
 }
 
 const naplesPoint = projectPoint(...NAPLES_CENTER);

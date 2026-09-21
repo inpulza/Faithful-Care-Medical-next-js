@@ -18,3 +18,4 @@ Las consultas de PR11-16 deben repetirse tras el último push. Hasta la revisió
 
 ## Decisiones pendientes
 Credencial/modelos IA, autorización específica de conexión Google en Vercel, revisión visual y lanzamiento. No se ocultan estos pendientes con un resultado de CI.
+- La nueva navegación desde la portada española detectó coordenadas D3 distintas por decimales insignificantes entre servidor y navegador: coordenadas SVG redondeadas a tres decimales, manteniendo la geometría y eliminando el error de hidratación en el recorrido real.
