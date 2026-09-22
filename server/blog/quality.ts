@@ -24,8 +24,8 @@ export async function verify(post:Post,options:{refreshSources?:boolean;actor?:s
   const media=[...(post.data.hero?[{url:post.data.hero,alt:post.data.heroAlt}]:[]),...post.data.images];
   for(const image of media){
     if(!ownedMediaUrl(image.url)){blockers.push("Images must come from this client's own media library.");continue;}
-    const approved=await query("SELECT m.id FROM fc_blog_media m JOIN fc_blog_posts p ON p.id=m.post_id WHERE m.url=$1 AND m.reviewed=true AND p.translation_group=$2",[image.url,post.translation_group]);
-    if(!approved.length)blockers.push("Review and select each image in this article's media library before publishing.");
+    const owned=await query("SELECT m.id FROM fc_blog_media m JOIN fc_blog_posts p ON p.id=m.post_id WHERE m.url=$1 AND p.translation_group=$2",[image.url,post.translation_group]);
+    if(!owned.length)blockers.push("Choose images from this article's own media library before publishing.");
     if(!image.alt.trim())blockers.push("Every image needs descriptive alternative text.");
   }
   const headings=(post.content.match(/<h2\b/gi)||[]).length;

@@ -12,19 +12,23 @@ const reservationKey=(key:string)=>digest("image-reservation:"+key);
 // same bucket. Reservations are conservative: cancellation never refunds spend.
 export async function reserveImageBudget(keys:string[]){
  if(keys.length!==3||new Set(keys).size!==3)throw new BlogError(400,"A complete unique image plan is required.");
+ return reserveKeys(keys);
+}
+export async function reserveSingleImageBudget(key:string){return reserveKeys([key]);}
+async function reserveKeys(keys:string[]){
  const rows=await query(`WITH admitted AS (
-  INSERT INTO fc_blog_limits(key,attempts,expires_at) VALUES($1,3,now()+interval '1 hour')
+  INSERT INTO fc_blog_limits(key,attempts,expires_at) VALUES($1,$4,now()+interval '1 hour')
   ON CONFLICT(key) DO UPDATE SET
-   attempts=CASE WHEN fc_blog_limits.expires_at<=now() THEN 3 ELSE fc_blog_limits.attempts+3 END,
+   attempts=CASE WHEN fc_blog_limits.expires_at<=now() THEN $4 ELSE fc_blog_limits.attempts+$4 END,
    expires_at=CASE WHEN fc_blog_limits.expires_at<=now() THEN now()+interval '1 hour' ELSE fc_blog_limits.expires_at END
-  WHERE fc_blog_limits.expires_at<=now() OR fc_blog_limits.attempts+3<=$3
+  WHERE fc_blog_limits.expires_at<=now() OR fc_blog_limits.attempts+$4<=$3
   RETURNING key
  ), reserved AS (
   INSERT INTO fc_blog_limits(key,attempts,expires_at)
   SELECT reservation,0,now()+interval '24 hours' FROM unnest($2::text[]) AS reservation
   WHERE EXISTS(SELECT 1 FROM admitted) RETURNING key
- ) SELECT key FROM reserved`,[budgetKey,keys.map(reservationKey),IMAGE_HOURLY_LIMIT]);
- if(rows.length!==3)throw new BlogError(429,"Auto Generate needs three available image credits. The shared limit is 36 images per hour; fewer than three credits remain. Try again after it resets; no AI requests were sent.");
+ ) SELECT key FROM reserved`,[budgetKey,keys.map(reservationKey),IMAGE_HOURLY_LIMIT,keys.length]);
+ if(rows.length!==keys.length)throw new BlogError(429,keys.length===1?"The shared image limit is 36 images per hour. Try after it resets; no AI requests were sent.":"Auto Generate needs three available image credits. The shared limit is 36 images per hour; fewer than three credits remain. Try again after it resets; no AI requests were sent.");
 }
 
 export async function consumeImageBudget(key:string){
