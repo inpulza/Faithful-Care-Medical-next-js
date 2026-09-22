@@ -2,7 +2,7 @@ import {after} from "next/server";
 import { NextRequest,NextResponse } from "next/server";
 import { COOKIE,cookieOptions,assertOrigin,login,logout,session } from "../../../../../server/blog/auth";
 import { BlogError } from "../../../../../server/blog/types";
-import { createPost,editPost,getPost,listPosts,transition,incomingArticleLinks } from "../../../../../server/blog/posts";
+import { createPost,deletePost,editPost,getPost,listPosts,transition,incomingArticleLinks } from "../../../../../server/blog/posts";
 import { verify } from "../../../../../server/blog/quality";
 import { ZodError } from "zod";
 export const runtime="nodejs";
@@ -93,6 +93,7 @@ async function handle(request:NextRequest,context:Context) {
    }
    if(path.length===3&&path[2]==="translate"&&request.method==="POST"){const m=await import("../../../../../server/blog/translation");return json({post:await m.translatePost(path[1],String(body.requestId||""),editor.username)},201);}
    if(path.length===2&&request.method==="GET")return json({post:await getPost(path[1])});
+   if(path.length===2&&request.method==="DELETE"){await deletePost(path[1],Number(body.version),editor.username);return json({ok:true});}
    if(path.length===2&&request.method==="PUT")return json({post:await editPost(path[1],body,Number(body.version),editor.username)});
    if(path.length===3&&path[2]==="verify"&&request.method==="POST")return json(await verify(await getPost(path[1]),{refreshSources:true,actor:editor.username}));
    if(path.length===3&&path[2]==="status"&&request.method==="POST"){
@@ -111,4 +112,4 @@ async function handle(request:NextRequest,context:Context) {
   return json({error:"The editorial service is unavailable. Try again later."},503);
  }
 }
-export const GET=handle;export const POST=handle;export const PUT=handle;
+export const DELETE=handle;export const GET=handle;export const POST=handle;export const PUT=handle;

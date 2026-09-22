@@ -43,7 +43,7 @@ export async function selectImage(id:string,mediaId:string,version:number,actor:
  if(media.role==="hero"){data.hero=media.url;data.heroAlt=alt;}
  else data.images=[...data.images.filter(i=>i.afterHeading!==media.placement),{url:media.url,alt,afterHeading:media.placement}].sort((a,b)=>a.afterHeading-b.afterHeading);
  const rows=await query<Post>(`WITH changed AS (
- UPDATE fc_blog_posts SET data=$2,status='draft',version=version+1,updated_at=now() WHERE id=$1 AND version=$3 AND status<>'published' RETURNING *
+ UPDATE fc_blog_posts SET data=$2,status='draft',version=version+1,updated_at=now() WHERE id=$1 AND NOT (data ? 'deletedAt') AND version=$3 AND status<>'published' RETURNING *
  ), reviewed AS (UPDATE fc_blog_media SET reviewed=true,alt=CASE WHEN post_id=$1 THEN $5 ELSE alt END WHERE id=$4 AND EXISTS(SELECT 1 FROM changed)),
  audit AS (INSERT INTO fc_blog_events(post_id,action,actor,detail) SELECT id,'image_selected',$6,jsonb_build_object('mediaId',$4::text) FROM changed)
  SELECT * FROM changed`,[id,JSON.stringify(data),version,mediaId,alt,actor]);
