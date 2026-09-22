@@ -68,7 +68,7 @@ export async function auditSource(url:string,actor:string){
 export async function sourceDashboard(){
  const links=await linkLibrary();
  const cached=await query<{url:string;expires_at:string}>("SELECT url,expires_at FROM fc_blog_source_cache");
- const posts=await query<{id:string;title:string;language:string;status:string;sources:string[]}>("SELECT id,title,language,status,data->'sources' AS sources FROM fc_blog_posts ORDER BY updated_at DESC");
+ const posts=await query<{id:string;title:string;language:string;status:string;sources:string[]}>("SELECT id,title,language,status,data->'sources' AS sources FROM fc_blog_posts WHERE NOT (data ? 'deletedAt') ORDER BY updated_at DESC");
  const history=await query("SELECT id,action,created_at,detail FROM fc_blog_events WHERE action IN ('source_checked','source_reused','source_researched','source_approved','source_blocked') ORDER BY id DESC LIMIT 100");
  return {links:links.map(link=>{const source=SOURCES.find(s=>s.url===link.url);const articles=posts.filter(p=>Array.isArray(p.sources)&&p.sources.includes(link.url)).map(({sources,...p})=>p);return {...link,qualified:qualifiedSource(link),title:source?.title||link.url,categories:source?.categories||[],cache_expires_at:cached.find(c=>c.url===link.url)?.expires_at||null,usage:articles.length,articles};}),history};
 }

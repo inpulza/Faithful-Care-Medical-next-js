@@ -42,7 +42,7 @@ export async function translatePost(id:string,key:string,actor:string){
  aiConfig();const source=await getPost(id);const target:Language=source.language==="en"?"es":"en";
  rejectPrivateInformation(source.title+" "+source.content);
  if(wordCount(source.content)<100)throw new BlogError(422,"Save a substantive article before translating.");
- if((await query("SELECT id FROM fc_blog_posts WHERE translation_group=$1 AND language=$2",[source.translation_group,target])).length)throw new BlogError(409,"This article already has a translation. Edit the existing translation.");
+ if((await query("SELECT id FROM fc_blog_posts WHERE translation_group=$1 AND language=$2 AND NOT (data ? 'deletedAt')",[source.translation_group,target])).length)throw new BlogError(409,"This article already has a translation. Edit the existing translation.");
  const job=await claimJob("translate",key,actor,{sourceId:id,sourceVersion:source.version,target});
  try{
   await consumeLimit("text-generation-global",5,3600);await jobStage(job.id,"translating");

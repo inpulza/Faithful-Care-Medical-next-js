@@ -70,7 +70,7 @@ export async function deletePost(id:string,version:number,actor:string){
    version=version+1,updated_at=now()
   WHERE id=$1 AND version=$2 AND status<>'published' AND NOT (data ? 'deletedAt')
   AND NOT EXISTS(SELECT 1 FROM fc_blog_auto_runs WHERE status='running' AND (post_id=$1 OR translation_id=$1))
-  AND NOT EXISTS(SELECT 1 FROM fc_blog_jobs WHERE status='running' AND post_id=$1)
+  AND NOT EXISTS(SELECT 1 FROM fc_blog_jobs WHERE status='running' AND (post_id=$1 OR detail->>'postId'=$1::text OR detail->>'sourceId'=$1::text))
   RETURNING id
  ), audit AS (INSERT INTO fc_blog_events(post_id,action,actor) SELECT id,'deleted',$3 FROM changed)
  SELECT id FROM changed`,[id,version,actor]);

@@ -7,6 +7,7 @@ process.env.NODE_ENV="test";
 const {setTestDatabase,query}=await import("../server/blog/db.ts");
 const {createPost,deletePost,listPosts,getPost,editPost,transition,publicPost}=await import("../server/blog/posts.ts");
 const {blankData}=await import("../server/blog/types.ts");
+const {claimJob,saveGeneratedPost}=await import("../server/blog/jobs.ts");
 let db;
 before(async()=>{db=new PGlite();for(const n of (await fs.readdir(new URL("../migrations/blog/",import.meta.url))).filter(n=>n.endsWith(".sql")).sort())await db.exec(await fs.readFile(new URL("../migrations/blog/"+n,import.meta.url),"utf8"));setTestDatabase(db);});
 after(async()=>{setTestDatabase();await db.close();});
@@ -29,10 +30,20 @@ test("published, stale and generating articles cannot be deleted",async()=>{
  await query("UPDATE fc_blog_posts SET status='published',published_at=now() WHERE id=$1",[a.id]);
  await assert.rejects(()=>deletePost(a.id,a.version,"tester"),e=>e.status===409);
  await query("UPDATE fc_blog_posts SET status='draft',published_at=NULL WHERE id=$1",[a.id]);
- await query("INSERT INTO fc_blog_jobs(post_id,kind,status) VALUES($1,'image','running')",[a.id]);
+ await claimJob("image",randomUUID(),"tester",{postId:a.id});
  await assert.rejects(()=>deletePost(a.id,a.version,"tester"),e=>e.status===409);
 });
 test("concurrent delete requests produce exactly one deletion",async()=>{
  const a=await createPost(input(),"tester");const results=await Promise.allSettled([deletePost(a.id,a.version,"tester"),deletePost(a.id,a.version,"tester")]);
  assert.equal(results.filter(r=>r.status==="fulfilled").length,1);
+});
+
+test("active translation blocks source deletion and deleted translation can be regenerated",async()=>{
+ const a=await createPost(input(),"tester"),b=await createPost({...input(),language:"es"},"tester",a.translation_group);
+ await deletePost(b.id,b.version,"tester");
+ const job=await claimJob("translate",randomUUID(),"tester",{sourceId:a.id});
+ await assert.rejects(()=>deletePost(a.id,a.version,"tester"),e=>e.status===409);
+ const restored=await saveGeneratedPost({...input(),language:"es"},"tester",job.id,a.translation_group,{id:a.id,version:a.version});
+ assert.equal(restored.id,b.id);assert.equal(restored.slug,b.slug);assert.equal(restored.status,"draft");assert(!restored.data.deletedAt);
+ assert.equal((await getPost(restored.id)).id,b.id);
 });
