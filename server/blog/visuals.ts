@@ -36,7 +36,7 @@ export async function captionAndPlace(id:string,mediaIds:string[],expectedVersio
  if(!hero||inline.length!==2)throw new BlogError(422,"Expected one hero and two inline images.");
  const data={...post.data,hero:hero.url,heroAlt:alt(hero),images:inline.map(m=>({url:m.url,alt:alt(m),afterHeading:m.placement})),reviewConfirmed:false,reviewer:""};
  const changed=await query<Post>(`WITH changed AS (
- UPDATE fc_blog_posts SET data=$2,version=version+1,updated_at=now() WHERE id=$1 AND version=$3 AND status='draft' RETURNING *
+ UPDATE fc_blog_posts SET data=$2,version=version+1,updated_at=now() WHERE id=$1 AND NOT (data ? 'deletedAt') AND version=$3 AND status='draft' RETURNING *
  ), captions AS (
  UPDATE fc_blog_media m SET alt=c.alt FROM jsonb_to_recordset($4::jsonb) AS c(id uuid,alt text)
  WHERE m.id=c.id AND m.post_id=$1 AND EXISTS(SELECT 1 FROM changed)

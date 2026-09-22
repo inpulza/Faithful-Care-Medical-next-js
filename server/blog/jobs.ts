@@ -17,7 +17,7 @@ export async function jobHistory(){
 export async function saveGeneratedPost(input:unknown,actor:string,jobId:string,group?:string,sourceGuard?:{id:string;version:number}){
  const p=postInput.parse(input);const data={...p.data,reviewConfirmed:false,reviewer:""};
  const rows=await query<Post>(`WITH admitted AS (
-   SELECT id FROM fc_blog_jobs WHERE id=$7 AND status='running' AND ($9::uuid IS NULL OR EXISTS(SELECT 1 FROM fc_blog_posts WHERE id=$9 AND version=$10 FOR UPDATE)) FOR UPDATE
+   SELECT id FROM fc_blog_jobs WHERE id=$7 AND status='running' AND ($9::uuid IS NULL OR EXISTS(SELECT 1 FROM fc_blog_posts WHERE id=$9 AND NOT (data ? 'deletedAt') AND version=$10 FOR UPDATE)) FOR UPDATE
  ), changed AS (
  INSERT INTO fc_blog_posts(language,title,slug,content,data,translation_group)
  SELECT $1,$2,$3,$4,$5,COALESCE($6::uuid,gen_random_uuid()) FROM admitted RETURNING *

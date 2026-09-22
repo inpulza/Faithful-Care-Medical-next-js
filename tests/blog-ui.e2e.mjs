@@ -41,6 +41,9 @@ try{
   await row.getByRole("status").filter({hasText:"Returned to draft"}).waitFor();
   await page.screenshot({path:"artifacts/blog/editor-"+width+"x"+height+".png",fullPage:false});
   assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),"No horizontal overflow");
+  page.once("dialog",d=>d.dismiss());await row.getByRole("button",{name:"Delete article",exact:true}).click();assert.equal(await row.count(),1);
+  page.once("dialog",d=>d.accept());await row.getByRole("button",{name:"Delete article",exact:true}).click();await page.getByRole("status").filter({hasText:"Article deleted"}).waitFor();assert.equal(await row.count(),0);
+  await page.reload();await page.getByRole("heading",{name:"Blog management",exact:true}).waitFor();assert(!(await (await context.request.get(config.baseUrl+"/api/admin/blog/posts")).json()).posts.some(p=>p.slug===slug));
   await page.getByRole("button",{name:"Sign out",exact:true}).click();await page.waitForURL("**/admin/login");
   assert.equal((await context.request.get(config.baseUrl+"/api/admin/blog/posts")).status(),401);
   assert.deepEqual(errors,[],"Unexpected browser errors");
