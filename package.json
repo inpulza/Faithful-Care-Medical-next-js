@@ -11,7 +11,9 @@
     "build": "next build",
     "start": "next start",
     "check": "tsc --noEmit",
-    "test": "node --import tsx --test --test-concurrency=4 tests/*.test.mjs"
+    "test": "node --import tsx --test --test-concurrency=4 tests/*.test.mjs",
+    "test:blog": "node --import tsx --test --test-concurrency=1 tests/blog-*.test.mjs",
+    "blog:migrate": "node --env-file=.env.local scripts/blog-migrate.mjs"
   },
   "dependencies": {
     "@phosphor-icons/react": "^2.1.10",
@@ -44,17 +46,20 @@
     "@radix-ui/react-tooltip": "^1.2.8",
     "@tanstack/react-query": "^5.60.5",
     "@types/d3-geo": "^3.1.0",
+    "@vercel/blob": "^2.6.1",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "cmdk": "^1.1.1",
     "d3-geo": "^3.1.1",
     "embla-carousel-react": "^8.6.0",
+    "entities": "8.1.0",
     "framer-motion": "^12.23.24",
     "gsap": "^3.14.2",
     "input-otp": "^1.4.2",
     "lenis": "^1.3.17",
-    "next": "^16.2.12",
+    "next": "^16.3.3",
     "next-themes": "^0.4.6",
+    "pg": "^8.23.0",
     "react": "^19.2.0",
     "react-day-picker": "^9.11.1",
     "react-dom": "^19.2.0",
@@ -62,17 +67,23 @@
     "react-resizable-panels": "^2.1.9",
     "recharts": "^2.15.4",
     "resend": "^6.18.1",
+    "sanitize-html": "^2.17.7",
+    "sharp": "^0.35.4",
     "sonner": "^2.0.7",
     "tailwind-merge": "^3.3.1",
     "tw-animate-css": "^1.4.0",
     "vaul": "^1.1.2",
-    "zod": "^3.25.76"
+    "zod": "^3.25.76",
+    "zod-to-json-schema": "^3.25.1"
   },
   "devDependencies": {
+    "@electric-sql/pglite": "^0.5.8",
     "@tailwindcss/postcss": "^4.3.3",
     "@types/node": "^20.19.0",
+    "@types/pg": "^8.23.1",
     "@types/react": "^19.2.0",
     "@types/react-dom": "^19.2.0",
+    "@types/sanitize-html": "^2.16.1",
     "autoprefixer": "^10.4.21",
     "playwright": "^1.62.1",
     "postcss": "^8.5.6",
@@ -84,7 +95,7 @@
     "nanoid": "3.3.18",
     "next": {
       "postcss": "8.5.25",
-      "sharp": "0.35.3"
+      "sharp": "0.35.4"
     }
   }
 }

@@ -2,7 +2,7 @@ import * as React from "react";
 import { useLocation } from "@/lib/router";
 import { motion, AnimatePresence } from "framer-motion";
 import { navigationData, standaloneLinks } from "@/lib/navigation-data";
-import { isConditionRoute } from "@shared/condition-route-paths";
+import { isSensitiveHealthRoute } from "@shared/tracking-route-privacy";
 
 function buildRouteLabels(): Record<string, string> {
   const labels: Record<string, string> = {
@@ -114,8 +114,8 @@ export function PageTransitionProvider({
       if (phaseRef.current !== "idle") return;
       if (href === locationRef.current) return;
       const targetPath = pathForHref(href);
-      const requiresPrivacyBoundary = isConditionRoute(locationRef.current)
-        || isConditionRoute(targetPath);
+      const requiresPrivacyBoundary = isSensitiveHealthRoute(locationRef.current)
+        || isSensitiveHealthRoute(targetPath);
 
       if (prefersReducedMotion.current) {
         if (requiresPrivacyBoundary) {

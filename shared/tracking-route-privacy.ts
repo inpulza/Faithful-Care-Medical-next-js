@@ -1,3 +1,7 @@
+import {isConditionRoute} from "./condition-route-paths.ts";
+export const isBlogArticleRoute=(path:string)=>/^\/(es\/)?blog\/[a-z0-9-]+\/?$/.test(path);
+export const isSensitiveHealthRoute=(path:string)=>isConditionRoute(path)||isBlogArticleRoute(path);
+
 import {
   CONDITION_ROUTE_PATHS,
   type ConditionRoutePath,
@@ -29,9 +33,11 @@ export const CONDITION_TRACKING_TITLE_ALIASES = Object.freeze(
 );
 
 export function privacySafeTrackingPath(pathname: string): string {
+  if(isBlogArticleRoute(pathname))return pathname.startsWith("/es/")?"/es/blog":"/blog";
   return CONDITION_TRACKING_PATH_ALIASES[pathname as ConditionRoutePath] ?? pathname;
 }
 
 export function privacySafeTrackingTitle(pathname: string, fallbackTitle: string): string {
+  if(isBlogArticleRoute(pathname))return "Health Journal | Faithful Care Medical Services";
   return CONDITION_TRACKING_TITLE_ALIASES[pathname as ConditionRoutePath] ?? fallbackTitle;
 }

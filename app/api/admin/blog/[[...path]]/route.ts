@@ -1,0 +1,114 @@
+import {after} from "next/server";
+import { NextRequest,NextResponse } from "next/server";
+import { COOKIE,cookieOptions,assertOrigin,login,logout,session } from "../../../../../server/blog/auth";
+import { BlogError } from "../../../../../server/blog/types";
+import { createPost,editPost,getPost,listPosts,transition,incomingArticleLinks } from "../../../../../server/blog/posts";
+import { verify } from "../../../../../server/blog/quality";
+import { ZodError } from "zod";
+export const runtime="nodejs";
+export const dynamic="force-dynamic";
+export const maxDuration=300;
+const headers={"Cache-Control":"no-store","X-Robots-Tag":"noindex, nofollow, noarchive"};
+type Context={params:Promise<{path?:string[]}>};
+const json=(value:unknown,status=200)=>NextResponse.json(value,{status,headers});
+async function handle(request:NextRequest,context:Context) {
+ try {
+  const path=(await context.params).path||[];
+  const token=request.cookies.get(COOKIE)?.value;
+  let body:Record<string,any>={};
+  if(request.method!=="GET"){
+   assertOrigin(request);
+   if(!request.headers.get("content-type")?.startsWith("application/json")) throw new BlogError(415,"JSON is required.");
+   const reader=request.body?.getReader();const chunks:Uint8Array[]=[];let length=0;
+   if(reader){while(true){const part=await reader.read();if(part.done)break;length+=part.value.length;if(length>200000){await reader.cancel();throw new BlogError(413,"Request is too large.");}chunks.push(part.value);}}
+   try{body=JSON.parse(Buffer.concat(chunks).toString("utf8"));}catch{throw new BlogError(400,"Invalid JSON.");}
+   if(!body||typeof body!=="object"||Array.isArray(body))throw new BlogError(400,"Invalid request.");
+  }
+  if(path.join("/")==="login"&&request.method==="POST"){
+   if(typeof body.username!=="string"||typeof body.password!=="string"||body.username.length>150||body.password.length>1024)throw new BlogError(400,"Invalid credentials.");
+   // Vercel sets x-vercel-forwarded-for; never trust arbitrary X-Forwarded-For as the only limit.
+   const ip=process.env.VERCEL ? request.headers.get("x-vercel-forwarded-for")||"unknown" : "local";
+   const value=await login(body.username,body.password,ip);
+   const response=json({ok:true});response.cookies.set(COOKIE,value,cookieOptions);return response;
+  }
+  const editor=await session(token);
+  if(!editor)throw new BlogError(401,"Editorial login required.");
+  if(path.join("/")==="session"&&request.method==="GET")return json({username:editor.username});
+  if(path.join("/")==="logout"&&request.method==="POST"){
+    await logout(token);const response=json({ok:true});response.cookies.set(COOKIE,"",{...cookieOptions,maxAge:0});return response;
+  }
+  if(path[0]==="auto"){
+   const m=await import("../../../../../server/blog/auto");
+   if(path.length===2&&path[1]==="config"&&request.method==="GET")return json(m.autoConfiguration());
+   if(path.length===2&&path[1]==="current"&&request.method==="GET"){const run=await m.currentRun();return json({run:run?m.viewRun(run):null});}
+   if(path.length===2&&path[1]==="start"&&request.method==="POST")return json({run:m.viewRun(await m.startAuto(body,editor.username))},201);
+   if(path.length===2&&request.method==="GET")return json({run:m.viewRun(await m.autoRun(path[1]))});
+   if(path.length===3&&path[2]==="advance"&&request.method==="POST"){if(!Number.isInteger(body.cursor)||body.cursor<0||body.cursor>14)throw new BlogError(400,"Invalid workflow step.");return json({run:m.viewRun(await m.advanceAuto(path[1],body.cursor))});}
+   if(path.length===3&&path[2]==="cancel"&&request.method==="POST")return json({run:m.viewRun(await m.cancelAuto(path[1]))});
+   if(path.length===3&&path[2]==="events"&&request.method==="GET"){
+    await m.autoRun(path[1]);
+    let cancelled=false;
+    const stream=new ReadableStream({async start(controller){
+     const encoder=new TextEncoder();let last="";const deadline=Date.now()+25000;
+     try{while(!cancelled&&!request.signal.aborted&&Date.now()<deadline){
+      if(!await session(token)){controller.enqueue(encoder.encode('data: {"authExpired":true}\n\n'));break;}
+      const run=m.viewRun(await m.autoRun(path[1])),payload=JSON.stringify({run});
+      if(payload!==last){controller.enqueue(encoder.encode("data: "+payload+"\n\n"));last=payload;}
+      if(run.status!=="running")break;
+      await new Promise(resolve=>setTimeout(resolve,1500));
+     }}catch{if(!cancelled&&!request.signal.aborted)controller.enqueue(encoder.encode('data: {"reconnect":true}\n\n'));}
+     finally{if(!cancelled){try{controller.close();}catch{}}}
+    },cancel(){cancelled=true;}});
+    return new NextResponse(stream,{headers:{...headers,"Content-Type":"text/event-stream","Connection":"keep-alive","X-Accel-Buffering":"no"}});
+   }
+  }
+
+  if(path.join("/")==="google-connection"&&request.method==="GET"){const m=await import("../../../../../server/blog/seo");return json(await m.googleConnection());}
+  if(path[0]==="topics"&&request.method==="GET"){const m=await import("../../../../../server/blog/generation");return json({topics:await m.topicPlan(request.nextUrl.searchParams.get("language")==="es"?"es":"en")});}
+  if(path[0]==="jobs"&&request.method==="GET"){const m=await import("../../../../../server/blog/jobs");return json({jobs:await m.jobHistory()});}
+  if(path[0]==="generate"&&request.method==="POST"){if(!["en","es"].includes(body.language))throw new BlogError(400,"Choose a language.");const m=await import("../../../../../server/blog/generation");return json({post:await m.generateDraft(String(body.topicId||""),body.language,String(body.requestId||""),editor.username)},201);}
+  if(path[0]==="links"){
+    const links=await import("../../../../../server/blog/links");
+    if(path.length===1&&request.method==="GET")return json({links:await links.linkLibrary()});
+    if(path.length===2&&path[1]==="dashboard"&&request.method==="GET")return json(await links.sourceDashboard());
+    if(path[1]==="check"&&request.method==="POST")return json(await links.auditSource(String(body.url||""),editor.username));
+  }
+  if(path[0]==="posts"){
+   if(path.length===1&&request.method==="GET")return json({posts:await listPosts(undefined,true)});
+   if(path.length===1&&request.method==="POST")return json({post:await createPost(body,editor.username)},201);
+   if(path.length===3&&path[2]==="incoming-links"&&request.method==="GET")return json({articles:await incomingArticleLinks(path[1])});
+   if(path.length===3&&path[2]==="seo"){const m=await import("../../../../../server/blog/seo");if(request.method==="GET")return json({events:await m.seoHistory(path[1])});if(request.method==="POST")return json(await m.publishSeo(path[1],editor.username));}
+   if(path.length===3&&path[2]==="preview"&&request.method==="GET"){
+    const {previewHtml,previewArticle}=await import("../../../../../server/blog/render");
+    const post=await getPost(path[1]);
+    if(request.headers.get("accept")==="application/json")return json({html:previewArticle(post)});
+    return new NextResponse(previewHtml(post),{headers:{...headers,"Content-Type":"text/html; charset=utf-8","X-Frame-Options":"SAMEORIGIN","Content-Security-Policy":"default-src 'none'; img-src 'self' https://"+(process.env.BLOB_PUBLIC_HOSTNAME||"invalid.invalid")+"; style-src 'unsafe-inline'; sandbox"}});
+   }
+   if(path[2]==="media"){
+    const m=await import("../../../../../server/blog/media");
+    if(path.length===3&&request.method==="GET")return json({media:await m.mediaList(path[1])});
+    if(request.method==="POST"){const alt=String(body.alt||"").trim();if(alt.length<5||alt.length>250)throw new BlogError(400,"Add useful image alternative text.");
+     if(path[3]==="select")return json({post:await m.selectImage(path[1],String(body.mediaId||""),Number(body.version),editor.username,alt)});
+     if(path[3]==="generate"){const placement=Number(body.placement||1);if(!Number.isInteger(placement)||placement<1||placement>30)throw new BlogError(400,"Invalid image placement.");return json({media:await m.generateImage(path[1],String(body.requestId||""),body.role==="inline"?"inline":"hero",alt,placement,editor.username)});}}
+   }
+   if(path.length===3&&path[2]==="translate"&&request.method==="POST"){const m=await import("../../../../../server/blog/translation");return json({post:await m.translatePost(path[1],String(body.requestId||""),editor.username)},201);}
+   if(path.length===2&&request.method==="GET")return json({post:await getPost(path[1])});
+   if(path.length===2&&request.method==="PUT")return json({post:await editPost(path[1],body,Number(body.version),editor.username)});
+   if(path.length===3&&path[2]==="verify"&&request.method==="POST")return json(await verify(await getPost(path[1]),{refreshSources:true,actor:editor.username}));
+   if(path.length===3&&path[2]==="status"&&request.method==="POST"){
+    if(!["draft","pending_review","published","rejected"].includes(body.status))throw new BlogError(400,"Invalid status.");
+    const post=await transition(path[1],body.status,Number(body.version),editor.username);
+    if(post.status==="published")after(async()=>{try{const m=await import("../../../../../server/blog/seo");await m.publishSeo(post.id,editor.username);}catch{console.error("Blog Google check did not complete; use the editorial retry control.");}});
+    return json({post});
+   }
+  }
+  throw new BlogError(404,"Editorial endpoint not found.");
+ }catch(error){
+  if(error instanceof BlogError)return json({error:error.message},error.status);
+  if(error instanceof ZodError)return json({error:"Please check the article fields.",fields:error.flatten()},400);
+  if((error as {code?:string})?.code==="23505")return json({error:"That slug, topic or translation already exists."},409);
+  console.error("Blog request failed",error instanceof Error?error.name:"unknown");
+  return json({error:"The editorial service is unavailable. Try again later."},503);
+ }
+}
+export const GET=handle;export const POST=handle;export const PUT=handle;

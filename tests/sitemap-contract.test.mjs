@@ -7,8 +7,8 @@ const routeContractUrl = new URL("../app/lib/route-contract.ts", import.meta.url
 const { default: sitemap } = await import(sitemapUrl.href);
 const { publicRoutes } = await import(routeContractUrl.href);
 
-test("sitemap exactly matches the public route contract without duplicate URLs", () => {
-  const entries = sitemap();
+test("sitemap exactly matches the public route contract without duplicate URLs", async () => {
+  const entries = await sitemap();
   const sitemapUrls = entries.map(({ url }) => url);
   const publicUrls = publicRoutes.map(({ canonical }) => canonical);
 
@@ -17,9 +17,9 @@ test("sitemap exactly matches the public route contract without duplicate URLs",
   assert.equal(entries.length, publicRoutes.length);
 });
 
-test("sitemap lastmod values are explicit and deterministic", () => {
-  const first = sitemap();
-  const second = sitemap();
+test("sitemap lastmod values are explicit and deterministic", async () => {
+  const first = await sitemap();
+  const second = await sitemap();
 
   assert.deepEqual(first, second);
 

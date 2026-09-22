@@ -56,6 +56,7 @@ export const TRACKING_BOOTSTRAP = `
   var allowedTrackingPaths = Object.freeze(${JSON.stringify(TRACKABLE_PATHS)});
   var trackingPathAliases = Object.freeze(${JSON.stringify(CONDITION_TRACKING_PATH_ALIASES)});
   var trackingTitleAliases = Object.freeze(${JSON.stringify(CONDITION_TRACKING_TITLE_ALIASES)});
+  function isBlogArticle(pathname) { return /^\\/(es\\/)?blog\\/[a-z0-9-]+\\/?$/.test(pathname); }
   function conditionGuideLinkForEvent(event) {
     var target = event.target;
     var element = target && target.nodeType === 1 ? target : target && target.parentElement;
@@ -68,7 +69,7 @@ export const TRACKING_BOOTSTRAP = `
       var url = new URL(anchor.getAttribute("href"), window.location.href);
       if (
         url.origin !== window.location.origin ||
-        !Object.prototype.hasOwnProperty.call(trackingPathAliases, url.pathname)
+        (!Object.prototype.hasOwnProperty.call(trackingPathAliases, url.pathname) && !isBlogArticle(url.pathname))
       ) {
         return null;
       }
@@ -107,6 +108,7 @@ export const TRACKING_BOOTSTRAP = `
     return trackingPathAliases[pathname] || pathname;
   }
   function safeTrackingTitle(pathname) {
+    if (isBlogArticle(pathname)) return "Health Journal | Faithful Care Medical Services";
     return trackingTitleAliases[pathname] || document.title;
   }
   window.__fcmsAllowedTrackingPaths = allowedTrackingPaths;

@@ -199,6 +199,7 @@ export const navigationData: NavCategory[] = [
 ];
 
 export const standaloneLinks: NavLink[] = [
+  ...(process.env.NEXT_PUBLIC_BLOG_ENABLED==="true"?[{id:"journal",title:"Health Journal",href:"/blog",icon:FirstAid}]:[]),
   {
     id: "about",
     title: "About",

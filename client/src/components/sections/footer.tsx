@@ -37,6 +37,7 @@ export function Footer({ className }: FooterProps) {
   const cookiePreferencesLabel = isSpanish
     ? "Preferencias de cookies"
     : "Cookie Preferences";
+  const blogHref=isSpanish?"/es/blog":"/blog";
   const serviceCategories = navigationData.filter(c => c.id !== "locations" && c.id !== "insurance");
   const locationCategory = navigationData.find(c => c.id === "locations");
 
@@ -59,6 +60,7 @@ export function Footer({ className }: FooterProps) {
             </p>
           </div>
 
+          {process.env.NEXT_PUBLIC_BLOG_ENABLED==="true"&&<div><h3 className="font-semibold text-white mb-4 text-sm uppercase tracking-wider">{isSpanish?"Recursos":"Resources"}</h3><Link href={blogHref} className="text-white/60 hover:text-secondary text-sm">{isSpanish?"Diario de salud":"Health Journal"}</Link></div>}
           {serviceCategories.map((category) => (
             <div key={category.id} data-testid={`footer-column-${category.id}`}>
               <h3 className="font-semibold text-white mb-4 text-sm uppercase tracking-wider">

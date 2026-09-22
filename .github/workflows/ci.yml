@@ -44,3 +44,22 @@ jobs:
           done
           cat "$RUNNER_TEMP/faithful-care-next.log"
           exit 1
+      - name: Test protected bilingual editorial UI with isolated local database
+        shell: bash
+        run: |
+          node scripts/blog-dev.mjs > "$RUNNER_TEMP/faithful-care-blog.log" 2>&1 &
+          blog_pid=$!
+          trap 'kill "$blog_pid" 2>/dev/null || true' EXIT
+          for attempt in {1..40}; do
+            if curl --fail --silent --output /dev/null http://127.0.0.1:3187/admin/login; then
+              node --import tsx tests/blog-auto.e2e.mjs
+              node tests/blog-ui.e2e.mjs
+              node tests/blog-layout.e2e.mjs
+              node tests/blog-workspace.e2e.mjs
+              node --import tsx tests/blog-author.e2e.mjs
+              exit $?
+            fi
+            sleep 1
+          done
+          cat "$RUNNER_TEMP/faithful-care-blog.log"
+          exit 1
