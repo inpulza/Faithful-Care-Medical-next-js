@@ -15,12 +15,14 @@ before(async()=>{db=new PGlite();for(const n of (await fs.readdir(new URL("../mi
 after(async()=>{setTestDatabase();await db.close();});
 beforeEach(async()=>{await query("DELETE FROM fc_blog_limits");await query("DELETE FROM fc_blog_auto_runs");Object.assign(process.env,{BLOG_AI_ENABLED:"true",BLOG_IMAGES_ENABLED:"true",OPENAI_API_KEY:"unit-only",BLOB_READ_WRITE_TOKEN:"unit-only",BLOB_PUBLIC_HOSTNAME:"client.public.blob.vercel-storage.com"});});
 
-test("one manual image prevents a whole automatic run before any provider step",async()=>{
- await consumeImageBudget(randomUUID());
+async function spend(count){for(let i=0;i<count;i++)await consumeImageBudget(randomUUID());}
+
+test("34 manual images prevent a whole automatic run before any provider step",async()=>{
+ await spend(34);
  await assert.rejects(()=>startAuto(input(),"tester"),e=>e.status===429);
  const [run]=await query("SELECT * FROM fc_blog_auto_runs");assert.equal(run.status,"failed");assert.equal(run.cursor,0);assert.equal(run.lease_token,null);
  let calls=0;await advanceAuto(run.id,0,{ideate:async()=>{calls++;}});assert.equal(calls,0);
- assert.equal((await query("SELECT attempts FROM fc_blog_limits WHERE key=$1",[budgetKey]))[0].attempts,1);
+ assert.equal((await query("SELECT attempts FROM fc_blog_limits WHERE key=$1",[budgetKey]))[0].attempts,34);
 });
 
 test("reserved automatic images consume once without being charged twice",async()=>{
@@ -29,10 +31,12 @@ test("reserved automatic images consume once without being charged twice",async(
  await Promise.all(ids.map(consumeImageBudget));
  assert.equal((await query("SELECT attempts FROM fc_blog_limits WHERE key=$1",[budgetKey]))[0].attempts,3);
  await assert.rejects(()=>consumeImageBudget(ids[0]),e=>e.status===409);
+ await spend(33);
  await assert.rejects(()=>consumeImageBudget(randomUUID()),e=>e.status===429);
 });
 
 test("competing runs reserve only one complete image set",async()=>{
+ await spend(33);
  const a=keys(),b=keys();const results=await Promise.allSettled([reserveImageBudget(a),reserveImageBudget(b)]);
  assert.equal(results.filter(r=>r.status==="fulfilled").length,1);
  assert.equal(results.find(r=>r.status==="rejected").reason.status,429);
@@ -40,6 +44,7 @@ test("competing runs reserve only one complete image set",async()=>{
 });
 
 test("manual generation racing auto reservation cannot oversubscribe the bucket",async()=>{
+ await spend(33);
  const ids=keys();const results=await Promise.allSettled([consumeImageBudget(randomUUID()),reserveImageBudget(ids)]);
  assert.equal(results.filter(r=>r.status==="fulfilled").length,1);
  const reservations=await query("SELECT key FROM fc_blog_limits WHERE key<>$1",[budgetKey]);
@@ -48,6 +53,7 @@ test("manual generation racing auto reservation cannot oversubscribe the bucket"
 });
 
 test("a second run is rejected before text; expired hourly buckets reopen safely",async()=>{
+ await spend(33);
  const first=await startAuto(input(),"tester");await cancelAuto(first.id);
  await assert.rejects(()=>startAuto(input(),"tester"),e=>e.status===429);
  await query("UPDATE fc_blog_limits SET expires_at=now()-interval '1 second' WHERE key=$1",[budgetKey]);
@@ -79,3 +85,20 @@ test("a running record without confirmed admission fails closed even without a l
  let calls=0;const result=await advanceAuto(run.id,0,{ideate:async()=>{calls++;}});
  assert.equal(result.status,"failed");assert.equal(calls,0);
 });
+
+ test("36 individual images are admitted and the 37th is rejected",async()=>{
+ await spend(36);
+ await assert.rejects(()=>consumeImageBudget(randomUUID()),e=>e.status===429);
+ });
+ test("12 complete auto runs fit in an hour without the former two-start cap",async()=>{
+ for(let i=0;i<12;i++){const run=await startAuto(input(),"tester");assert.equal(run.status,"running");await cancelAuto(run.id);}
+ assert.equal((await query("SELECT attempts FROM fc_blog_limits WHERE key=$1",[budgetKey]))[0].attempts,36);
+ await assert.rejects(()=>startAuto(input(),"tester"),e=>e.status===429);
+ });
+ test("raising the limit preserves existing hourly consumption and reset time",async()=>{
+ await spend(3);
+ const [before]=await query("SELECT expires_at FROM fc_blog_limits WHERE key=$1",[budgetKey]);
+ await reserveImageBudget(keys());
+ const [after]=await query("SELECT attempts,expires_at FROM fc_blog_limits WHERE key=$1",[budgetKey]);
+ assert.equal(after.attempts,6);assert.deepEqual(after.expires_at,before.expires_at);
+ });
