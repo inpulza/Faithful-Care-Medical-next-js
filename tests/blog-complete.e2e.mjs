@@ -52,7 +52,7 @@ try{
   await page.setViewportSize({width,height});
   await page.getByRole("button",{name:"Preview",exact:true}).click();
   const frame=page.locator(".saved-article-preview");await frame.getByRole("heading",{level:1}).waitFor();
-  assert.equal(await frame.locator("img").count(),2);
+  assert.equal(await frame.locator("img:not(.blog-author-avatar img)").count(),2);
   await page.getByRole("button",{name:"Back to dashboard",exact:true}).click();
   await page.getByLabel("Search articles",{exact:true}).fill(slug);
   await page.locator(".article-row").getByRole("button",{name:"Manage",exact:true}).click();
@@ -65,7 +65,7 @@ try{
   await publicPage.addInitScript(({key,version})=>localStorage.setItem(key,JSON.stringify({version,state:{necessary:true,analytics:true,advertising:false,personalization:false}})),{key:CONSENT_STORAGE_KEY,version:CONSENT_VERSION});
   const response=await publicPage.goto(config.baseUrl+"/blog/"+slug,{waitUntil:"networkidle"});assert.equal(response.status(),200);
   assert.equal(await publicPage.locator("main h1").count(),1);
-  assert.equal(await publicPage.locator("main img").count(),2);
+  assert.equal(await publicPage.locator("main img:not(.blog-author-avatar img)").count(),2);
   for(const img of await publicPage.locator("main img").all())await img.scrollIntoViewIfNeeded();await publicPage.waitForFunction(()=>[...document.querySelectorAll("main img")].every(i=>i.complete&&i.naturalWidth>0));await publicPage.evaluate(()=>scrollTo(0,0));
   assert.equal(await publicPage.locator('link[rel="canonical"]').getAttribute("href"),"https://faithfulcaremedical.com/blog/"+slug);
   assert.equal(await publicPage.getByTestId("link-lang-es").getAttribute("href"),"/es/blog");

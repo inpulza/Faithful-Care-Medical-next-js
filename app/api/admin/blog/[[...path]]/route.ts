@@ -82,7 +82,7 @@ async function handle(request:NextRequest,context:Context) {
     const {previewHtml,previewArticle}=await import("../../../../../server/blog/render");
     const post=await getPost(path[1]);
     if(request.headers.get("accept")==="application/json")return json({html:previewArticle(post)});
-    return new NextResponse(previewHtml(post),{headers:{...headers,"Content-Type":"text/html; charset=utf-8","X-Frame-Options":"SAMEORIGIN","Content-Security-Policy":"default-src 'none'; img-src https://"+(process.env.BLOB_PUBLIC_HOSTNAME||"invalid.invalid")+"; style-src 'unsafe-inline'; sandbox"}});
+    return new NextResponse(previewHtml(post),{headers:{...headers,"Content-Type":"text/html; charset=utf-8","X-Frame-Options":"SAMEORIGIN","Content-Security-Policy":"default-src 'none'; img-src 'self' https://"+(process.env.BLOB_PUBLIC_HOSTNAME||"invalid.invalid")+"; style-src 'unsafe-inline'; sandbox"}});
    }
    if(path[2]==="media"){
     const m=await import("../../../../../server/blog/media");

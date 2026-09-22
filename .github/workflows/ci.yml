@@ -56,6 +56,7 @@ jobs:
               node tests/blog-ui.e2e.mjs
               node tests/blog-layout.e2e.mjs
               node tests/blog-workspace.e2e.mjs
+              node --import tsx tests/blog-author.e2e.mjs
               exit $?
             fi
             sleep 1

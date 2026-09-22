@@ -1,3 +1,4 @@
+import {BLOG_AUTHOR} from "../../shared/blog-author";
 export type Language = "en" | "es";
 export type Status = "draft" | "pending_review" | "published" | "rejected";
 export interface EditorialData {
@@ -17,6 +18,6 @@ export class BlogError extends Error {
 }
 export const blankData: EditorialData = {
   excerpt: "", metaTitle: "", metaDescription: "", category: "prevention", tags: [],
-  author: "Faithful Care Medical Services", reviewer: "", reviewConfirmed: false,
+  author: BLOG_AUTHOR.name, reviewer: "", reviewConfirmed: false,
   hero: "", heroAlt: "", images: [], sources: [], topic: "", disclaimer: "",
 };
