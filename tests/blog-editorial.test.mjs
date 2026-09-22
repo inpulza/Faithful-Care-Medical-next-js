@@ -1,9 +1,33 @@
 import assert from "node:assert/strict";
 import {test} from "node:test";
-import {portfolio,validateBrief,buildBrief,assertLinks,assess,makeMetadata,assemble} from "../server/blog/editorial.ts";
+import {portfolio,validateBrief,buildBrief,assertLinks,assess,makeMetadata,assemble,ideate} from "../server/blog/editorial.ts";
 import {blankData} from "../server/blog/types.ts";
 const candidate={id:"preventive-visit",title:"Preparing a preventive visit",angle:"Prepare a practical question list with a clinician",keyword:"preventive visit",category:"prevention",sourceUrls:["https://medlineplus.gov/healthscreening.html"]};
-async function provider(values,fn){const fetch=globalThis.fetch,saved={...process.env};let count=0;process.env.BLOG_AI_ENABLED="true";process.env.OPENAI_API_KEY="unit-only";globalThis.fetch=async()=>Response.json({choices:[{finish_reason:"stop",message:{content:JSON.stringify(values[count++])}}]});try{await fn(()=>count);}finally{globalThis.fetch=fetch;for(const key of ["BLOG_AI_ENABLED","OPENAI_API_KEY"]){if(saved[key]===undefined)delete process.env[key];else process.env[key]=saved[key];}}}
+async function provider(values,fn){const fetch=globalThis.fetch,saved={...process.env};let count=0;const requests=[];process.env.BLOG_AI_ENABLED="true";process.env.OPENAI_API_KEY="unit-only";globalThis.fetch=async(_url,options)=>{requests.push(JSON.parse(options.body));const value=values[count++];if(value instanceof Error)throw value;if(value instanceof Response)return value;return Response.json({choices:[{finish_reason:"stop",message:{content:JSON.stringify(value)}}]});};try{await fn(()=>count,requests);}finally{globalThis.fetch=fetch;for(const key of ["BLOG_AI_ENABLED","OPENAI_API_KEY"]){if(saved[key]===undefined)delete process.env[key];else process.env[key]=saved[key];}}}
+test("topic planning repairs every candidate against the category mapping while preserving focus and language",async()=>{
+ const second={...candidate,id:"screening-followup",title:"Discussing preventive screening follow-up"};
+ const good={candidates:[candidate,second]};
+ const bad={candidates:[candidate,{...second,sourceUrls:["https://medlineplus.gov/palliativecare.html"]}]};
+ await provider([bad,good],async(count,requests)=>{
+  assert.deepEqual(await ideate("es","Preparar una consulta de prevención",[]),good.candidates);assert.equal(count(),2);
+  for(const request of requests){const context=JSON.parse(request.messages[1].content);assert.equal(context.language,"es");assert.equal(context.focus,"Preparar una consulta de prevención");assert.deepEqual(context.categorySourceUrls.prevention,[candidate.sourceUrls[0]]);}
+  assert.deepEqual(JSON.parse(requests[1].messages[1].content).previous,bad);
+ });
+ for(const invalid of [{candidates:[candidate,candidate]},{candidates:[candidate,{...second,angle:"short"}]},{candidates:[candidate,{...second,sourceUrls:["https://unlisted.example/source"]}]}]){
+  await provider([invalid,good],async count=>{assert.deepEqual(await ideate("en","Preventive visits",[]),good.candidates);assert.equal(count(),2);});
+ }
+ await provider([bad,{candidates:[candidate,candidate]},good],async count=>{await assert.rejects(()=>ideate("es","Prevención",[]),e=>e.status===422&&e.message.includes("after one repair"));assert.equal(count(),2);});
+});
+test("topic repair never retries provider failures or resends identifying content",async()=>{
+ const good={candidates:[candidate,{...candidate,id:"other-visit"}]};
+ const malformed={...good,candidates:[candidate,{...candidate,id:"other-visit",angle:"Contact patient@example.com for the next discussion"}]};
+ for(const value of [new Error("Network interrupted"),Response.json({}, {status:429}),Response.json({choices:[{finish_reason:"length",message:{content:"{}"}}]})]){
+  await provider([value,good],async count=>{await assert.rejects(()=>ideate("en","Preventive visits",[]));assert.equal(count(),1);});
+ }
+ await provider([malformed,good],async count=>{await assert.rejects(()=>ideate("en","Preventive visits",[]),e=>e.status===400);assert.equal(count(),1);});
+ await provider([{},malformed,good],async count=>{await assert.rejects(()=>ideate("en","Preventive visits",[]),e=>e.status===400);assert.equal(count(),2);});
+ await provider([good],async count=>{await assert.rejects(()=>ideate("en","Patient name: Test",[]),e=>e.status===400);assert.equal(count(),0);});
+});
 test("editorial memory groups translations and carries body/metadata evidence",()=>{
  const base={id:"a",translation_group:"same",title:"Prevention",content:"<p>Ask your clinician</p>",data:{...blankData,excerpt:"Useful discussion"}};
  const result=portfolio([base,{...base,id:"b",language:"es"}]);assert.equal(result.length,1);assert.equal(result[0].body,"Ask your clinician");

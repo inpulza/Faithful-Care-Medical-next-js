@@ -31,11 +31,26 @@ export function portfolio(posts:Post[]){
 }
 export async function ideate(language:Language,focus:string,posts:Post[]){
  rejectPrivateInformation(focus);
- const result=await generateJson(clinicalRules+" Return JSON {candidates:[{id,title,angle,keyword,category,sourceUrls}]}. Propose 4 distinct useful article ideas in the requested language, grounded in available sources and actual services. When focus is provided, every idea must answer that explicit focus; never switch clinical service to avoid a duplicate. If the focus is empty, balance primary care, prevention, chronic care, seniors, palliative care and family support. Avoid duplicate intent, saturated categories, location-only rewrites and generic Top/Best lists. Use only allowed categories and exact source URLs whose subjects support the angle. IDs must be meaningful lowercase hyphenated terms.",{language,focus,categories,sources:SOURCES,portfolio:portfolio(posts)},[],candidatesSchema);
- const candidates=candidatesSchema.parse(result).candidates;
- if(new Set(candidates.map(c=>c.id)).size!==candidates.length)throw new BlogError(422,"The topic planner repeated a candidate.");
- for(const c of candidates){rejectPrivateInformation(c.title+" "+c.angle+" "+c.keyword);if(c.sourceUrls.some(u=>!SOURCES.some(s=>s.url===u&&(s.categories as readonly string[]).includes(c.category))))throw new BlogError(422,"The topic planner selected a source outside its clinical category.");}
- return candidates;
+ const instruction=clinicalRules+" Return JSON {candidates:[{id,title,angle,keyword,category,sourceUrls}]}. Propose 4 distinct useful article ideas in the requested language, grounded in available sources and actual services. When focus is provided, every idea must answer that explicit focus; never switch clinical service to avoid a duplicate. If the focus is empty, balance primary care, prevention, chronic care, seniors, palliative care and family support. Avoid duplicate intent, saturated categories, location-only rewrites and generic Top/Best lists. For EACH candidate, choose an allowed category and 1-2 exact URLs from categorySourceUrls[category]. Every URL must belong to that exact category; a related clinical subject does not permit a URL from another category. Do not alter the requested focus or language to satisfy this mapping. IDs must be unique meaningful lowercase hyphenated terms.";
+ const categorySourceUrls:Record<string,string[]>=Object.fromEntries(categories.map(c=>[c,SOURCES.filter(s=>(s.categories as readonly string[]).includes(c)).map(s=>s.url)]));
+ const context={language,focus,categories,categorySourceUrls,sources:SOURCES,portfolio:portfolio(posts)};
+ let value=await generateJson(instruction,context,[],candidatesSchema);
+ for(let attempt=0;attempt<2;attempt++){
+  // Never send identifying data from a malformed result back to the provider for repair.
+  rejectPrivateInformation(JSON.stringify(value));
+  try{
+   const candidates=candidatesSchema.parse(value).candidates;
+   if(new Set(candidates.map(c=>c.id)).size!==candidates.length)throw new BlogError(422,"The topic planner repeated a candidate.");
+   for(const c of candidates)if(c.sourceUrls.some(u=>!categorySourceUrls[c.category].includes(u)))throw new BlogError(422,"The topic planner selected a source outside its clinical category.");
+   return candidates;
+  }catch(error){
+   if(!(error instanceof z.ZodError)&&!(error instanceof BlogError&&error.status===422))throw error;
+   if(attempt===1)throw new BlogError(422,"The topic planner still fails structure or category-source checks after one repair. No article was written.");
+   const issues=error instanceof z.ZodError?error.issues.map(i=>({path:i.path,message:i.message})):[{path:["candidates"],message:error.message}];
+   value=await generateJson(instruction+" Repair the previous candidates using the validation issues. Return the complete candidate list and recheck every candidate against categorySourceUrls. Preserve the requested focus and language.",{...context,previous:value,issues},[],candidatesSchema);
+  }
+ }
+ throw new BlogError(422,"The topic planner could not be validated.");
 }
 export async function assess(candidates:Candidate[],posts:Post[],focus=""):Promise<{candidates:AssessedCandidate[];selected:AssessedCandidate}>{
  const memory=portfolio(posts);

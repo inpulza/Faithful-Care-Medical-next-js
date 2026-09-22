@@ -24,7 +24,7 @@ export function autoConfiguration(){
  return {ready:missing.length===0,missing};
 }
 function preflight(){aiConfig();const c=autoConfiguration();if(!c.ready)throw new BlogError(503,"Auto Generate is not connected yet: "+c.missing.join(", ")+". No generation was started.");}
-export function viewRun(r:AutoRun):AutoView{return {id:r.id,status:r.status,cursor:r.cursor,busy:!!r.lease_token,language:r.language,steps:r.steps,postId:r.post_id,translationId:r.translation_id,error:r.error};}
+export function viewRun(r:AutoRun):AutoView{return {id:r.id,requestId:r.request_key,status:r.status,cursor:r.cursor,busy:!!r.lease_token,language:r.language,steps:r.steps,postId:r.post_id,translationId:r.translation_id,error:r.error};}
 async function expireRuns(){
  await query("UPDATE fc_blog_auto_runs SET status='failed',error='The last step was interrupted. Inspect its saved draft and operation history before starting another run; it was not retried.',lease_token=NULL,lease_until=NULL,updated_at=now() WHERE status='running' AND lease_until<now()");
 }
