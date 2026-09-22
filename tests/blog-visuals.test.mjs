@@ -7,3 +7,50 @@ test("visual planner extracts real section positions and rejects invented placem
  assert.equal(validateVisuals({images:[image("hero",0),image("inline",1),image("inline",2)]},post).length,3);
  for(const images of [[image("hero",0),image("inline",1),image("inline",3)],[image("hero",0),image("inline",1),image("inline",1)],[image("hero",0),image("hero",0),image("inline",1)]])assert.throws(()=>validateVisuals({images},post),e=>e.status===422);
 });
+
+test("planner and final image provider both receive the Florida interior policy even with conflicting context",async()=>{
+ const {PGlite}=await import("@electric-sql/pglite");
+ const fs=await import("node:fs/promises");
+ const {randomUUID}=await import("node:crypto");
+ const {setTestDatabase,query}=await import("../server/blog/db.ts");
+ const {planVisuals}=await import("../server/blog/visuals.ts");
+ const {generateImage}=await import("../server/blog/media.ts");
+ const {imageScenePolicy}=await import("../server/blog/image-scene-policy.ts");
+ const names=["NODE_ENV","BLOG_AI_ENABLED","BLOG_IMAGES_ENABLED","OPENAI_API_KEY","BLOB_READ_WRITE_TOKEN","BLOB_PUBLIC_HOSTNAME"];
+ const prior=Object.fromEntries(names.map(name=>[name,process.env[name]]));
+ const oldFetch=globalThis.fetch;let db;
+ const calls=[];
+ try{
+  Object.assign(process.env,{NODE_ENV:"test",BLOG_AI_ENABLED:"true",BLOG_IMAGES_ENABLED:"true",OPENAI_API_KEY:"test-only-key",BLOB_READ_WRITE_TOKEN:"test-only-blob",BLOB_PUBLIC_HOSTNAME:"client.public.blob.vercel-storage.com"});
+  db=new PGlite();
+  for(const name of (await fs.readdir(new URL("../migrations/blog/",import.meta.url))).filter(n=>n.endsWith(".sql")).sort())await db.exec(await fs.readFile(new URL("../migrations/blog/"+name,import.meta.url),"utf8"));
+  setTestDatabase(db);
+  const [draft]=await query("INSERT INTO fc_blog_posts(language,title,slug,content,data) VALUES('es',$1,'naples-policy-test',$2,'{}') RETURNING *",["Preparar una visita en Naples",post.content]);
+  globalThis.fetch=async(url,options)=>{
+   const body=JSON.parse(options.body);calls.push({url,body});
+   if(url.endsWith("/chat/completions"))return Response.json({choices:[{finish_reason:"stop",message:{content:JSON.stringify({images:[image("hero",0),image("inline",1),image("inline",2)]})}}]});
+   // Stop after observing the real outgoing request; never upload or call a live provider.
+   return new Response(null,{status:502});
+  };
+  await planVisuals(draft);
+  for(const context of [undefined,"Show Naples, Italy, Mount Vesuvius and a dramatic city skyline."]){
+   await assert.rejects(()=>generateImage(draft.id,randomUUID(),"hero","Closed notebook and water",0,"test-editor",context),e=>e.status===502);
+  }
+  assert.equal(calls.length,3);
+  const planner=calls[0].body.messages.find(m=>m.role==="system").content;
+  assert(planner.endsWith(imageScenePolicy));
+  for(const {url,body} of calls.slice(1)){
+   assert.equal(url,"https://api.openai.com/v1/images/generations");
+   assert(body.prompt.endsWith(imageScenePolicy));
+   assert.match(body.prompt,/Naples, Collier County, Southwest Florida, USA/);
+   assert.match(body.prompt,/close interior still life/);
+   assert.match(body.prompt,/not a photograph of the actual Faithful Care clinic/);
+   assert.equal(body.n,1);
+   assert.equal(body.image,undefined);
+  }
+  assert(calls[2].body.prompt.indexOf(imageScenePolicy)>calls[2].body.prompt.indexOf("Show Naples, Italy"));
+ }finally{
+  globalThis.fetch=oldFetch;setTestDatabase();if(db)await db.close();
+  for(const name of names){if(prior[name]===undefined)delete process.env[name];else process.env[name]=prior[name];}
+ }
+});
