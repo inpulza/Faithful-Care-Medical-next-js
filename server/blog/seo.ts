@@ -41,11 +41,11 @@ export async function seoHistory(id:string){await getPost(id);return query("SELE
 export async function publishSeo(id:string,actor:string){
  const post=await getPost(id);if(post.status!=="published")throw new BlogError(409,"Publish the reviewed article before checking its public indexing status.");
  if(process.env.VERCEL_ENV!=="production"||process.env.BLOG_GSC_ENABLED!=="true"){
-  const result={status:"skipped",reason:"Google submissions run only on enabled production deployments. Preview remains private.",url:postUrl(post)};
+  const result={status:"skipped",reason:process.env.VERCEL_ENV!=="production"?"Preview does not submit articles to Google. Check this article in production.":"Automatic Google submissions are disabled in this production deployment.",url:postUrl(post)};
   await event(id,"seo_skipped",actor,result);return result;
  }
  const {consumeLimit}=await import("./auth");await consumeLimit("seo:"+id,4,3600);
- const result:Record<string,unknown>={url:postUrl(post),checkedAt:new Date().toISOString(),sitemapSubmitted:false,inspection:null,status:"checking"};
+ const result:Record<string,unknown>={url:postUrl(post),articleVersion:post.version,checkedAt:new Date().toISOString(),sitemapSubmitted:false,inspection:null,status:"checking"};
  try{
   const [page,map]=await Promise.all([fetch(postUrl(post),{redirect:"manual",cache:"no-store",signal:AbortSignal.timeout(25000)}),fetch(SITEMAP,{redirect:"manual",cache:"no-store",signal:AbortSignal.timeout(25000)})]);
   if(page.status!==200||map.status!==200)throw new BlogError(502,"The canonical article and sitemap must both return HTTP 200 without redirects.");
@@ -53,9 +53,11 @@ export async function publishSeo(id:string,actor:string){
   if(!audit.ok)throw new BlogError(422,audit.blockers.join(" "));
   const current=await getPost(id);if(current.status!=="published"||current.version!==post.version)throw new BlogError(409,"The article changed during the Google check. Retry its current published version.");
   const token=await accessToken();
-  await google(token,"https://www.googleapis.com/webmasters/v3/sites/"+encodeURIComponent(PROPERTY)+"/sitemaps/"+encodeURIComponent(SITEMAP),"PUT");result.sitemapSubmitted=true;
+  await google(token,"https://www.googleapis.com/webmasters/v3/sites/"+encodeURIComponent(PROPERTY)+"/sitemaps/"+encodeURIComponent(SITEMAP),"PUT");result.sitemapSubmitted=true;result.sitemapSubmittedAt=new Date().toISOString();
   const inspected=await google(token,"https://searchconsole.googleapis.com/v1/urlInspection/index:inspect","POST",{inspectionUrl:postUrl(post),siteUrl:PROPERTY,languageCode:post.language});
   const index=inspected.inspectionResult?.indexStatusResult||{};
+  result.inspectedAt=new Date().toISOString();
+  result.inspectionResultLink=inspected.inspectionResult?.inspectionResultLink;
   result.inspection={verdict:index.verdict,coverageState:index.coverageState,lastCrawlTime:index.lastCrawlTime,googleCanonical:index.googleCanonical,userCanonical:index.userCanonical,pageFetchState:index.pageFetchState};
   result.status="checked";result.note="Sitemap submission and URL Inspection are not a guarantee of indexing.";
   await event(id,"seo_checked",actor,result);return result;
