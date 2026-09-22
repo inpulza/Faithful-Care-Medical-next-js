@@ -226,3 +226,12 @@
 .article-action-icon svg{width:20px;height:20px;pointer-events:none}
 .editor .article-action-icon:focus-visible{outline:3px solid #0065ff;outline-offset:3px}
 .editor .article-action-icon[aria-expanded="true"]{background:#dcecff;color:#004eaa}
+/* Keep the live workflow state visible while its detailed output scrolls. */
+.auto-progress{position:sticky;top:0;z-index:3;padding:18px;margin:0 0 24px;background:#fff;border:1px solid #c6dce9;border-radius:14px;box-shadow:0 4px 16px #09294512}
+.auto-progress-heading{display:flex;align-items:center;gap:12px;font-size:15px;line-height:1.5}
+.auto-spinner{display:inline-block;width:20px;height:20px;flex:0 0 20px;border:2px solid #c6e3ed;border-top-color:#0066ff;border-radius:50%;animation:auto-progress-spin .9s linear infinite}
+.auto-progress-symbol{color:#008d99;font-size:20px}.auto-progress progress{display:block;width:100%;height:8px;margin:14px 0 10px;accent-color:#0066ff;border:0;border-radius:8px;overflow:hidden;background:#e4edf4}.auto-progress progress::-webkit-progress-bar{background:#e4edf4}.auto-progress progress::-webkit-progress-value{background:#0066ff}.auto-progress progress::-moz-progress-bar{background:#0066ff}
+.auto-progress-caption{display:flex;justify-content:space-between;gap:8px;font-size:12px;color:#526675}.auto-progress p{font-size:12px;line-height:1.5;margin:10px 0}.editor .auto-progress button{padding:8px 12px;font-size:12px;margin-top:8px;min-height:36px}.auto-steps>li[data-status="running"]{background:#e8f3ff;border-radius:10px;padding:16px}.auto-progress[data-state="failed"]{border-color:#dfad8b}
+@keyframes auto-progress-spin{to{transform:rotate(360deg)}}
+@media(prefers-reduced-motion:reduce){.auto-spinner{animation:none}}
+@media(max-width:600px){.auto-progress{padding:12px}.auto-progress-heading{font-size:13px}.auto-progress-caption{flex-direction:column;gap:2px}.auto-progress p{display:none}}

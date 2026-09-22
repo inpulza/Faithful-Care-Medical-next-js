@@ -53,6 +53,7 @@ jobs:
           for attempt in {1..40}; do
             if curl --fail --silent --output /dev/null http://127.0.0.1:3187/admin/login; then
               node --import tsx tests/blog-auto.e2e.mjs
+              node --import tsx tests/blog-progress.e2e.mjs
               node tests/blog-ui.e2e.mjs
               node tests/blog-layout.e2e.mjs
               node tests/blog-workspace.e2e.mjs
