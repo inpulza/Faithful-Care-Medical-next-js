@@ -8,7 +8,7 @@ test("visual planner extracts real section positions and rejects invented placem
  for(const images of [[image("hero",0),image("inline",1),image("inline",3)],[image("hero",0),image("inline",1),image("inline",1)],[image("hero",0),image("hero",0),image("inline",1)]])assert.throws(()=>validateVisuals({images},post),e=>e.status===422);
 });
 
-test("planner and final image provider both receive the Florida interior policy even with conflicting context",async()=>{
+test("planner and final image provider both receive the Florida and human editorial policy even with conflicting context",async()=>{
  const {PGlite}=await import("@electric-sql/pglite");
  const fs=await import("node:fs/promises");
  const {randomUUID}=await import("node:crypto");
@@ -32,25 +32,46 @@ test("planner and final image provider both receive the Florida interior policy 
    // Stop after observing the real outgoing request; never upload or call a live provider.
    return new Response(null,{status:502});
   };
-  await planVisuals(draft);
-  for(const context of [undefined,"Show Naples, Italy, Mount Vesuvius and a dramatic city skyline."]){
+  const planned=await planVisuals(draft);
+  assert.equal(planned.length,3);
+  for(const family of ["HUMAN SCENE:","ENVIRONMENT SCENE:","CONTEXTUAL DETAIL:"])assert.equal(planned.filter(p=>p.prompt.includes(family)).length,1);
+  for(const context of [undefined,"Show Naples, Italy, Mount Vesuvius and a dramatic city skyline.",planned.find(p=>p.prompt.includes("HUMAN SCENE:")).prompt]){
    await assert.rejects(()=>generateImage(draft.id,randomUUID(),"hero","Closed notebook and water",0,"test-editor",context),e=>e.status===502);
   }
-  assert.equal(calls.length,3);
+  assert.equal(calls.length,4);
   const planner=calls[0].body.messages.find(m=>m.role==="system").content;
   assert(planner.endsWith(imageScenePolicy));
   for(const {url,body} of calls.slice(1)){
    assert.equal(url,"https://api.openai.com/v1/images/generations");
    assert(body.prompt.endsWith(imageScenePolicy));
    assert.match(body.prompt,/Naples, Collier County, Southwest Florida, USA/);
-   assert.match(body.prompt,/close interior still life/);
+   assert.match(body.prompt,/People are fictional adults only/);
+   assert.match(body.prompt,/negative fill/);
+   assert.match(body.prompt,/natural skin texture/);
+   assert(!body.prompt.includes("Compose a close interior still life"));
    assert.match(body.prompt,/not a photograph of the actual Faithful Care clinic/);
    assert.equal(body.n,1);
    assert.equal(body.image,undefined);
   }
+  assert.match(calls[3].body.prompt,/HUMAN SCENE:/);
+  const assignments=JSON.parse(calls[0].body.messages[1].content).sceneAssignments;
+  assert.deepEqual(new Set(assignments.map(s=>s.family)),new Set(["people","environment","detail"]));
   assert(calls[2].body.prompt.indexOf(imageScenePolicy)>calls[2].body.prompt.indexOf("Show Naples, Italy"));
  }finally{
   globalThis.fetch=oldFetch;setTestDatabase();if(db)await db.close();
   for(const name of names){if(prior[name]===undefined)delete process.env[name];else process.env[name]=prior[name];}
  }
+});
+
+
+test("scene assignment mixes all three families and rotates hero treatments across article topics",async()=>{
+ const {articleSceneMix}=await import("../server/blog/image-scene-policy.ts");
+ const heroFamilies=new Set(),casting=new Set();
+ for(let i=0;i<30;i++){
+  const seed="Preparing a care discussion "+i,mix=articleSceneMix(seed);
+  assert.deepEqual(mix,articleSceneMix(seed));
+  assert.deepEqual(new Set(mix.map(s=>s.family)),new Set(["people","environment","detail"]));
+  heroFamilies.add(mix[0].family);casting.add(mix.find(s=>s.family==="people").direction);
+ }
+ assert.equal(heroFamilies.size,3);assert(casting.size>=4);
 });

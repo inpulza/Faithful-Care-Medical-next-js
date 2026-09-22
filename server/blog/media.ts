@@ -1,5 +1,5 @@
 import sharp from "sharp";
-import {withImageScenePolicy} from "./image-scene-policy";
+import {withImageScenePolicy,articleSceneMix,editorialPhotography} from "./image-scene-policy";
 import {put} from "@vercel/blob";
 import {randomUUID} from "node:crypto";
 import {query} from "./db";
@@ -56,7 +56,8 @@ export async function generateImage(id:string,key:string,role:"hero"|"inline",al
  rejectPrivateInformation(post.title);
  const model=process.env.BLOG_IMAGE_MODEL||"gpt-image-2.5-sunburst";
  if(contextPrompt)rejectPrivateInformation(contextPrompt);
- const prompt=withImageScenePolicy((contextPrompt?contextPrompt+" Contextual editorial assignment. ":"")+"Create a calm, believable editorial photograph for a primary and palliative care educational article titled "+post.title+". Show an everyday, respectful still life related to preparing for care, with natural light, navy and soft teal accents. No identifiable patients, no doctors impersonating real staff, no visible medical records or names, no text or typography, no logos, no dramatic illness, no procedural demonstrations. Landscape composition. Create an entirely new image, never edit or reuse a previous generated image. Placement: "+role+".");
+ const assignment=contextPrompt||articleSceneMix(post.title)[role==="hero"?0:1+(placement%2)].direction;
+ const prompt=withImageScenePolicy(editorialPhotography+"\nArticle context: "+post.title+". Placement: "+role+".\nScene brief: "+assignment);
  const job=await claimJob("image",key,actor,{postId:id,role,model});
  try{
   await consumeImageBudget(key);await jobStage(job.id,"generating_image");
