@@ -48,9 +48,9 @@ export default function AutoGenerator({api,onDraft,onActive,dirty}:Props){
    const failure=e instanceof Error?e.message:"Could not start.";
    try{
     const latest:AutoView|null=(await api("auto/current")).run;
-    if(latest&&(latest.requestId===key||latest.status==="running")){
+    if(latest&&latest.requestId===key){
      acceptRun(latest);
-     setMessage(latest.status==="running"?"Reconnected to saved generation progress.":latest.error?"":failure);
+     setMessage(latest.status==="running"?"Reconnected to saved generation progress.":latest.status==="completed"||latest.status==="cancelled"||latest.error?"":failure);
     }else setMessage(failure);
    }catch{setMessage(failure+" The connection could not be confirmed. Retry to reconnect to the same request.");}
   }

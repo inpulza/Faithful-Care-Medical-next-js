@@ -41,17 +41,20 @@ try{
   await page.getByRole("button",{name:"Open English draft",exact:true}).waitFor();await page.getByRole("button",{name:"Open Spanish draft",exact:true}).waitFor();
   // Failure recovery must never show the previous successful run as this attempt.
   await page.unroute("**/api/admin/blog/auto/**");
-  let mode="quota",latest=run;const attempts=[];
+  let mode="quota",latest=run;const attempts=[],unrelatedRequests=[];
   const failed=requestId=>({id:randomUUID(),requestId,status:"failed",cursor:0,busy:false,language:"en",steps:AUTO_STEPS.map(([id,label],index)=>({id,label,status:index===0?"failed":"pending"})),postId:null,translationId:null,error:"Image budget reached. No AI requests were made."});
   expectedConsoleStatuses.add(429);expectedConsoleStatuses.add(503);
   await page.route("**/api/admin/blog/auto/**",async route=>{
    const pathname=new URL(route.request().url()).pathname;let response={run:latest},status=200;
+   if(mode==="unrelated"&&latest&&pathname.includes("/"+latest.id))unrelatedRequests.push(pathname);
    if(pathname.endsWith("/config"))response={ready:true,missing:[]};
    else if(pathname.endsWith("/start")){
     const body=route.request().postDataJSON();attempts.push(body.requestId);
     if(mode==="quota"){latest=failed(body.requestId);status=429;response={error:latest.error};}
     else if(mode==="ambiguous"){status=503;response={error:"Connection interrupted"};}
     else if(mode==="stale"){status=503;response={error:"Provider unavailable before admission"};}
+    else if(mode==="completed"){latest={...run,id:randomUUID(),requestId:body.requestId,error:null};status=503;response={error:"Response interrupted after completion"};}
+    else if(mode==="unrelated"){latest={...failed(randomUUID()),status:"running",busy:false,error:null};status=503;response={error:"Another editor already has a running request"};}
     else if(mode==="reconnect"){latest={...failed(body.requestId),status:"running",busy:true,error:null};status=503;response={error:"Response interrupted after admission"};}
     else {latest=failed(body.requestId);response={run:latest};}
    }else if(pathname.endsWith("/current")&&mode==="ambiguous"){status=503;response={error:"Connection still interrupted"};}
@@ -74,6 +77,10 @@ try{
   const recoveredKey=attempts.at(-1);latest={...latest,status:"failed",busy:false,error:"Recovered generation stopped safely."};
   await page.getByRole("alert").filter({hasText:"Recovered generation stopped safely"}).waitFor();await page.waitForFunction(()=>sessionStorage.getItem("faithful-auto-request")===null);
   mode="known";await button.click();await page.getByRole("alert").filter({hasText:"Image budget reached"}).waitFor();assert.notEqual(attempts.at(-1),recoveredKey,"A run completed after recovery must release its request key");
+  // A confirmed matching completion replaces the lost HTTP response, without an error banner.
+  mode="completed";await button.click();await page.locator(".auto-complete").waitFor();assert.equal(await page.locator(".auto-generator").getByRole("alert").count(),0);assert.equal(await page.evaluate(()=>sessionStorage.getItem("faithful-auto-request")),null);
+  // Do not adopt, poll, stream, advance or cancel another editor's unrelated request.
+  mode="unrelated";await button.click();await page.getByRole("alert").filter({hasText:"Another editor"}).waitFor();assert.equal(await page.locator(".auto-complete").count(),0);assert.equal(await page.getByRole("button",{name:"Stop after current request",exact:true}).count(),0);assert(await button.isEnabled());assert.equal(await page.evaluate(()=>sessionStorage.getItem("faithful-auto-request")),attempts.at(-1));assert.deepEqual(unrelatedRequests,[]);
   assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1));assert.deepEqual(errors,[]);
   await context.close();
  }
