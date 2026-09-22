@@ -41,7 +41,6 @@ try{
     await page.waitForFunction(()=>Math.abs(document.querySelector('.saved-article-preview h2').getBoundingClientRect().top-24)<5);
     await page.evaluate(y=>scrollTo({top:y,behavior:'instant'}),start+900);
    }
-   if(width>760){await page.mouse.move(width-100,height/2);await page.mouse.wheel(0,350);await page.waitForFunction(()=>Math.abs(document.querySelector('.saved-article-preview nav').getBoundingClientRect().top-24)<2);}
    await page.screenshot({path:`artifacts/blog-author/sticky-${language}-${width}x${height}.png`});
   }
   const standalone=await context.newPage();assert.equal((await standalone.goto(config.baseUrl+"/api/admin/blog/posts/"+post.id+"/preview")).status(),200);await standalone.waitForFunction(()=>{const img=document.querySelector('.blog-author-avatar img');return img?.complete&&img.naturalWidth>0;});await standalone.close();
