@@ -15,7 +15,7 @@ test("planner and final image provider both receive the Florida and human editor
  const {setTestDatabase,query}=await import("../server/blog/db.ts");
  const {planVisuals}=await import("../server/blog/visuals.ts");
  const {generateImage}=await import("../server/blog/media.ts");
- const {imageScenePolicy}=await import("../server/blog/image-scene-policy.ts");
+ const {imageScenePolicy,humanRealismRequirements}=await import("../server/blog/image-scene-policy.ts");
  const names=["NODE_ENV","BLOG_AI_ENABLED","BLOG_IMAGES_ENABLED","OPENAI_API_KEY","BLOB_READ_WRITE_TOKEN","BLOB_PUBLIC_HOSTNAME"];
  const prior=Object.fromEntries(names.map(name=>[name,process.env[name]]));
  const oldFetch=globalThis.fetch;let db;
@@ -41,12 +41,15 @@ test("planner and final image provider both receive the Florida and human editor
   assert.equal(calls.length,4);
   const planner=calls[0].body.messages.find(m=>m.role==="system").content;
   assert(planner.endsWith(imageScenePolicy));
+  assert(planner.includes(humanRealismRequirements));
   for(const {url,body} of calls.slice(1)){
    assert.equal(url,"https://api.openai.com/v1/images/generations");
    assert(body.prompt.endsWith(imageScenePolicy));
+   assert(body.prompt.includes(humanRealismRequirements));
+   assert(body.prompt.indexOf(humanRealismRequirements)>body.prompt.indexOf("Scene brief:"));
    assert.match(body.prompt,/Naples, Collier County, Southwest Florida, USA/);
    assert.match(body.prompt,/People are fictional adults only/);
-   assert.match(body.prompt,/negative fill/);
+   assert.match(body.prompt,/controlled fill and natural falloff/);
    assert.match(body.prompt,/natural skin texture/);
    assert(!body.prompt.includes("Compose a close interior still life"));
    assert.match(body.prompt,/not a photograph of the actual Faithful Care clinic/);
@@ -74,4 +77,21 @@ test("scene assignment mixes all three families and rotates hero treatments acro
   heroFamilies.add(mix[0].family);casting.add(mix.find(s=>s.family==="people").direction);
  }
  assert.equal(heroFamilies.size,3);assert(casting.size>=4);
+});
+
+test("human scene assignments specify a consistent light setup and concrete attention targets",async()=>{
+ const {articleSceneMix}=await import("../server/blog/image-scene-policy.ts");
+ const cases=new Set();
+ for(let i=0;i<100;i++){
+  const mix=articleSceneMix("Natural care scene "+i);
+  const direction=mix.find(s=>s.family==="people").direction;
+  assert.doesNotMatch(mix.find(s=>s.family==="environment").direction,/\b(?:cheek|eye detail|hair|shoulder|nose shadow|subjects)\b/);
+  assert.match(direction,/camera-left/);assert.match(direction,/pupils|both eyes/);
+  if(direction.includes("two fictional adults")){
+   assert.match(direction,/camera-right/);
+   if(direction.includes("looks back")){cases.add("mutual");assert.match(direction,/speaker's eyes/);}
+   else {cases.add("shared");assert.match(direction,/same visible point/);assert.match(direction,/older adult on camera-right speaks/);assert.match(direction,/younger adult on camera-left listens/);}
+  }else{cases.add("solo");assert.match(direction,/same concrete target/);assert.match(direction,/section-specific action/);assert.match(direction,/Keep exactly one person/);}
+ }
+ assert.deepEqual(cases,new Set(["mutual","shared","solo"]));
 });
