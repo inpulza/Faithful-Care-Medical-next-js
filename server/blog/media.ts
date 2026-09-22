@@ -50,7 +50,7 @@ export async function selectImage(id:string,mediaId:string,version:number,actor:
  if(!rows[0])throw new BlogError(409,"The article changed. Reload before selecting the image.");
  return rows[0];
 }
-export async function generateImage(id:string,key:string,role:"hero"|"inline",alt:string,placement:number,actor:string,contextPrompt?:string){
+export async function generateImage(id:string,key:string,role:"hero"|"inline",alt:string,placement:number,actor:string,contextPrompt?:string,timeoutMs=240000){
  if(process.env.BLOG_IMAGES_ENABLED!=="true"||!process.env.OPENAI_API_KEY||!mediaConfigured())throw new BlogError(503,"Image generation is disabled until a provider and this client's storage are configured.");
  const post=await getPost(id);if(post.status==="published")throw new BlogError(409,"Unpublish before changing images.");
  rejectPrivateInformation(post.title);
@@ -61,7 +61,7 @@ export async function generateImage(id:string,key:string,role:"hero"|"inline",al
  const job=await claimJob("image",key,actor,{postId:id,role,model});
  try{
   await consumeImageBudget(key);await jobStage(job.id,"generating_image");
-  const response=await fetch("https://api.openai.com/v1/images/generations",{method:"POST",headers:{"Content-Type":"application/json",Authorization:"Bearer "+process.env.OPENAI_API_KEY},signal:AbortSignal.timeout(240000),
+  const response=await fetch("https://api.openai.com/v1/images/generations",{method:"POST",headers:{"Content-Type":"application/json",Authorization:"Bearer "+process.env.OPENAI_API_KEY},signal:AbortSignal.timeout(timeoutMs),
    body:JSON.stringify({model,prompt,n:1,size:"1536x1024",quality:"medium",output_format:"webp"})});
   if(!response.ok)throw new BlogError(502,"The image provider could not complete this request.");
   const payload=await response.json(),encoded=payload.data?.[0]?.b64_json;

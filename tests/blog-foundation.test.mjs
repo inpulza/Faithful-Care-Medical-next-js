@@ -89,25 +89,27 @@ test("generation operation IDs cannot duplicate drafts and saving completes atom
 });
 
 // A selected candidate is required even if its URL belongs to our store.
-test("unreviewed images cannot bypass publication; translated siblings may share reviewed media",async()=>{
+test("owned images need no separate approval; unrelated media still cannot be published",async()=>{
  const {verify}=await import("../server/blog/quality.ts");
  const {selectImage}=await import("../server/blog/media.ts");
  process.env.BLOB_PUBLIC_HOSTNAME="client.public.blob.vercel-storage.com";
  const url="https://client.public.blob.vercel-storage.com/faithful-care/blog/test.webp";
  let p=await createPost({...input("media-review-test"),data:{...blankData,hero:url,heroAlt:"A calm waiting room"}},"tester");
- assert((await verify(p)).blockers.some(x=>x.includes("Review and select")));
+ assert((await verify(p)).blockers.some(x=>x.includes("Choose images from")));
  const [candidate]=await query("INSERT INTO fc_blog_media(post_id,url,role,alt,placement,source) VALUES($1,$2,'hero','A calm waiting room',1,'upload') RETURNING *",[p.id,url]);
+ assert.equal(candidate.reviewed,false);
+ assert(!(await verify(p)).blockers.some(x=>x.includes("Choose images from")));
  p=await selectImage(p.id,candidate.id,p.version,"tester","A calm waiting room");
- assert(!(await verify(p)).blockers.some(x=>x.includes("Review and select")));
+ assert(!(await verify(p)).blockers.some(x=>x.includes("Choose images from")));
  assert.equal(p.data.reviewConfirmed,false);
  await assert.rejects(()=>selectImage(p.id,candidate.id,p.version-1,"tester","A calm waiting room"),e=>e.status===409);
  const es=await createPost({...input("media-es-test"),language:"es",data:{...blankData,hero:url,heroAlt:"Una sala de espera tranquila"}},"tester",p.translation_group);
- assert(!(await verify(es)).blockers.some(x=>x.includes("Review and select")));
+ assert(!(await verify(es)).blockers.some(x=>x.includes("Choose images from")));
  const {mediaList}=await import("../server/blog/media.ts");assert.equal((await mediaList(es.id))[0].alt,"Una sala de espera tranquila");
  const selectedEs=await selectImage(es.id,candidate.id,es.version,"tester","Una sala luminosa para esperar");assert.equal(selectedEs.data.heroAlt,"Una sala luminosa para esperar");assert.equal((await getPost(p.id)).data.heroAlt,"A calm waiting room");assert.equal((await query("SELECT alt FROM fc_blog_media WHERE id=$1",[candidate.id]))[0].alt,"A calm waiting room");
 
  const unrelated=await createPost({...input("media-other-test"),data:{...blankData,hero:url,heroAlt:"A calm waiting room"}},"tester");
- assert((await verify(unrelated)).blockers.some(x=>x.includes("Review and select")));
+ assert((await verify(unrelated)).blockers.some(x=>x.includes("Choose images from")));
  await assert.rejects(()=>selectImage(unrelated.id,candidate.id,unrelated.version,"tester","Wrong family"),e=>e.status===400);
  delete process.env.BLOB_PUBLIC_HOSTNAME;
 });

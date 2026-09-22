@@ -87,6 +87,7 @@ async function handle(request:NextRequest,context:Context) {
    if(path[2]==="media"){
     const m=await import("../../../../../server/blog/media");
     if(path.length===3&&request.method==="GET")return json({media:await m.mediaList(path[1])});
+    if(request.method==="POST"&&path.length===4&&path[3]==="regenerate"){const regeneration=await import("../../../../../server/blog/regenerate-image");return json(await regeneration.regenerateArticleImage(path[1],body,editor.username));}
     if(request.method==="POST"){const alt=String(body.alt||"").trim();if(alt.length<5||alt.length>250)throw new BlogError(400,"Add useful image alternative text.");
      if(path[3]==="select")return json({post:await m.selectImage(path[1],String(body.mediaId||""),Number(body.version),editor.username,alt)});
      if(path[3]==="generate"){const placement=Number(body.placement||1);if(!Number.isInteger(placement)||placement<1||placement>30)throw new BlogError(400,"Invalid image placement.");return json({media:await m.generateImage(path[1],String(body.requestId||""),body.role==="inline"?"inline":"hero",alt,placement,editor.username)});}}

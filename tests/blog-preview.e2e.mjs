@@ -32,7 +32,7 @@ try{
  const bytes=await sharp({create:{width:800,height:500,channels:3,background:"#153d57"}}).webp().toBuffer();
  await page.getByRole("button",{name:"Images",exact:true}).click();await page.getByText("Add or replace an image",{exact:true}).click();
  await page.getByLabel("Alternative text",{exact:true}).fill("Solid navy technical verification image");
- await page.getByLabel("Approved image file",{exact:true}).setInputFiles({name:"preview-qa.webp",mimeType:"image/webp",buffer:bytes});
+ await page.getByLabel("Image file",{exact:true}).setInputFiles({name:"preview-qa.webp",mimeType:"image/webp",buffer:bytes});
  await page.getByRole("button",{name:"Upload candidate",exact:true}).click();await page.getByRole("status").filter({hasText:"Candidate uploaded"}).waitFor();
  await page.getByRole("button",{name:"Use this image",exact:true}).click();await page.getByRole("status").filter({hasText:"Image selected"}).waitFor();
  await page.getByRole("button",{name:"Preview",exact:true}).click();await page.locator(".saved-article-preview").getByRole("heading",{level:1}).waitFor();

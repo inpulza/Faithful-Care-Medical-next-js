@@ -38,7 +38,7 @@ try{
   await page.getByRole("button",{name:"Images",exact:true}).click();
   await page.getByText("Add or replace an image",{exact:true}).click();
   await page.getByLabel("Alternative text",{exact:true}).fill("Solid navy QA image for the layout test");
-  await page.getByLabel("Approved image file",{exact:true}).setInputFiles({name:"qa-image.webp",mimeType:"image/webp",buffer:fixture});
+  await page.getByLabel("Image file",{exact:true}).setInputFiles({name:"qa-image.webp",mimeType:"image/webp",buffer:fixture});
   await page.getByRole("button",{name:"Upload candidate",exact:true}).click();
   await page.getByRole("status").filter({hasText:"Candidate uploaded"}).waitFor();
   await page.getByRole("button",{name:"Use this image",exact:true}).click();

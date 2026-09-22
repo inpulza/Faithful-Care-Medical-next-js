@@ -5,7 +5,7 @@ import {randomUUID,createHash} from "node:crypto";
 import {PGlite} from "@electric-sql/pglite";
 process.env.NODE_ENV="test";
 const {setTestDatabase,query}=await import("../server/blog/db.ts");
-const {reserveImageBudget,consumeImageBudget}=await import("../server/blog/image-budget.ts");
+const {reserveImageBudget,reserveSingleImageBudget,consumeImageBudget}=await import("../server/blog/image-budget.ts");
 const {startAuto,advanceAuto,cancelAuto}=await import("../server/blog/auto.ts");
 const budgetKey=createHash("sha256").update("image-generation-global").digest("hex");
 const keys=()=>Array.from({length:3},()=>randomUUID());
@@ -102,3 +102,5 @@ test("a running record without confirmed admission fails closed even without a l
  const [after]=await query("SELECT attempts,expires_at FROM fc_blog_limits WHERE key=$1",[budgetKey]);
  assert.equal(after.attempts,6);assert.deepEqual(after.expires_at,before.expires_at);
  });
+
+test("regeneration reserves one image before text and consumes only once",async()=>{await spend(35);const key=randomUUID();await reserveSingleImageBudget(key);await consumeImageBudget(key);assert.equal((await query("SELECT attempts FROM fc_blog_limits WHERE key=$1",[budgetKey]))[0].attempts,36);await assert.rejects(()=>reserveSingleImageBudget(randomUUID()),e=>e.status===429);});
