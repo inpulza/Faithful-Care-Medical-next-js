@@ -10,7 +10,6 @@ try{
  page.on("pageerror",e=>errors.push(e.message));page.on("console",m=>{if(m.type()==="error")errors.push(m.text());});
  await page.goto(auth.baseUrl+"/admin/login");await page.getByLabel("Username",{exact:true}).fill(auth.username);await page.getByLabel("Password",{exact:true}).fill(auth.password);await page.getByRole("button",{name:"Sign in",exact:true}).click();await page.waitForURL("**/admin/blog");await page.getByRole("heading",{name:"Blog management",exact:true}).waitFor();
  await page.locator(".source-card").first().waitFor();
- await page.getByLabel("Search articles",{exact:true}).fill("no-matching-fixture-xyz");await page.getByRole("heading",{name:"No articles match these filters"}).waitFor();await page.getByLabel("Search articles",{exact:true}).fill("");
  const marker="filter-qa-"+Date.now(),fixtures=[];
  for(const language of ["en","es"]){
   const response=await context.request.post(auth.baseUrl+"/api/admin/blog/posts",{headers:{Origin:auth.baseUrl},data:{title:"Local filter QA "+language+" "+marker,slug:marker+"-"+language,language,content:"<p>Private local filter fixture.</p>"}});
@@ -21,6 +20,7 @@ try{
  }
  await page.reload();await page.getByRole("heading",{name:"Blog management",exact:true}).waitFor();
  await page.getByRole("article",{name:fixtures[0].title,exact:true}).waitFor();
+ await page.getByLabel("Search articles",{exact:true}).fill("no-matching-fixture-xyz");await page.getByRole("heading",{name:"No articles match these filters"}).waitFor();await page.getByLabel("Search articles",{exact:true}).fill("");
  const search=page.getByLabel("Search articles",{exact:true}),languageFilter=page.getByRole("combobox",{name:"Article language",exact:true});
  const statuses=page.locator(".status-filters");
  for(const [width,height] of [[1440,900],[390,844]]){
