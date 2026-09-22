@@ -104,7 +104,7 @@ export async function advanceAuto(id:string,expectedCursor:number,services:AutoS
  try{
   switch(step.id){
    case "ideas":state.candidates=await services.ideate(run.language,run.focus,await listPosts(undefined,true));outputs.Candidates=state.candidates.map((c:any)=>c.title).join("\n");break;
-   case "memory":state.plan=await services.assess(state.candidates,await listPosts(undefined,true));outputs.Topic=state.plan.selected.title;outputs.Angle=state.plan.selected.angle;outputs.Reason=state.plan.selected.reason;break;
+   case "memory":state.plan=await services.assess(state.candidates,await listPosts(undefined,true),run.focus);outputs.Topic=state.plan.selected.title;outputs.Angle=state.plan.selected.angle;outputs.Reason=state.plan.selected.reason;break;
    case "research":state.sources=await services.research(state.plan.selected,run.actor);outputs.Sources=state.sources.map((s:any)=>s.url+" · "+s.score+"/100").join("\n");break;
    case "brief":state.brief=await services.buildBrief(state.plan.selected,run.language,state.sources);outputs.Sections=state.brief.sections.join("\n");outputs.Evidence=state.brief.facts.length+" supported research points";break;
    case "writing":state.article=await services.writeArticle(state.plan.selected,run.language,state.brief);outputs.H1=state.article.title;break;

@@ -1,3 +1,5 @@
+import {hasInternalEditorialNotes} from "../../shared/blog-text";
+import {ARTICLE_MIN_WORDS} from "../../shared/blog-policy";
 import {allowedSource,auditSource,qualifiedSource,type LinkRecord} from "./links";
 import {ownedMediaUrl} from "./media-url";
 import type { Post } from "./types";
@@ -8,7 +10,8 @@ export async function verify(post:Post,options:{refreshSources?:boolean;actor?:s
   const blockers:string[]=[];
   const warnings:string[]=[];
   const words=wordCount(post.content);
-  if(words<800) blockers.push("At least 800 useful words are required.");
+  if(hasInternalEditorialNotes(post.content))blockers.push("Remove internal research notes from the patient-facing article.");
+  if(words<ARTICLE_MIN_WORDS) blockers.push("At least "+ARTICLE_MIN_WORDS+" useful words are required.");
   if(!/<h2\b/i.test(post.content)) blockers.push("Add clear article sections.");
   if(sanitize(post.content)!==post.content) blockers.push("Unsafe article HTML.");
   if(post.data.excerpt.length<30) blockers.push("Add a meaningful excerpt.");

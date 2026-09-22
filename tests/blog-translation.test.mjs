@@ -18,3 +18,10 @@ test("translation preserves accessible tables and lists and refuses missing cell
  assert.throws(()=>translatedDraft(source,"es",{...result,content:result.content.replace('<td>Priorities</td>','')},{}),e=>e.status===422);
  assert.throws(()=>translatedDraft(source,"es",{...result,content:result.content.replace('<li>Escribe preguntas</li>','')},{}),e=>e.status===422);
 });
+
+
+test("a publication-length source cannot become a short translated article",()=>{
+ const source={title:"Preparing your visit",content:"<h2>Prepare</h2><p>"+"Useful question list for care. ".repeat(260)+"</p>",data:{...blankData}};
+ const result={title:"Preparar una visita",slug:"preparar-visita",content:"<h2>Prepara</h2><p>"+"Preguntas importantes para tu visita. ".repeat(200)+"</p>",excerpt:"Una guía para conversar durante la próxima visita.",metaTitle:"Preparar una visita médica",metaDescription:"Prepara tus preguntas para conversar con tu profesional de salud en la próxima visita de atención primaria.",tags:["visitas"],imageAlts:[]};
+ assert.throws(()=>translatedDraft(source,"es",result,{}),e=>e.status===422&&e.message.includes("incomplete"));
+});

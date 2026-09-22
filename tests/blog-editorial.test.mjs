@@ -44,3 +44,22 @@ test("related article suggestions include only published same-language relevant 
  const result=relatedArticleLinks([post,{...post,status:"draft",slug:"private"},{...post,language:"es",slug:"es"},{...post,data:{...post.data,category:"palliative-care"},slug:"other"},{...post,data:{...post.data,topic:candidate.id},slug:"duplicate"}],candidate,"en");
  assert.deepEqual(result,[{url:"/blog/preventive-questions",title:post.title}]);
 });
+
+
+test("explicit editorial focus cannot be replaced by a novel unrelated topic",async()=>{
+ const unrelated={...candidate,id:"palliative-family",title:"Discussing palliative family care",category:"family-support",sourceUrls:["https://medlineplus.gov/palliativecare.html"]};
+ const reviews=[{id:candidate.id,recommendation:"update_existing",reason:"Existing article has the requested primary care intent",matches:[],focusMatch:true},{id:unrelated.id,recommendation:"create_new",reason:"Novel but unrelated to the requested primary care visit",matches:[],focusMatch:false}];
+ await provider([{reviews}],async()=>{await assert.rejects(()=>assess([candidate,unrelated],[],"Prepare for a primary care visit"),e=>e.status===409);});
+ await provider([{reviews:[{...reviews[0],recommendation:"create_new"},reviews[1]]}],async()=>{assert.equal((await assess([candidate,unrelated],[],"Prepare for a primary care visit")).selected.id,candidate.id);});
+});
+
+test("article minimum matches XL length policy and expansion requests substantial useful coverage",async()=>{
+ const {expandArticle}=await import("../server/blog/editorial.ts");
+ const {ARTICLE_MIN_WORDS,ARTICLE_TARGET_MIN_WORDS}=await import("../shared/blog-policy.ts");
+ assert.equal(ARTICLE_MIN_WORDS,1200);assert.equal(ARTICLE_TARGET_MIN_WORDS,1500);
+ const html=n=>'<h2>One</h2><h2>Two</h2><h2>Three</h2><h2>Four</h2><p>'+Array.from({length:n},()=>"word").join(" ")+'</p><p><a href="/primary-care">Care</a><a href="/contact">Contact</a><a href="'+candidate.sourceUrls[0]+'">Source</a></p>';
+ const metadata={slug:"useful-visit",excerpt:"Prepare practical questions for your upcoming clinical visit.",metaTitle:"Preparing for a clinical visit",metaDescription:"Prepare useful questions before your primary care visit and discuss appropriate preventive screening with your clinician.",tags:["prevention","visits"]};
+ assert.throws(()=>assemble(candidate,"en",{title:candidate.title,content:html(1100)},metadata),e=>e.status===422);
+ assert.equal(assemble(candidate,"en",{title:candidate.title,content:html(1250)},metadata).title,candidate.title);
+ await provider([{title:candidate.title,content:html(1600)}],async count=>{const result=await expandArticle({title:candidate.title,content:html(1250)},candidate,"en",{});assert(result.content.includes("word"));assert.equal(count(),1);});
+});
