@@ -43,7 +43,16 @@ test("active translation blocks source deletion and deleted translation can be r
  await deletePost(b.id,b.version,"tester");
  const job=await claimJob("translate",randomUUID(),"tester",{sourceId:a.id});
  await assert.rejects(()=>deletePost(a.id,a.version,"tester"),e=>e.status===409);
- const restored=await saveGeneratedPost({...input(),language:"es"},"tester",job.id,a.translation_group,{id:a.id,version:a.version});
- assert.equal(restored.id,b.id);assert.equal(restored.slug,b.slug);assert.equal(restored.status,"draft");assert(!restored.data.deletedAt);
+ const replacement={...input(),language:"es"};
+ const restored=await saveGeneratedPost(replacement,"tester",job.id,a.translation_group,{id:a.id,version:a.version});
+ assert.equal(restored.id,b.id);assert.equal(restored.slug,replacement.slug);assert.equal(restored.status,"draft");assert(!restored.data.deletedAt);
  assert.equal((await getPost(restored.id)).id,b.id);
+});
+
+test("deletion frees topic and slug and clears completed generator links",async()=>{
+ const original={...input(),data:{...blankData,topic:"Reusable topic"}};const a=await createPost(original,"tester");
+ await query("INSERT INTO fc_blog_auto_runs(request_key,actor,language,status,steps,post_id) VALUES($1,'tester','en','completed','[]',$2)",[randomUUID(),a.id]);
+ await deletePost(a.id,a.version,"tester");
+ assert.equal((await query("SELECT post_id FROM fc_blog_auto_runs WHERE actor='tester' ORDER BY created_at DESC LIMIT 1"))[0].post_id,null);
+ const replacement=await createPost(original,"tester");assert.notEqual(replacement.id,a.id);assert.equal(replacement.slug,a.slug);
 });

@@ -66,12 +66,16 @@ export async function incomingArticleLinks(id:string) {
 // Keep audit history and shared translated media; deleted articles are private tombstones.
 export async function deletePost(id:string,version:number,actor:string){
  const rows=await query(`WITH changed AS (
-  UPDATE fc_blog_posts SET data=data||jsonb_build_object('deletedAt',now()),
+  UPDATE fc_blog_posts SET data=data||jsonb_build_object('deletedAt',now(),'deletedSlug',slug,'deletedTopic',data->>'topic','topic',''),slug='deleted-'||id::text,
    version=version+1,updated_at=now()
   WHERE id=$1 AND version=$2 AND status<>'published' AND NOT (data ? 'deletedAt')
   AND NOT EXISTS(SELECT 1 FROM fc_blog_auto_runs WHERE status='running' AND (post_id=$1 OR translation_id=$1))
   AND NOT EXISTS(SELECT 1 FROM fc_blog_jobs WHERE status='running' AND (post_id=$1 OR detail->>'postId'=$1::text OR detail->>'sourceId'=$1::text))
   RETURNING id
+ ), cleared AS (
+  UPDATE fc_blog_auto_runs SET post_id=CASE WHEN post_id=$1 THEN NULL ELSE post_id END,
+   translation_id=CASE WHEN translation_id=$1 THEN NULL ELSE translation_id END
+  WHERE (post_id=$1 OR translation_id=$1) AND EXISTS(SELECT 1 FROM changed)
  ), audit AS (INSERT INTO fc_blog_events(post_id,action,actor) SELECT id,'deleted',$3 FROM changed)
  SELECT id FROM changed`,[id,version,actor]);
  if(!rows.length)throw new BlogError(409,"The article changed, is published, or is still generating. Reload and unpublish it before deleting.");

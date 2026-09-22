@@ -22,7 +22,7 @@ export async function saveGeneratedPost(input:unknown,actor:string,jobId:string,
  INSERT INTO fc_blog_posts(language,title,slug,content,data,translation_group)
  SELECT $1,$2,$3,$4,$5,COALESCE($6::uuid,gen_random_uuid()) FROM admitted
  ON CONFLICT(translation_group,language) DO UPDATE SET
- title=EXCLUDED.title,content=EXCLUDED.content,data=EXCLUDED.data,status='draft',published_at=NULL,
+ title=EXCLUDED.title,slug=EXCLUDED.slug,content=EXCLUDED.content,data=EXCLUDED.data,status='draft',published_at=NULL,
  version=fc_blog_posts.version+1,updated_at=now()
  WHERE fc_blog_posts.data ? 'deletedAt'
  RETURNING *
