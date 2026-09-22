@@ -42,7 +42,7 @@ try{
   // Failure recovery must never show the previous successful run as this attempt.
   await page.unroute("**/api/admin/blog/auto/**");
   let mode="quota",latest=run;const attempts=[],unrelatedRequests=[];
-  const failed=requestId=>({id:randomUUID(),requestId,status:"failed",cursor:0,busy:false,language:"en",steps:AUTO_STEPS.map(([id,label],index)=>({id,label,status:index===0?"failed":"pending"})),postId:null,translationId:null,error:"Image budget reached. No AI requests were made."});
+  const failed=requestId=>({id:randomUUID(),requestId,status:"failed",cursor:0,busy:false,language:"en",steps:AUTO_STEPS.map(([id,label],index)=>({id,label,status:index===0?"failed":"pending"})),postId:null,translationId:null,error:"Auto Generate needs three available image credits. The shared limit is 36 images per hour; fewer than three credits remain. Try again after it resets; no AI requests were sent.. No AI requests were made."});
   expectedConsoleStatuses.add(429);expectedConsoleStatuses.add(503);
   await page.route("**/api/admin/blog/auto/**",async route=>{
    const pathname=new URL(route.request().url()).pathname;let response={run:latest},status=200;
@@ -61,22 +61,22 @@ try{
    else if(pathname.endsWith("/events")){await route.fulfill({status:200,contentType:"text/event-stream",body:"data: "+JSON.stringify({run:latest})+"\n\n"});return;}
    await route.fulfill({status,json:response});
   });
-  await button.click();await page.getByRole("alert").filter({hasText:"Image budget reached"}).waitFor();
+  await button.click();await page.getByRole("alert").filter({hasText:"Auto Generate needs three available image credits. The shared limit is 36 images per hour; fewer than three credits remain. Try again after it resets; no AI requests were sent."}).waitFor();
   assert.equal(await page.locator(".auto-complete").count(),0);assert.equal(await page.locator('.auto-steps>li[data-status="failed"]').count(),1);assert.equal(await page.locator('.auto-steps>li[data-status="completed"]').count(),0);
   assert.equal(await page.evaluate(()=>sessionStorage.getItem("faithful-auto-request")),null);
   mode="known";await button.click();await page.waitForFunction(()=>!document.querySelector(".auto-generator button")?.disabled);assert.equal(attempts.length,2);assert.notEqual(attempts[0],attempts[1]);
   // An ambiguous error retains the same request key even if current cannot be read.
   mode="ambiguous";await button.click();await page.getByRole("alert").filter({hasText:"same request"}).waitFor();const uncertainKey=attempts.at(-1);
   assert.equal(await page.evaluate(()=>sessionStorage.getItem("faithful-auto-request")),uncertainKey);assert.equal(await page.locator(".auto-complete").count(),0);
-  mode="known";await button.click();await page.getByRole("alert").filter({hasText:"Image budget reached"}).waitFor();assert.equal(attempts.at(-1),uncertainKey);
+  mode="known";await button.click();await page.getByRole("alert").filter({hasText:"Auto Generate needs three available image credits. The shared limit is 36 images per hour; fewer than three credits remain. Try again after it resets; no AI requests were sent."}).waitFor();assert.equal(attempts.at(-1),uncertainKey);
   // An unrelated old completion must neither be rendered nor clear an uncertain key.
   latest=run;mode="stale";await button.click();await page.getByRole("alert").filter({hasText:"before admission"}).waitFor();const staleKey=attempts.at(-1);assert.equal(await page.locator(".auto-complete").count(),0);assert.equal(await page.locator('.auto-steps>li[data-status="completed"]').count(),0);assert.equal(await page.evaluate(()=>sessionStorage.getItem("faithful-auto-request")),staleKey);
   // A terminal result from an older UI releases its matching saved key on reload.
-  latest=failed(staleKey);mode="known";await page.reload();await page.getByRole("button",{name:"Auto Generate",exact:true}).click();await page.getByRole("alert").filter({hasText:"Image budget reached"}).waitFor();assert.equal(await page.evaluate(()=>sessionStorage.getItem("faithful-auto-request")),null);
+  latest=failed(staleKey);mode="known";await page.reload();await page.getByRole("button",{name:"Auto Generate",exact:true}).click();await page.getByRole("alert").filter({hasText:"Auto Generate needs three available image credits. The shared limit is 36 images per hour; fewer than three credits remain. Try again after it resets; no AI requests were sent."}).waitFor();assert.equal(await page.evaluate(()=>sessionStorage.getItem("faithful-auto-request")),null);
   mode="reconnect";await button.click();await page.getByRole("alert").filter({hasText:"Reconnected to saved generation progress"}).waitFor();await page.getByRole("button",{name:"Stop after current request",exact:true}).waitFor();assert.equal(await page.locator(".auto-complete").count(),0);assert(await button.isDisabled());
   const recoveredKey=attempts.at(-1);latest={...latest,status:"failed",busy:false,error:"Recovered generation stopped safely."};
   await page.getByRole("alert").filter({hasText:"Recovered generation stopped safely"}).waitFor();await page.waitForFunction(()=>sessionStorage.getItem("faithful-auto-request")===null);
-  mode="known";await button.click();await page.getByRole("alert").filter({hasText:"Image budget reached"}).waitFor();assert.notEqual(attempts.at(-1),recoveredKey,"A run completed after recovery must release its request key");
+  mode="known";await button.click();await page.getByRole("alert").filter({hasText:"Auto Generate needs three available image credits. The shared limit is 36 images per hour; fewer than three credits remain. Try again after it resets; no AI requests were sent."}).waitFor();assert.notEqual(attempts.at(-1),recoveredKey,"A run completed after recovery must release its request key");
   // A confirmed matching completion replaces the lost HTTP response, without an error banner.
   mode="completed";await button.click();await page.locator(".auto-complete").waitFor();assert.equal(await page.locator(".auto-generator").getByRole("alert").count(),0);assert.equal(await page.evaluate(()=>sessionStorage.getItem("faithful-auto-request")),null);
   // Do not adopt, poll, stream, advance or cancel another editor's unrelated request.

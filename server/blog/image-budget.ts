@@ -4,6 +4,7 @@ import {consumeLimit} from "./auth";
 import {BlogError} from "./types";
 
 const digest=(value:string)=>createHash("sha256").update(value).digest("hex");
+export const IMAGE_HOURLY_LIMIT=36;
 const budgetKey=digest("image-generation-global");
 const reservationKey=(key:string)=>digest("image-reservation:"+key);
 
@@ -16,14 +17,14 @@ export async function reserveImageBudget(keys:string[]){
   ON CONFLICT(key) DO UPDATE SET
    attempts=CASE WHEN fc_blog_limits.expires_at<=now() THEN 3 ELSE fc_blog_limits.attempts+3 END,
    expires_at=CASE WHEN fc_blog_limits.expires_at<=now() THEN now()+interval '1 hour' ELSE fc_blog_limits.expires_at END
-  WHERE fc_blog_limits.expires_at<=now() OR fc_blog_limits.attempts+3<=3
+  WHERE fc_blog_limits.expires_at<=now() OR fc_blog_limits.attempts+3<=$3
   RETURNING key
  ), reserved AS (
   INSERT INTO fc_blog_limits(key,attempts,expires_at)
   SELECT reservation,0,now()+interval '24 hours' FROM unnest($2::text[]) AS reservation
   WHERE EXISTS(SELECT 1 FROM admitted) RETURNING key
- ) SELECT key FROM reserved`,[budgetKey,keys.map(reservationKey)]);
- if(rows.length!==3)throw new BlogError(429,"Auto Generate needs three available image credits. The hourly image limit is already in use. Try again after it resets; no AI requests were sent.");
+ ) SELECT key FROM reserved`,[budgetKey,keys.map(reservationKey),IMAGE_HOURLY_LIMIT]);
+ if(rows.length!==3)throw new BlogError(429,"Auto Generate needs three available image credits. The shared limit is 36 images per hour; fewer than three credits remain. Try again after it resets; no AI requests were sent.");
 }
 
 export async function consumeImageBudget(key:string){
@@ -32,5 +33,5 @@ export async function consumeImageBudget(key:string){
  if(claimed.length)return;
  const existing=await query("SELECT key FROM fc_blog_limits WHERE key=$1",[reservation]);
  if(existing.length)throw new BlogError(409,"The image reservation was already used or expired. Inspect the operation history before starting again.");
- await consumeLimit("image-generation-global",3,3600);
+ await consumeLimit("image-generation-global",IMAGE_HOURLY_LIMIT,3600);
 }

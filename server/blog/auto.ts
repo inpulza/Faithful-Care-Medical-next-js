@@ -4,7 +4,7 @@ import {query,configured} from "./db";
 import {aiConfig,rejectPrivateInformation} from "./provider";
 import {mediaConfigured,generateImage} from "./media";
 import {consumeLimit} from "./auth";
-import {reserveImageBudget} from "./image-budget";
+import {reserveImageBudget,IMAGE_HOURLY_LIMIT} from "./image-budget";
 import {listPosts,getPost} from "./posts";
 import {translatePost} from "./translation";
 import {verify} from "./quality";
@@ -41,7 +41,7 @@ export async function startAuto(input:unknown,actor:string){
  if(existing){if(existing.actor!==actor||existing.language!==p.language||existing.focus!==p.focus||existing.translate!==p.translate)throw new BlogError(409,"That operation ID belongs to a different request.");return existing;}
  preflight();
  const active=(await query<AutoRun>("SELECT * FROM fc_blog_auto_runs WHERE status='running' LIMIT 1"))[0];if(active)return active;
- await consumeLimit("auto-generation-global",2,3600);
+ await consumeLimit("auto-generation-global",IMAGE_HOURLY_LIMIT/3,3600);
  const steps:AutoStep[]=AUTO_STEPS.map(([id,label])=>({id,label,status:"pending"}));
  const keys=Object.fromEntries(["hero","inline_1","inline_2","translation"].map(k=>[k,randomUUID()]));
  // Hold an admission lease until all three images have budget. A concurrent
