@@ -85,7 +85,7 @@ test("human scene assignments specify a consistent light setup and concrete atte
  for(let i=0;i<100;i++){
   const mix=articleSceneMix("Natural care scene "+i);
   const direction=mix.find(s=>s.family==="people").direction;
-  assert.doesNotMatch(mix.find(s=>s.family==="environment").direction,/cheek|eye detail|hair|shoulder|nose shadow|subjects/);
+  assert.doesNotMatch(mix.find(s=>s.family==="environment").direction,/\b(?:cheek|eye detail|hair|shoulder|nose shadow|subjects)\b/);
   assert.match(direction,/camera-left/);assert.match(direction,/pupils|both eyes/);
   if(direction.includes("two fictional adults")){
    assert.match(direction,/camera-right/);
