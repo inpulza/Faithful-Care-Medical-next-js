@@ -8,7 +8,7 @@ import {consumeLimit} from "./auth";
 import {BlogError,type Post,type Language} from "./types";
 import {hrefs,postInput,sanitize,wordCount} from "./content";
 import {DISCLAIMERS} from "./catalog";
-const translationSchema=z.object({title:z.string().min(10).max(180),slug:z.string().regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/).max(180),excerpt:z.string().min(30).max(500),content:z.string().max(150000),metaTitle:z.string().min(10).max(60),metaDescription:z.string().min(50).max(160),tags:z.array(z.string().min(2).max(50)).min(2).max(4),heroAlt:z.string().max(250),imageAlts:z.array(z.string().min(10).max(250)).max(3)});
+const translationSchema=z.object({title:z.string().min(10).max(180),slug:z.string().regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/).max(180),excerpt:z.string().min(30).max(500),content:z.string().max(150000),metaTitle:z.string().min(10).max(60),metaDescription:z.string().min(50).max(160),tags:z.array(z.string().min(2).max(50)).min(2).max(4),heroAlt:z.string().max(250),imageAlts:z.array(z.string().min(10).max(250)).max(5)});
 export function staticTranslatedLink(href:string,target:Language){
  const split=href.search(/[?#]/);const base=split<0?href:href.slice(0,split),suffix=split<0?"":href.slice(split);
  const pair=HREFLANG_PAIRS.find(p=>p.en===base||p.es===base);

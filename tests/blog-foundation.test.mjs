@@ -5,7 +5,7 @@ import {PGlite} from "@electric-sql/pglite";
 process.env.NODE_ENV="test";
 const {setTestDatabase,query}=await import("../server/blog/db.ts");
 const {passwordHash,login,session,logout,assertOrigin,consumeLimit}=await import("../server/blog/auth.ts");
-const {createPost,editPost,getPost,listPosts,transition,publicPost}=await import("../server/blog/posts.ts");
+const {createPost,editPost,getPost,listPosts,transition,publicPost,incomingArticleLinks}=await import("../server/blog/posts.ts");
 const {blankData}=await import("../server/blog/types.ts");
 const {sanitize}=await import("../server/blog/content.ts");
 let db;
@@ -50,8 +50,25 @@ test("reviewed publish, language isolation and unpublish",async()=>{
  assert.equal((await query("SELECT actor FROM fc_blog_events WHERE post_id=$1 AND action='published'",[p.id]))[0].actor,"tester");
  assert.equal((await publicPost("en",p.slug)).id,p.id);assert.equal(await publicPost("es",p.slug),null);
  await assert.rejects(()=>editPost(p.id,input(p.slug),published.version,"tester"),e=>e.status===409);
+ const dependent=await createPost({...p,slug:"dependent-public-post",content:p.content+'<p><a href="/blog/'+p.slug+'?from=related#article-section-1">Related preparation</a></p>'},"tester");
+ const liveDependent=await transition(dependent.id,"published",dependent.version,"tester");
+ const incoming=await incomingArticleLinks(p.id);assert.equal(incoming.length,1);assert.equal(incoming[0].id,dependent.id);
+ await transition(dependent.id,"draft",liveDependent.version,"tester");assert.equal((await incomingArticleLinks(p.id)).length,0);
  const unpublished=await transition(p.id,"draft",published.version,"tester");
  assert.equal(unpublished.published_at,null);assert.equal(await publicPost("en",p.slug),null);
+ await assert.rejects(()=>editPost(p.id,{...p,slug:"changed-public-url"},unpublished.version,"tester"),e=>e.status===409);
+ const corrected=await editPost(p.id,{...p,title:"Preparing for your next visit"},unpublished.version,"tester");
+ const republished=await transition(p.id,"published",corrected.version,"tester");
+ assert.equal(String(republished.published_at),String(published.published_at));
+ assert.equal((await publicPost("en",p.slug)).title,"Preparing for your next visit");
+ // Older withdrawn rows may have lost published_at; the audit trail still locks their URL and restores the original date.
+ const withdrawn=await transition(p.id,"draft",republished.version,"tester");
+ await query("UPDATE fc_blog_posts SET published_at=NULL WHERE id=$1",[p.id]);
+ await assert.rejects(()=>editPost(p.id,{...p,slug:"changed-legacy-url"},withdrawn.version,"tester"),e=>e.status===409);
+ const restored=await transition(p.id,"published",withdrawn.version,"tester");
+ const [firstEvent]=await query("SELECT min(created_at) AS first FROM fc_blog_events WHERE post_id=$1 AND action='published'",[p.id]);
+ assert.equal(String(restored.published_at),String(firstEvent.first));
+ await transition(p.id,"draft",restored.version,"tester");
 });
 test("sanitization is idempotent and rejects encoded active content",()=>{
  const clean=sanitize('<p><a href="https://medlineplus.gov/">Reference</a><a href="/contact">Care</a><img src=x onerror=alert(1)></p>');

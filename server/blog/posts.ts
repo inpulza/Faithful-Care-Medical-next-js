@@ -1,5 +1,5 @@
 import { query,configured } from "./db";
-import { postInput,sanitize } from "./content";
+import { postInput,sanitize,hrefs } from "./content";
 import { BlogError, type Post, type Language, type Status } from "./types";
 export async function listPosts(language?:Language,admin=false) {
   if(!configured()) return [];
@@ -30,9 +30,9 @@ export async function createPost(input:unknown,actor:string,translationGroup?:st
 export async function editPost(id:string,input:unknown,version:number,actor:string) {
   const inputData=postInput.parse(input);
   const rows=await query<Post>(`WITH changed AS (UPDATE fc_blog_posts SET title=$2,slug=$3,content=$4,data=$5,version=version+1,
-    updated_at=now(),status='draft' WHERE id=$1 AND version=$6 AND status<>'published' AND language=$7 RETURNING *), audit AS (INSERT INTO fc_blog_events(post_id,action,actor) SELECT id,'edited',$8 FROM changed) SELECT * FROM changed`,
+    updated_at=now(),status='draft' WHERE id=$1 AND version=$6 AND status<>'published' AND language=$7 AND (slug=$3 OR (published_at IS NULL AND NOT EXISTS (SELECT 1 FROM fc_blog_events e WHERE e.post_id=fc_blog_posts.id AND e.action='published'))) RETURNING *), audit AS (INSERT INTO fc_blog_events(post_id,action,actor) SELECT id,'edited',$8 FROM changed) SELECT * FROM changed`,
     [id,inputData.title,inputData.slug,sanitize(inputData.content),JSON.stringify({...inputData.data,reviewConfirmed:false,reviewer:""}),version,inputData.language,actor]);
-  if(!rows[0]) throw new BlogError(409,"The article changed or is published. Reload it; unpublish before editing.");
+  if(!rows[0]) throw new BlogError(409,"The article changed, is published, or its previously published URL was changed. Reload it; unpublish before editing and keep the original slug.");
 
   return rows[0];
 }
@@ -47,11 +47,18 @@ export async function transition(id:string,next:Status,version:number,actor:stri
   }
   const data={...post.data,reviewConfirmed:false,reviewer:""};
   const rows=await query<Post>(`WITH changed AS (UPDATE fc_blog_posts SET status=$2,data=$3,version=version+1,updated_at=now(),
-    published_at=CASE WHEN $2='published' THEN now() ELSE NULL END WHERE id=$1 AND version=$4 RETURNING *), audit AS (INSERT INTO fc_blog_events(post_id,action,actor,detail) SELECT id,$2,$5,$6 FROM changed) SELECT * FROM changed`,[id,next,JSON.stringify(data),version,actor,JSON.stringify({publicationChecks:next==="published"?"passed":null})]);
+    published_at=CASE WHEN $2='published' THEN COALESCE(published_at,(SELECT min(e.created_at) FROM fc_blog_events e WHERE e.post_id=fc_blog_posts.id AND e.action='published'),now()) ELSE NULL END WHERE id=$1 AND version=$4 RETURNING *), audit AS (INSERT INTO fc_blog_events(post_id,action,actor,detail) SELECT id,$2,$5,$6 FROM changed) SELECT * FROM changed`,[id,next,JSON.stringify(data),version,actor,JSON.stringify({publicationChecks:next==="published"?"passed":null})]);
   if(!rows[0]) throw new BlogError(409,"The article changed. Reload before publishing.");
 
   return rows[0];
 }
 export async function event(id:string|null,action:string,actor:string,detail:unknown={}) {
   await query("INSERT INTO fc_blog_events(post_id,action,actor,detail) VALUES($1,$2,$3,$4)",[id,action,actor,JSON.stringify(detail)]);
+}
+
+export async function incomingArticleLinks(id:string) {
+  const target=await getPost(id);
+  const path=(target.language==="es"?"/es":"")+"/blog/"+target.slug;
+  return (await listPosts()).filter(post=>post.id!==id&&hrefs(post.content).some(href=>href.split(/[?#]/)[0]===path))
+    .map(post=>({id:post.id,title:post.title,language:post.language,url:(post.language==="es"?"/es":"")+"/blog/"+post.slug}));
 }

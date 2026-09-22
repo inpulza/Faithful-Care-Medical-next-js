@@ -6,7 +6,7 @@ import {getPost} from "./posts";
 import {BlogError,type Post} from "./types";
 import {ownedMediaUrl} from "./media-url";
 import {claimJob,failJob,jobStage} from "./jobs";
-import {consumeLimit} from "./auth";
+import {consumeImageBudget} from "./image-budget";
 import {rejectPrivateInformation} from "./provider";
 export interface Media {id:string;post_id:string;url:string;role:"hero"|"inline";alt:string;placement:number;source:string;reviewed:boolean}
 export function mediaConfigured(){return Boolean(process.env.BLOB_READ_WRITE_TOKEN&&process.env.BLOB_PUBLIC_HOSTNAME);}
@@ -36,6 +36,8 @@ export async function selectImage(id:string,mediaId:string,version:number,actor:
  const post=await getPost(id);if(post.version!==version||post.status==="published")throw new BlogError(409,"Reload the draft before selecting an image.");
  const [media]=await query<Media>("SELECT m.* FROM fc_blog_media m JOIN fc_blog_posts p ON p.id=m.post_id WHERE m.id=$1 AND p.translation_group=$2",[mediaId,post.translation_group]);
  if(!media||!ownedMediaUrl(media.url))throw new BlogError(400,"Choose an image from this article's own library.");
+ if(media.role==="inline"&&post.data.images.length>=5&&!post.data.images.some(image=>image.afterHeading===media.placement))
+  throw new BlogError(422,"An article supports up to five inline images. Replace an image at an existing section instead.");
  const data={...post.data,reviewConfirmed:false,reviewer:""};
  if(media.role==="hero"){data.hero=media.url;data.heroAlt=alt;}
  else data.images=[...data.images.filter(i=>i.afterHeading!==media.placement),{url:media.url,alt,afterHeading:media.placement}].sort((a,b)=>a.afterHeading-b.afterHeading);
@@ -56,7 +58,7 @@ export async function generateImage(id:string,key:string,role:"hero"|"inline",al
  const prompt=(contextPrompt?contextPrompt+" Contextual editorial assignment. ":"")+"Create a calm, believable editorial photograph for a primary and palliative care educational article titled "+post.title+". Show an everyday, respectful still life related to preparing for care, with natural light, navy and soft teal accents. No identifiable patients, no doctors impersonating real staff, no visible medical records or names, no text or typography, no logos, no dramatic illness, no procedural demonstrations. Landscape composition. Create an entirely new image, never edit or reuse a previous generated image. Placement: "+role+".";
  const job=await claimJob("image",key,actor,{postId:id,role,model});
  try{
-  await consumeLimit("image-generation-global",3,3600);await jobStage(job.id,"generating_image");
+  await consumeImageBudget(key);await jobStage(job.id,"generating_image");
   const response=await fetch("https://api.openai.com/v1/images/generations",{method:"POST",headers:{"Content-Type":"application/json",Authorization:"Bearer "+process.env.OPENAI_API_KEY},signal:AbortSignal.timeout(240000),
    body:JSON.stringify({model,prompt,n:1,size:"1536x1024",quality:"medium",output_format:"webp"})});
   if(!response.ok)throw new BlogError(502,"The image provider could not complete this request.");

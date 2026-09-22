@@ -28,8 +28,19 @@ try{
  await page.getByRole("button",{name:"Edit text",exact:true}).click();
  await page.getByRole("button",{name:"Edit HTML",exact:true}).click();const html=page.getByLabel("Article HTML",{exact:true});const original=await html.inputValue();await html.fill(original+'<img src="/qa-never-request" onerror="window.__editorInjected=true"><script>window.__editorInjected=true</script>');await page.getByRole("button",{name:"Visual editor",exact:true}).click();assert.equal(await page.locator(".visual-article-editor img,.visual-article-editor script").count(),0);assert.equal(await page.evaluate(()=>window.__editorInjected),undefined);
  const editor=page.getByRole("textbox",{name:"Article body",exact:true});await editor.click();await page.keyboard.press("Control+End");await page.keyboard.type(" Edited in the visual editor.");
- assert(await page.getByRole("button",{name:"Back to dashboard",exact:true}).isDisabled());await page.getByRole("button",{name:"Save draft",exact:true}).click();await page.getByRole("status").filter({hasText:"Draft saved"}).waitFor();
- await page.getByRole("button",{name:"Preview",exact:true}).click();await frame.getByText("Edited in the visual editor.",{exact:false}).waitFor();
+ assert(await page.getByRole("button",{name:"Back to dashboard",exact:true}).isDisabled());
+ for(const control of [page.locator('.editor-header>a'),page.getByRole("button",{name:"Sign out",exact:true})]){
+  const prompt=page.waitForEvent("dialog");const click=control.click();const dialog=await prompt;assert.equal(dialog.type(),"confirm");await dialog.dismiss();await click;
+  assert(page.url().endsWith("/admin/blog"));assert((await editor.innerText()).includes("Edited in the visual editor."));
+ }
+ const reloadPrompt=page.waitForEvent("dialog");const reload=page.reload().catch(()=>null);const reloadDialog=await reloadPrompt;assert.equal(reloadDialog.type(),"beforeunload");await reloadDialog.dismiss();await reload;
+ assert((await editor.innerText()).includes("Edited in the visual editor."));
+ await page.getByRole("button",{name:"Save draft",exact:true}).click();await page.getByRole("status").filter({hasText:"Draft saved"}).waitFor();
+ assert.equal(await page.evaluate(()=>{const event=new Event("beforeunload",{cancelable:true});window.dispatchEvent(event);return event.defaultPrevented;}),false,"Saving releases the exit guard");
+ await page.getByLabel("Title",{exact:true}).fill("Unsaved title to discard");await page.getByRole("button",{name:"Discard changes",exact:true}).click();
+ assert.equal(await page.getByLabel("Title",{exact:true}).inputValue(),post.title);
+ assert.equal(await page.evaluate(()=>{const event=new Event("beforeunload",{cancelable:true});window.dispatchEvent(event);return event.defaultPrevented;}),false,"Discarding releases the exit guard");
+ await page.locator('.editor-header>a').click();await page.waitForURL(config.baseUrl+"/");await page.goto(config.baseUrl+"/admin/blog");await page.getByLabel("Search articles",{exact:true}).fill(slug);await page.locator(".article-row").getByRole("button",{name:"Preview",exact:true}).click();await frame.getByText("Edited in the visual editor.",{exact:false}).waitFor();
  await page.getByRole("button",{name:"Back to dashboard",exact:true}).click();await page.getByLabel("Search articles",{exact:true}).fill(slug);
  const row=page.locator(".article-row");await row.getByRole("button",{name:"Manage",exact:true}).click();await row.getByRole("button",{name:"Check article",exact:true}).click();await row.getByText("Publication checks passed.",{exact:true}).waitFor();
  assert.equal(await page.getByLabel("Reviewing clinician",{exact:true}).count(),0);assert.equal(await page.getByRole("button",{name:"Approve source",exact:true}).count(),0);
@@ -39,7 +50,13 @@ try{
  const publicPage=await context.newPage();publicPage.on("pageerror",e=>errors.push(e.message));publicPage.on("console",m=>{if(m.type()==="error")errors.push(m.text());});
  assert.equal((await publicPage.goto(config.baseUrl+"/blog/"+slug)).status(),200);assert.equal(await publicPage.locator('.blog-copy table th[scope="col"]').count(),2);
  for(const width of [390,1440]){await publicPage.setViewportSize({width,height:900});await publicPage.locator("table").scrollIntoViewIfNeeded();assert(await publicPage.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1));}
- await row.getByRole("button",{name:"Unpublish",exact:true}).click();await row.getByText("Returned to draft. The article is private.",{exact:true}).waitFor();assert.equal((await context.request.get(config.baseUrl+"/blog/"+slug)).status(),404);
+ const incoming=await context.request.get(config.baseUrl+"/api/admin/blog/posts/"+post.id+"/incoming-links");assert.equal(incoming.status(),200);assert.deepEqual((await incoming.json()).articles,[]);
+ await page.route("**/api/admin/blog/posts/"+post.id+"/incoming-links",route=>route.fulfill({json:{articles:[{id:"related-qa",title:"Related published QA article",language:"en",url:"/blog/related-qa"}]}}));
+ const cancelPrompt=page.waitForEvent("dialog");const cancelClick=row.getByRole("button",{name:"Unpublish",exact:true}).click();const cancelDialog=await cancelPrompt;assert.match(cancelDialog.message(),/Related published QA article/);await cancelDialog.dismiss();await cancelClick;
+ assert.equal((await context.request.get(config.baseUrl+"/blog/"+slug)).status(),200,"Cancel keeps the target published");
+ const confirmPrompt=page.waitForEvent("dialog");const confirmClick=row.getByRole("button",{name:"Unpublish",exact:true}).click();const confirmDialog=await confirmPrompt;await confirmDialog.accept();await confirmClick;await row.getByText("Returned to draft. The article is private.",{exact:true}).waitFor();assert.equal((await context.request.get(config.baseUrl+"/blog/"+slug)).status(),404);
  const saved=(await(await context.request.get(config.baseUrl+"/api/admin/blog/posts/"+post.id)).json()).post;assert.equal(saved.data.reviewConfirmed,false);assert.equal(saved.data.reviewer,"");
+ await row.getByRole("button",{name:"Edit",exact:true}).click();await page.getByLabel("Title",{exact:true}).fill("Discard this title on sign out");
+ const exitPrompt=page.waitForEvent("dialog");const exitClick=page.getByRole("button",{name:"Sign out",exact:true}).click();const exitDialog=await exitPrompt;assert.equal(exitDialog.type(),"confirm");await exitDialog.accept();await exitClick;await page.waitForURL("**/admin/login");
  assert.deepEqual(errors,[]);await context.close();console.log("PASS: visual editing, five viewport preview/table/SEO/action matrix, no manual doctor/source approvals, dashboard publication and unpublish, public table rendering.");
 }finally{await browser.close();}

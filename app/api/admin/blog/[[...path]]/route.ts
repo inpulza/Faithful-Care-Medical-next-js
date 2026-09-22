@@ -2,7 +2,7 @@ import {after} from "next/server";
 import { NextRequest,NextResponse } from "next/server";
 import { COOKIE,cookieOptions,assertOrigin,login,logout,session } from "../../../../../server/blog/auth";
 import { BlogError } from "../../../../../server/blog/types";
-import { createPost,editPost,getPost,listPosts,transition } from "../../../../../server/blog/posts";
+import { createPost,editPost,getPost,listPosts,transition,incomingArticleLinks } from "../../../../../server/blog/posts";
 import { verify } from "../../../../../server/blog/quality";
 import { ZodError } from "zod";
 export const runtime="nodejs";
@@ -76,6 +76,7 @@ async function handle(request:NextRequest,context:Context) {
   if(path[0]==="posts"){
    if(path.length===1&&request.method==="GET")return json({posts:await listPosts(undefined,true)});
    if(path.length===1&&request.method==="POST")return json({post:await createPost(body,editor.username)},201);
+   if(path.length===3&&path[2]==="incoming-links"&&request.method==="GET")return json({articles:await incomingArticleLinks(path[1])});
    if(path.length===3&&path[2]==="seo"){const m=await import("../../../../../server/blog/seo");if(request.method==="GET")return json({events:await m.seoHistory(path[1])});if(request.method==="POST")return json(await m.publishSeo(path[1],editor.username));}
    if(path.length===3&&path[2]==="preview"&&request.method==="GET"){
     const {previewHtml,previewArticle}=await import("../../../../../server/blog/render");

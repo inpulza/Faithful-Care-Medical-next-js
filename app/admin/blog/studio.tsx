@@ -14,7 +14,10 @@ const fresh=():Draft=>({title:"",slug:"",language:"en",content:"",data:{...blank
 export default function Editor({username}:{username:string}){
  const [posts,setPosts]=useState<Post[]>([]),[draft,setDraft]=useState<Draft>(fresh),[message,setMessage]=useState(""),[busy,setBusy]=useState(false);
  const [generating,setGenerating]=useState(false),[editing,setEditing]=useState(false),[view,setView]=useState<View>("preview"),[dirty,setDirty]=useState(false);
- const autoDialog=useRef<HTMLDialogElement>(null);
+ const autoDialog=useRef<HTMLDialogElement>(null),unsaved=useRef(false),leaving=useRef(false);
+ unsaved.current=dirty;
+ useEffect(()=>{const warn=(event:BeforeUnloadEvent)=>{if(unsaved.current&&!leaving.current){event.preventDefault();event.returnValue="";}};window.addEventListener("beforeunload",warn);return()=>window.removeEventListener("beforeunload",warn);},[]);
+ function mayLeave(){return !unsaved.current||window.confirm("You have unsaved changes. Leave without saving?");}
  async function api(path:string,method="GET",body?:unknown){const r=await fetch("/api/admin/blog/"+path,{method,headers:body?{"Content-Type":"application/json"}:undefined,body:body?JSON.stringify(body):undefined});const d=await r.json();if(r.status===401){window.location.href="/admin/login";throw Error("Sign in again.");}if(!r.ok)throw Error(d.error||"Request failed.");return d;}
  async function refresh(){setPosts((await api("posts")).posts);}
  useEffect(()=>{refresh().catch(e=>setMessage(e.message));},[]);
@@ -27,7 +30,7 @@ export default function Editor({username}:{username:string}){
  const locked=draft.status==="published",words=draft.content.replace(/<[^>]*>/g," ").trim().split(/\s+/).filter(Boolean).length;
  const links=[...new Set([...draft.content.matchAll(/href="([^"]+)"/g)].map(m=>m[1]))];
  const siblings=posts.filter(p=>p.id!==draft.id&&p.translation_group===draft.translation_group);
- return <div className="editor"><header className="editor-header"><a href="/">Faithful Care <span>Editorial studio</span></a><div><span>{username}</span><button className="secondary" onClick={()=>run(async()=>{await api("logout","POST",{});window.location.href="/admin/login";})}>Sign out</button></div></header>
+ return <div className="editor"><header className="editor-header"><a href="/" onClick={e=>{if(e.ctrlKey||e.metaKey||e.shiftKey||e.altKey)return;if(!mayLeave())e.preventDefault();else leaving.current=true;}}>Faithful Care <span>Editorial studio</span></a><div><span>{username}</span><button className="secondary" disabled={busy} onClick={()=>{if(!mayLeave())return;void run(async()=>{await api("logout","POST",{});leaving.current=true;window.location.href="/admin/login";});}}>Sign out</button></div></header>
  <dialog ref={autoDialog} className="editor-dialog" aria-label="Automatic article preparation"><div className="dialog-toolbar"><span>Faithful Care · AI editorial workflow</span><button className="secondary" onClick={()=>autoDialog.current?.close()}>Close generator</button></div><AutoGenerator api={api} dirty={dirty} onActive={setGenerating} onDraft={p=>{choose(p);autoDialog.current?.close();refresh().catch(e=>setMessage(e.message));}}/></dialog>
  {!editing?<main className="blog-dashboard"><Dashboard posts={posts} generating={generating} onGenerate={()=>autoDialog.current?.showModal()} onNew={()=>choose(fresh())} onSelect={p=>choose(p)} onEdit={p=>choose(p,"text")} onState={state} api={api}/>{message&&<p role="status" className="editor-message">{message}</p>}<Sources api={api}/></main>:<main className="article-workspace">
  <div className="workspace-toolbar"><button className="secondary" disabled={dirty||busy} onClick={()=>{setEditing(false);setMessage("");refresh().catch(e=>setMessage(e.message));}}>Back to dashboard</button><div className="editor-actions">{siblings.map(p=><button key={p.id} className="secondary" disabled={dirty||busy} onClick={()=>choose(p)}>Open {p.language==="es"?"Spanish":"English"}</button>)}{!locked&&<button disabled={busy||generating||!dirty} onClick={()=>run(save)}>Save draft</button>}</div></div>

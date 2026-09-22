@@ -4,6 +4,7 @@ import {query,configured} from "./db";
 import {aiConfig,rejectPrivateInformation} from "./provider";
 import {mediaConfigured,generateImage} from "./media";
 import {consumeLimit} from "./auth";
+import {reserveImageBudget} from "./image-budget";
 import {listPosts,getPost} from "./posts";
 import {translatePost} from "./translation";
 import {verify} from "./quality";
@@ -43,8 +44,21 @@ export async function startAuto(input:unknown,actor:string){
  await consumeLimit("auto-generation-global",2,3600);
  const steps:AutoStep[]=AUTO_STEPS.map(([id,label])=>({id,label,status:"pending"}));
  const keys=Object.fromEntries(["hero","inline_1","inline_2","translation"].map(k=>[k,randomUUID()]));
- const rows=await query<AutoRun>("INSERT INTO fc_blog_auto_runs(request_key,actor,language,focus,translate,state,steps) VALUES($1,$2,$3,$4,$5,$6,$7) ON CONFLICT DO NOTHING RETURNING *",[p.requestId,actor,p.language,p.focus,p.translate,JSON.stringify({keys}),JSON.stringify(steps)]);
- if(rows[0])return rows[0];
+ // Hold an admission lease until all three images have budget. A concurrent
+ // client can see the run, but cannot start a provider request before admission.
+ const admission=randomUUID();
+ const rows=await query<AutoRun>("INSERT INTO fc_blog_auto_runs(request_key,actor,language,focus,translate,state,steps,lease_token,lease_until) VALUES($1,$2,$3,$4,$5,$6,$7,$8,now()+interval '6 minutes') ON CONFLICT DO NOTHING RETURNING *",[p.requestId,actor,p.language,p.focus,p.translate,JSON.stringify({keys,imageBudgetReserved:false}),JSON.stringify(steps),admission]);
+ if(rows[0]){
+  try{
+   await reserveImageBudget([keys.hero,keys.inline_1,keys.inline_2]);
+   await query("UPDATE fc_blog_auto_runs SET state=state||'{\"imageBudgetReserved\":true}'::jsonb,lease_token=NULL,lease_until=NULL,updated_at=now() WHERE id=$1 AND lease_token=$2 AND status='running'",[rows[0].id,admission]);
+   return autoRun(rows[0].id);
+  }catch(error){
+   const message=error instanceof BlogError?error.message:"Image budget admission did not complete. No AI requests were sent.";
+   await query("UPDATE fc_blog_auto_runs SET status='failed',error=$3,lease_token=NULL,lease_until=NULL,updated_at=now() WHERE id=$1 AND lease_token=$2 AND status='running'",[rows[0].id,admission,message]);
+   throw error;
+  }
+ }
  const raced=(await query<AutoRun>("SELECT * FROM fc_blog_auto_runs WHERE request_key=$1 OR status='running' ORDER BY created_at DESC LIMIT 1",[p.requestId]))[0];
  if(!raced)throw new BlogError(409,"Another generation finished while this request started. Refresh the run history.");return raced;
 }
@@ -74,6 +88,10 @@ async function persistDraft(run:AutoRun,token:string,input:ReturnType<typeof edi
 export async function advanceAuto(id:string,expectedCursor:number,services:AutoServices=defaults){
  const current=await autoRun(id);
  if(current.status!=="running"||current.cursor!==expectedCursor||current.lease_token)return current;
+ if(current.state.imageBudgetReserved!==true){
+  await query("UPDATE fc_blog_auto_runs SET status='failed',error='This run has no confirmed image budget reservation. Inspect its saved progress before starting again.',updated_at=now() WHERE id=$1 AND status='running' AND lease_token IS NULL",[id]);
+  return autoRun(id);
+ }
  preflight();
  const token=randomUUID();
  const claimed=await query<AutoRun>("UPDATE fc_blog_auto_runs SET lease_token=$2,lease_until=now()+interval '6 minutes',updated_at=now() WHERE id=$1 AND status='running' AND lease_token IS NULL AND cursor=$3 RETURNING *",[id,token,expectedCursor]);

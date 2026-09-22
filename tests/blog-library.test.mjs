@@ -34,3 +34,9 @@ test("safe accessible tables survive saving and rendering while active content i
  const content=sanitize(input);assert(content.includes('<th scope="col">'));assert(content.includes('<caption>'));assert(!content.includes('onclick'));assert(!content.includes('<script'));assert.equal(sanitize(content),content);
  const html=articleHtml({language:"en",content,data:{images:[]}});assert(html.includes('class="article-table-scroll"'));assert(html.includes('role="region"'));assert(html.includes('<table>'));
 });
+
+test("Spanish preview declares its language and translates category/navigation labels",async()=>{
+ const {previewArticle}=await import("../server/blog/render.ts");
+ const html=previewArticle({language:"es",title:"Preparar una visita",content:"<h2>Preguntas</h2><p>Prepare sus preguntas.</p>",data:{...blankData,category:"primary-care"}});
+ assert(html.includes('<article lang="es"'));assert(html.includes("Atención primaria"));assert(html.includes('aria-label="Índice del artículo"'));
+});
