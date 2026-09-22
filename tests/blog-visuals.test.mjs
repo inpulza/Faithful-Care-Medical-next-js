@@ -83,13 +83,15 @@ test("human scene assignments specify a consistent light setup and concrete atte
  const {articleSceneMix}=await import("../server/blog/image-scene-policy.ts");
  const cases=new Set();
  for(let i=0;i<100;i++){
-  const direction=articleSceneMix("Natural care scene "+i).find(s=>s.family==="people").direction;
+  const mix=articleSceneMix("Natural care scene "+i);
+  const direction=mix.find(s=>s.family==="people").direction;
+  assert.doesNotMatch(mix.find(s=>s.family==="environment").direction,/cheek|eye detail|hair|shoulder|nose shadow|subjects/);
   assert.match(direction,/camera-left/);assert.match(direction,/pupils|both eyes/);
   if(direction.includes("two fictional adults")){
    assert.match(direction,/camera-right/);
    if(direction.includes("looks back")){cases.add("mutual");assert.match(direction,/speaker's eyes/);}
-   else {cases.add("shared");assert.match(direction,/same visible point/);}
-  }else{cases.add("solo");assert.match(direction,/same visible page/);}
+   else {cases.add("shared");assert.match(direction,/same visible point/);assert.match(direction,/older adult on camera-right speaks/);assert.match(direction,/younger adult on camera-left listens/);}
+  }else{cases.add("solo");assert.match(direction,/same concrete target/);assert.match(direction,/section-specific action/);assert.match(direction,/Keep exactly one person/);}
  }
  assert.deepEqual(cases,new Set(["mutual","shared","solo"]));
 });
