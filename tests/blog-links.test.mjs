@@ -1,5 +1,17 @@
 import assert from "node:assert/strict";import {test} from "node:test";
-import {publicIpv4,allowedSource,readSource} from "../server/blog/links.ts";
+import {publicIpv4,allowedSource,readSource,assessSourceHtml} from "../server/blog/links.ts";
+test("source readability requires main article content, not a navigation shell or challenge",()=>{
+ const article="Prepare questions about your health for your clinician. ".repeat(12);
+ assert.equal(assessSourceHtml(`<title>Health screening</title><nav>Navigation</nav><article>${article}</article>`).readable,true);
+ assert.equal(assessSourceHtml(`<nav>${article}</nav><footer>${article}</footer>`).readable,false);
+ assert.equal(assessSourceHtml(`<main><script>${article}</script><p>Short shell</p></main>`).readable,false);
+ for(const title of ["Page not found","404 Not Found","Access denied","Just a moment","Verify you are human"]){
+  const result=assessSourceHtml(`<title>${title}</title><main>${article}</main>`);
+  assert.equal(result.readable,false,title);assert.equal(result.excerpt,"");
+ }
+ const result=assessSourceHtml(`<nav>Navigation outside article</nav><main role="main"><p>${article}</p></main><footer>Footer outside article</footer>`);
+ assert.equal(result.readable,true);assert(!result.excerpt.includes("Navigation"));assert(!result.excerpt.includes("Footer"));
+});
 test("source checking rejects arbitrary hosts and private addresses",async()=>{
  for(const ip of ["127.0.0.1","10.1.2.3","169.254.169.254","172.16.0.1","192.168.1.2","100.64.1.1","198.18.0.1","0.0.0.0","255.255.255.255","999.1.2.3","::1"])assert.equal(publicIpv4(ip),false,ip);
  assert.equal(publicIpv4("8.8.8.8"),true);

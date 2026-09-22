@@ -1,3 +1,4 @@
+import {articleWordCount} from "../../shared/blog-text";
 import {ownedMediaUrl} from "./media-url";
 import sanitizeHtml from "sanitize-html";
 import { z } from "zod";
@@ -29,6 +30,6 @@ export function sanitize(content:string) {
   }).trim();
 }
 export function plain(content:string) {return sanitizeHtml(content,{allowedTags:[],allowedAttributes:{}}).replace(/\s+/g," ").trim();}
-export function wordCount(content:string) {return plain(content).split(/\s+/).filter(Boolean).length;}
+export function wordCount(content:string) {return articleWordCount(content);}
 export function hrefs(content:string) {const links:string[]=[];sanitizeHtml(content,{transformTags:{a:(_,a)=>{if(a.href)links.push(a.href);return {tagName:"a",attribs:a};}}});return [...new Set(links)];}
 export function slugify(text:string){return text.normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"").slice(0,170);}

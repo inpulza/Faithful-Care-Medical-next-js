@@ -1,4 +1,5 @@
 "use client";
+import {articleWordCount} from "../../../shared/blog-text";
 import {useEffect,useState,useRef} from "react";
 import type {Post,Status} from "../../../server/blog/types";
 import ArticleText from "./article-text";
@@ -27,7 +28,7 @@ export default function Editor({username}:{username:string}){
  async function run(action:()=>Promise<void>){setBusy(true);setMessage("");try{await action();}catch(e){setMessage(e instanceof Error?e.message:"Request failed.");}finally{setBusy(false);}}
  async function save(){const d=await api(draft.id?"posts/"+draft.id:"posts",draft.id?"PUT":"POST",draft);choose(d.post,view);setMessage("Draft saved. It remains private.");await refresh();}
  async function state(post:Post,status:Status){await api("posts/"+post.id+"/status","POST",{status,version:post.version});await refresh();}
- const locked=draft.status==="published",words=draft.content.replace(/<[^>]*>/g," ").trim().split(/\s+/).filter(Boolean).length;
+ const locked=draft.status==="published",words=articleWordCount(draft.content);
  const links=[...new Set([...draft.content.matchAll(/href="([^"]+)"/g)].map(m=>m[1]))];
  const siblings=posts.filter(p=>p.id!==draft.id&&p.translation_group===draft.translation_group);
  return <div className="editor"><header className="editor-header"><a href="/" onClick={e=>{if(e.ctrlKey||e.metaKey||e.shiftKey||e.altKey)return;if(!mayLeave())e.preventDefault();else leaving.current=true;}}>Faithful Care <span>Editorial studio</span></a><div><span>{username}</span><button className="secondary" disabled={busy} onClick={()=>{if(!mayLeave())return;void run(async()=>{await api("logout","POST",{});leaving.current=true;window.location.href="/admin/login";});}}>Sign out</button></div></header>

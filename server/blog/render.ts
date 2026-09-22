@@ -1,3 +1,4 @@
+import {articleWordCount} from "../../shared/blog-text";
 import {verifiedBlogAuthor} from "../../shared/blog-author";
 import {decodeHTML} from "entities";
 import {sanitize,plain} from "./content";
@@ -16,7 +17,7 @@ export function articleHtml(post:Post){
  }).join("");
 }
 export function previewArticle(post:Post){
- const es=post.language==="es",headings=articleHeadings(post),words=plain(post.content).split(/\s+/).filter(Boolean).length;
+ const es=post.language==="es",headings=articleHeadings(post),words=articleWordCount(post.content);
  const category=es?({"prevention":"Prevención","primary-care":"Atención primaria","chronic-care":"Enfermedades crónicas","senior-care":"Adultos mayores","palliative-care":"Cuidados paliativos","family-support":"Apoyo familiar"}[post.data.category]||post.data.category):post.data.category.replaceAll("-"," ");
  const author=verifiedBlogAuthor(post.data.author);
  const byline=author?'<a class="blog-author" rel="author" href="'+author.biography+'"><span class="blog-author-avatar"><img src="'+author.image+'" alt="" width="56" height="56"/></span><span><small>'+(es?'Por':'By')+'</small><strong>'+author.name+'</strong><span class="blog-author-bio">'+(es?'Conoce a la doctora':'Meet your doctor')+' →</span></span></a>':'<span>'+escapeHtml(post.data.author)+'</span>';
