@@ -57,8 +57,21 @@ export default function AutoGenerator({api,onDraft,onActive,dirty}:Props){
   finally{setStarting(false);}
  }
  async function open(id:string){try{onDraft((await api("posts/"+id)).post);}catch(e){setMessage(e instanceof Error?e.message:"Could not open the draft.");}}
+ const progressRef=useRef<HTMLDivElement>(null);
  const steps:AutoStep[]=run?.steps||AUTO_STEPS.map(([id,label])=>({id,label,status:"pending" as const}));
+ const finished=steps.filter(step=>step.status==="completed"||step.status==="skipped").length;
+ const runningIndex=steps.findIndex(step=>step.status==="running");
+ const currentIndex=active?(runningIndex>=0?runningIndex:Math.min(run!.cursor,steps.length-1)):-1;
+ const reconnect=active&&message.includes("Reload to reconnect");
+ const progressLabel=starting?"Starting your article…":reconnect?"Connection interrupted · reload to reconnect":active?`Step ${currentIndex+1} of ${steps.length}: ${steps[currentIndex].label}`:run?.status==="completed"?"Draft ready to review":run?.status==="cancelled"?"Generation stopped":"Generation needs attention";
  return <section className="auto-generator" aria-labelledby="auto-title">
+  {(run||starting)&&<div ref={progressRef} className="auto-progress" data-state={starting?"running":run?.status}>
+   <div className="auto-progress-heading"><span className={(active||starting)&&!reconnect?"auto-spinner":"auto-progress-symbol"} aria-hidden="true">{(active||starting)&&!reconnect?"":run?.status==="completed"?"✓":"!"}</span><strong role="status" aria-live="polite" aria-atomic="true">{progressLabel}</strong></div>
+   <progress aria-label="Overall article preparation" max={steps.length} value={starting?0:finished} aria-valuetext={`${starting?0:finished} of ${steps.length} steps finished`}/>
+   <div className="auto-progress-caption"><span>{starting?0:finished} / {steps.length} steps finished</span><span>Progress by steps, not estimated time</span></div>
+   {active&&!reconnect&&<p>The current step is processing. Images and translation can take several minutes.</p>}
+   {active&&<button type="button" className="secondary" onClick={()=>{const target=document.getElementById(`auto-step-${steps[currentIndex].id}`);if(target){target.style.scrollMarginTop=`${(progressRef.current?.offsetHeight||0)+28}px`;target.scrollIntoView({behavior:matchMedia("(prefers-reduced-motion: reduce)").matches?"instant":"smooth",block:"start"});}}}>Show current step</button>}
+  </div>}
   <div className="auto-heading"><div><p className="blog-eyebrow">AI EDITORIAL WORKFLOW</p><h3 id="auto-title">From a useful topic to a complete draft</h3></div><span className="blog-pill">English + Español</span></div>
   <p>Auto Generate researches a topic, writes the article and SEO fields, prepares contextual images and alternative text, and creates the second language. You review the result before publication.</p>
   {!config&&<p role="status">Checking the AI connection…</p>}
@@ -70,7 +83,7 @@ export default function AutoGenerator({api,onDraft,onActive,dirty}:Props){
   {message&&<p role="alert" className="auto-notice">{message}</p>}
   {active&&<p role="status">Preparing your draft. You can reload this page to reconnect to saved progress. If you close the editor, the current step may finish; reopen it to continue the remaining steps.</p>}
   {run?.error&&<p role="alert" className="auto-notice">{run.error}</p>}
-  <ol className="auto-steps" aria-label="Article generation progress">{steps.map(step=><li key={step.id} data-status={step.status}><span className="auto-step-dot" aria-hidden="true">{step.status==="completed"?"✓":step.status==="failed"?"!":step.status==="running"?"●":"○"}</span><div><strong>{step.label}</strong><span className="auto-step-status">{step.status}</span>{step.detail&&<p>{step.detail}</p>}{"outputs" in step&&step.outputs&&<dl>{Object.entries(step.outputs).map(([key,value])=><div key={key}><dt>{key}</dt><dd>{value}</dd></div>)}</dl>}</div></li>)}</ol>
+  <ol className="auto-steps" aria-label="Article generation progress">{steps.map((step,index)=><li key={step.id} id={`auto-step-${step.id}`} data-status={active&&index===currentIndex?"running":step.status}><span className={active&&steps[currentIndex]?.id===step.id&&!reconnect?"auto-step-dot auto-spinner":"auto-step-dot"} aria-hidden="true">{active&&steps[currentIndex]?.id===step.id&&!reconnect?"":step.status==="completed"?"✓":step.status==="failed"?"!":"○"}</span><div><strong>{step.label}</strong><span className="auto-step-status">{active&&index===currentIndex&&step.status==="pending"?"Preparing":step.status}</span>{step.detail&&<p>{step.detail}</p>}{"outputs" in step&&step.outputs&&<dl>{Object.entries(step.outputs).map(([key,value])=><div key={key}><dt>{key}</dt><dd>{value}</dd></div>)}</dl>}</div></li>)}</ol>
   {run?.status==="completed"&&<p className="auto-complete" role="status">Draft preparation finished. Review the sources, images and clinical content in each language. Nothing has been published.</p>}
   {(run?.postId||run?.translationId)&&<div className="editor-actions">{run.postId&&<button className="secondary" disabled={active} onClick={()=>open(run.postId!)}>Open {run.language==="en"?"English":"Spanish"} draft</button>}{run.translationId&&<button className="secondary" disabled={active} onClick={()=>open(run.translationId!)}>Open {run.language==="en"?"Spanish":"English"} draft</button>}</div>}
  </section>;
