@@ -20,6 +20,30 @@ try{
   await page.waitForFunction(()=>[...document.querySelectorAll('.blog-author-avatar img')].every(img=>img.complete&&img.naturalWidth>0));
   assert.equal(await preview.locator('a[rel="author"]').getAttribute("href"),"/about");assert.equal(await preview.locator(".blog-author strong").innerText(),blankData.author);
   for(const [width,height] of sizes){await page.setViewportSize({width,height});await preview.locator("h1").evaluate(el=>scrollTo({top:el.getBoundingClientRect().top+scrollY-30,behavior:"instant"}));await page.screenshot({path:`artifacts/blog-author/preview-${language}-${width}x${height}.png`});assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1));}
+  // A sticky declaration alone is insufficient: an overflow ancestor can trap it.
+  for(const [width,height] of sizes){
+   await page.setViewportSize({width,height});
+   const nav=preview.locator('nav');
+   if(width<=760){
+    await nav.scrollIntoViewIfNeeded();
+    const details=nav.locator('details');
+    if(!await details.evaluate(el=>el.open))await nav.locator('summary').click();
+    await nav.getByRole('link').first().click();
+    await page.waitForFunction(()=>Math.abs(document.querySelector('.saved-article-preview h2').getBoundingClientRect().top-24)<5);
+   }else{
+    const start=await preview.locator('.reading-layout').evaluate(el=>el.getBoundingClientRect().top+scrollY);
+    for(const offset of [250,900,1500]){
+     await page.evaluate(y=>scrollTo({top:y,behavior:'instant'}),start+offset);
+     await page.waitForFunction(()=>Math.abs(document.querySelector('.saved-article-preview nav').getBoundingClientRect().top-24)<2);
+     const box=await nav.boundingBox();assert(box.y>=0&&box.y+box.height<=height,'Contents remain within the viewport while reading');
+    }
+    await nav.getByRole('link').first().click();
+    await page.waitForFunction(()=>Math.abs(document.querySelector('.saved-article-preview h2').getBoundingClientRect().top-24)<5);
+    await page.evaluate(y=>scrollTo({top:y,behavior:'instant'}),start+900);
+   }
+   if(width>760){await page.mouse.move(width-100,height/2);await page.mouse.wheel(0,350);await page.waitForFunction(()=>Math.abs(document.querySelector('.saved-article-preview nav').getBoundingClientRect().top-24)<2);}
+   await page.screenshot({path:`artifacts/blog-author/sticky-${language}-${width}x${height}.png`});
+  }
   const standalone=await context.newPage();assert.equal((await standalone.goto(config.baseUrl+"/api/admin/blog/posts/"+post.id+"/preview")).status(),200);await standalone.waitForFunction(()=>{const img=document.querySelector('.blog-author-avatar img');return img?.complete&&img.naturalWidth>0;});await standalone.close();
   const {post:published}=await api("posts/"+post.id+"/status","POST",{status:"published",version:post.version});
   const article=await context.newPage();article.on("pageerror",e=>errors.push(e.message));article.on("console",e=>{if(e.type()==="error")errors.push(e.text());});
@@ -27,6 +51,14 @@ try{
   await article.waitForFunction(()=>[...document.querySelectorAll('.blog-author-avatar img')].every(img=>img.complete&&img.naturalWidth>0));
   const schema=await article.locator('main script[type="application/ld+json"]').textContent();assert.equal(JSON.parse(schema).author["@type"],"Person");assert.equal(JSON.parse(schema).author.name,blankData.author);
   for(const [width,height] of sizes){await article.setViewportSize({width,height});await article.evaluate(()=>scrollTo(0,0));await article.screenshot({path:`artifacts/blog-author/public-${language}-${width}x${height}.png`});assert(await article.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1));const box=await article.locator('.blog-author-avatar').boundingBox();assert.equal(box.width,56);assert.equal(box.height,56);}
+  for(const [width,height] of sizes.filter(([w])=>w>760)){
+   await article.setViewportSize({width,height});
+   const start=await article.locator('.article-reading-layout').evaluate(el=>el.getBoundingClientRect().top+scrollY);
+   for(const offset of [350,1000]){
+    await article.evaluate(y=>scrollTo({top:y,behavior:'instant'}),start+offset);
+    await article.waitForFunction(()=>Math.abs(document.querySelector('.article-contents').getBoundingClientRect().top-128)<2);
+   }
+  }
   await article.locator('a[rel="author"]').click();await article.waitForURL("**/about");await article.getByRole("heading",{name:/About Dr. Addys Reve/}).waitFor();await article.close();
   await api("posts/"+post.id+"/status","POST",{status:"draft",version:published.version});
   await api("posts/"+post.id,"PUT",{...post,version:published.version+1,data:{...post.data,author:"Faithful Care editorial team"}});
