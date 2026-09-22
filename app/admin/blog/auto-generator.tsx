@@ -6,8 +6,15 @@ export default function AutoGenerator({api,onDraft,onActive,dirty}:Props){
  const [config,setConfig]=useState<{ready:boolean;missing:string[]}|null>(null),[run,setRun]=useState<AutoView|null>(null);
  const [language,setLanguage]=useState("en"),[translate,setTranslate]=useState(true),[focus,setFocus]=useState(""),[message,setMessage]=useState(""),[starting,setStarting]=useState(false);
  const apiRef=useRef(api),activeRef=useRef(onActive);apiRef.current=api;activeRef.current=onActive;
+ function acceptRun(next:AutoView|null){
+  setRun(next);
+  if(next&&next.status!=="running"&&next.requestId===sessionStorage.getItem("faithful-auto-request"))sessionStorage.removeItem("faithful-auto-request");
+ }
+ useEffect(()=>{
+  if(run&&run.status!=="running"&&run.requestId===sessionStorage.getItem("faithful-auto-request"))sessionStorage.removeItem("faithful-auto-request");
+ },[run?.requestId,run?.status]);
  const active=run?.status==="running";
- useEffect(()=>{let live=true;Promise.all([apiRef.current("auto/config"),apiRef.current("auto/current")]).then(([c,r])=>{if(live){setConfig(c);setRun(r.run);}}).catch(e=>{if(live)setMessage(e.message);});return()=>{live=false;};},[]);
+ useEffect(()=>{let live=true;Promise.all([apiRef.current("auto/config"),apiRef.current("auto/current")]).then(([c,r])=>{if(live){setConfig(c);acceptRun(r.run);}}).catch(e=>{if(live)setMessage(e.message);});return()=>{live=false;};},[]);
  useEffect(()=>{activeRef.current(active||starting);return()=>activeRef.current(false);},[active,starting]);
  useEffect(()=>{
   if(!run||run.status!=="running")return;
@@ -33,11 +40,20 @@ export default function AutoGenerator({api,onDraft,onActive,dirty}:Props){
   void drive();return()=>{stopped=true;};
  },[run?.id,run?.status,config?.ready]);
  async function start(){
-  setStarting(true);setMessage("");
+  setStarting(true);setMessage("");setRun(null);
   const stored=sessionStorage.getItem("faithful-auto-request");
   const key=stored||crypto.randomUUID();sessionStorage.setItem("faithful-auto-request",key);
   try{const result=await api("auto/start","POST",{requestId:key,language,translate,focus});setRun(result.run);sessionStorage.removeItem("faithful-auto-request");}
-  catch(e){setMessage(e instanceof Error?e.message:"Could not start.");}
+  catch(e){
+   const failure=e instanceof Error?e.message:"Could not start.";
+   try{
+    const latest:AutoView|null=(await api("auto/current")).run;
+    if(latest&&(latest.requestId===key||latest.status==="running")){
+     acceptRun(latest);
+     setMessage(latest.status==="running"?"Reconnected to saved generation progress.":latest.error?"":failure);
+    }else setMessage(failure);
+   }catch{setMessage(failure+" The connection could not be confirmed. Retry to reconnect to the same request.");}
+  }
   finally{setStarting(false);}
  }
  async function open(id:string){try{onDraft((await api("posts/"+id)).post);}catch(e){setMessage(e instanceof Error?e.message:"Could not open the draft.");}}
