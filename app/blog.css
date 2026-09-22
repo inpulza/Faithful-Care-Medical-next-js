@@ -235,3 +235,15 @@
 @keyframes auto-progress-spin{to{transform:rotate(360deg)}}
 @media(prefers-reduced-motion:reduce){.auto-spinner{animation:none}}
 @media(max-width:600px){.auto-progress{padding:12px}.auto-progress-heading{font-size:13px}.auto-progress-caption{flex-direction:column;gap:2px}.auto-progress p{display:none}}
+
+.google-visibility { margin-top:1.25rem; }
+.google-actions { display:flex; flex-wrap:wrap; gap:.65rem; align-items:center; }
+.google-actions a { display:inline-flex; align-items:center; padding:.8rem 1rem; border-radius:14px; text-decoration:none; }
+.google-article-url { overflow-wrap:anywhere; font-size:.85rem; }
+.google-evidence { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:1rem; margin:1rem 0; }
+.google-evidence article { background:#f2f8fc; border-radius:16px; padding:1.1rem; min-width:0; }
+.google-evidence h4 { margin:0 0 .8rem; font-size:.9rem; }
+.google-evidence strong { color:#007f86; }
+.google-evidence p { font-size:.88rem; overflow-wrap:anywhere; }
+.google-history { margin-top:1rem; }
+@media(max-width:900px){.google-evidence { grid-template-columns:1fr; }}

@@ -77,7 +77,7 @@ async function handle(request:NextRequest,context:Context) {
    if(path.length===1&&request.method==="GET")return json({posts:await listPosts(undefined,true)});
    if(path.length===1&&request.method==="POST")return json({post:await createPost(body,editor.username)},201);
    if(path.length===3&&path[2]==="incoming-links"&&request.method==="GET")return json({articles:await incomingArticleLinks(path[1])});
-   if(path.length===3&&path[2]==="seo"){const m=await import("../../../../../server/blog/seo");if(request.method==="GET")return json({events:await m.seoHistory(path[1])});if(request.method==="POST")return json(await m.publishSeo(path[1],editor.username));}
+   if(path.length===3&&path[2]==="seo"){const m=await import("../../../../../server/blog/seo");if(request.method==="GET")return json({events:await m.seoHistory(path[1]),enabled:process.env.VERCEL_ENV==="production"&&process.env.BLOG_GSC_ENABLED==="true"&&m.googleConfigured()});if(request.method==="POST")return json(await m.publishSeo(path[1],editor.username));}
    if(path.length===3&&path[2]==="preview"&&request.method==="GET"){
     const {previewHtml,previewArticle}=await import("../../../../../server/blog/render");
     const post=await getPost(path[1]);
