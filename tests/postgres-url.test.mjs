@@ -32,3 +32,10 @@ test("hardens duplicate parameters and values followed by a URL fragment", () =>
     "postgresql://example/db?sslmode=verify-full&sslmode=verify-full#client",
   );
 });
+
+test("decodes SSL mode keys and values before hardening without rewriting the URL", () => {
+  assert.equal(
+    hardenPostgresSslMode("postgresql://user:p%40ss@example/db?%73slmode=%72equire&application_name=Faithful+Care#client"),
+    "postgresql://user:p%40ss@example/db?%73slmode=verify-full&application_name=Faithful+Care#client",
+  );
+});
