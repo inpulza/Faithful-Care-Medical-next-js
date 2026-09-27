@@ -35,7 +35,7 @@ Los PR siguen en borrador. Producción no se modificó.
 
 ## Conexión y credenciales
 La clave autorizada de agencia se leyó directamente desde su archivo original en 05. Pass. OPENAI_API_KEY es Sensitive y solo está configurada para Preview en feat/blog-xl-layout-faithful-brand. BLOG_AI_ENABLED y BLOG_IMAGES_ENABLED están activos en esa rama. La nueva configuración se aplicó mediante redeploy; no se modificó producción.
-Los modelos verificados con la cuenta son gpt-5.6-sol para texto, traducción y visión, y gpt-image-2.5-sunburst para imágenes. Las credenciales se leen solo en servidor: OPENAI_API_KEY, DATABASE_URL, BLOB_READ_WRITE_TOKEN, BLOG_ADMIN_PASSWORD_HASH y BLOG_ADMIN_SESSION_SECRET nunca llevan NEXT_PUBLIC_. La contraseña de administrador se conserva en la carpeta protegida del cliente; Vercel utiliza su hash scrypt y un secreto de sesión distinto.
+Los modelos verificados con la cuenta son gpt-5.6-sol para texto, traducción y visión, y gpt-image-2.5-sunburst para imágenes. Las credenciales se leen solo en servidor: OPENAI_API_KEY, DATABASE_URL, la conexión BLOB_STORE_ID cuyo token OIDC corto entrega Vercel en cada despliegue, BLOG_ADMIN_PASSWORD_HASH y BLOG_ADMIN_SESSION_SECRET nunca llevan NEXT_PUBLIC_. BLOB_READ_WRITE_TOKEN queda únicamente como fallback local o temporal durante la migración. La contraseña de administrador se conserva en la carpeta protegida del cliente; Vercel utiliza su hash scrypt y un secreto de sesión distinto.
 Los archivos temporales de carga, cookies y credenciales de QA se retiran al acabar las verificaciones. No se guardan estados de navegador ni trazas con sesiones. Las originales en 05. Pass y los secretos necesarios de Vercel se conservan.
 
 ## Repetir la revisión sin generar ni publicar

@@ -16,7 +16,7 @@ test("planner and final image provider both receive the Florida and human editor
  const {planVisuals}=await import("../server/blog/visuals.ts");
  const {generateImage}=await import("../server/blog/media.ts");
  const {imageScenePolicy,humanRealismRequirements}=await import("../server/blog/image-scene-policy.ts");
- const names=["NODE_ENV","BLOG_AI_ENABLED","BLOG_IMAGES_ENABLED","OPENAI_API_KEY","BLOB_READ_WRITE_TOKEN","BLOB_PUBLIC_HOSTNAME"];
+ const names=["NODE_ENV","BLOG_AI_ENABLED","BLOG_IMAGES_ENABLED","OPENAI_API_KEY","VERCEL_OIDC_TOKEN","BLOB_STORE_ID","BLOB_READ_WRITE_TOKEN","BLOB_PUBLIC_HOSTNAME"];
  const prior=Object.fromEntries(names.map(name=>[name,process.env[name]]));
  const oldFetch=globalThis.fetch;let db;
  const calls=[];

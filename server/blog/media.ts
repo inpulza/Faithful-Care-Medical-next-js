@@ -10,7 +10,9 @@ import {claimJob,failJob,jobStage} from "./jobs";
 import {consumeImageBudget} from "./image-budget";
 import {rejectPrivateInformation} from "./provider";
 export interface Media {id:string;post_id:string;url:string;role:"hero"|"inline";alt:string;placement:number;source:string;reviewed:boolean}
-export function mediaConfigured(){return Boolean(process.env.BLOB_READ_WRITE_TOKEN&&process.env.BLOB_PUBLIC_HOSTNAME);}
+export function mediaConfigured(){
+ return Boolean(process.env.BLOB_PUBLIC_HOSTNAME&&(process.env.BLOB_STORE_ID||process.env.BLOB_READ_WRITE_TOKEN));
+}
 export async function mediaList(id:string){
  const post=await getPost(id);
  const media=await query<Media>("SELECT m.* FROM fc_blog_media m JOIN fc_blog_posts p ON p.id=m.post_id WHERE p.translation_group=$1 ORDER BY m.created_at DESC",[post.translation_group]);
@@ -24,7 +26,7 @@ async function storeImage(post:Post,bytes:Buffer,role:"hero"|"inline",alt:string
  if(!["jpeg","png","webp"].includes(metadata.format||""))throw new BlogError(415,"Use JPEG, PNG or WebP.");
  if(!metadata.width||!metadata.height||metadata.width<600||metadata.height<300)throw new BlogError(422,"Use an image at least 600×300 pixels.");
  const encoded=await image.rotate().resize({width:1600,withoutEnlargement:true}).webp({quality:85}).toBuffer();
- const blob=await put("faithful-care/blog/"+post.id+"/"+randomUUID()+".webp",encoded,{access:"public",contentType:"image/webp",addRandomSuffix:false,token:process.env.BLOB_READ_WRITE_TOKEN});
+ const blob=await put("faithful-care/blog/"+post.id+"/"+randomUUID()+".webp",encoded,{access:"public",contentType:"image/webp",addRandomSuffix:false});
  if(!ownedMediaUrl(blob.url))throw new BlogError(503,"Image store hostname does not match the client configuration.");
  const [media]=await query<Media>("INSERT INTO fc_blog_media(post_id,url,role,alt,placement,source,model,prompt) VALUES($1,$2,$3,$4,$5,$6,$7,$8) RETURNING *",[post.id,blob.url,role,alt,placement,source,model||null,prompt||null]);
  return media;
