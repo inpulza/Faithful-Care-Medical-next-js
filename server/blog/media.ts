@@ -11,7 +11,8 @@ import {consumeImageBudget} from "./image-budget";
 import {rejectPrivateInformation} from "./provider";
 export interface Media {id:string;post_id:string;url:string;role:"hero"|"inline";alt:string;placement:number;source:string;reviewed:boolean}
 export function mediaConfigured(){
- return Boolean(process.env.BLOB_PUBLIC_HOSTNAME&&(process.env.BLOB_STORE_ID||process.env.BLOB_READ_WRITE_TOKEN));
+ const oidcConfigured=Boolean(process.env.BLOB_STORE_ID&&(process.env.VERCEL_ENV||process.env.VERCEL_OIDC_TOKEN));
+ return Boolean(process.env.BLOB_PUBLIC_HOSTNAME&&(oidcConfigured||process.env.BLOB_READ_WRITE_TOKEN));
 }
 export async function mediaList(id:string){
  const post=await getPost(id);

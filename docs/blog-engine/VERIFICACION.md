@@ -6,7 +6,7 @@
 - npm run build
 - npm test contra un servidor de producción en BASE_URL (la CI inicia y detiene ese servidor).
 - node scripts/blog-dev.mjs y node tests/blog-ui.e2e.mjs: base PGlite local aislada, acceso y borradores privados en móvil/escritorio, archivo EN/ES y cinco viewports.
-- node --import tsx tests/blog-complete.e2e.mjs: requiere almacenamiento Preview mediante BLOG_PREVIEW_ENV_FILE, el par temporal VERCEL_OIDC_TOKEN + BLOB_STORE_ID emitido por Vercel (o BLOB_READ_WRITE_TOKEN durante rollback) y BLOB_PUBLIC_HOSTNAME; valida carga real, selección hero/inline, vista previa, publicación local, canonical/sitemap, privacidad y retirada.
+- node --import tsx tests/blog-complete.e2e.mjs: requiere almacenamiento Preview mediante BLOG_PREVIEW_ENV_FILE, el par temporal VERCEL_OIDC_TOKEN + BLOB_STORE_ID emitido por Vercel para ejecución local (o BLOB_READ_WRITE_TOKEN durante rollback) y BLOB_PUBLIC_HOSTNAME; en Functions el token OIDC llega mediante el contexto de la petición. Valida carga real, selección hero/inline, vista previa, publicación local, canonical/sitemap, privacidad y retirada.
 - node tests/blog-preview.e2e.mjs: requiere BLOG_PREVIEW_URL, EXPECTED_SHA y BLOG_PASS_DIRECTORY. Usa cookies de acceso Vercel existentes y verifica el SHA exacto antes de operar. Nunca publica su borrador técnico.
 
 ## Evidencia histórica de la base (sustituida por la verificación vigente)
