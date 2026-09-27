@@ -25,3 +25,10 @@ test("preserves explicit secure and local connection strings", () => {
   );
   assert.equal(hardenPostgresSslMode("postgresql://localhost/db"), "postgresql://localhost/db");
 });
+
+test("hardens duplicate parameters and values followed by a URL fragment", () => {
+  assert.equal(
+    hardenPostgresSslMode("postgresql://example/db?sslmode=require&sslmode=prefer#client"),
+    "postgresql://example/db?sslmode=verify-full&sslmode=verify-full#client",
+  );
+});

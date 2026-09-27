@@ -1,4 +1,4 @@
-const AMBIGUOUS_SSL_MODES = /([?&]sslmode=)(prefer|require|verify-ca)(?=&|$)/i;
+const AMBIGUOUS_SSL_MODES = /([?&]sslmode=)(prefer|require|verify-ca)(?=&|#|$)/gi;
 
 /**
  * Preserve node-postgres' current certificate-verifying behavior explicitly.
